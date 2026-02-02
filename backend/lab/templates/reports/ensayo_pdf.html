@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Reporte de Ensayo - {{ ensayo.code }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+            @bottom-right {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            color: #333;
+            line-height: 1.5;
+            font-size: 10pt;
+        }
+        .header {
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-placeholder {
+            width: 150px;
+            height: 50px;
+            background-color: #f1f5f9;
+            border: 1px dashed #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 8pt;
+        }
+        .report-title {
+            text-align: right;
+        }
+        .report-title h1 {
+            margin: 0;
+            color: #2563eb;
+            font-size: 18pt;
+            text-transform: uppercase;
+        }
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+            background-color: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .metadata-item b {
+            color: #475569;
+            width: 120px;
+            display: inline-block;
+        }
+        .section-title {
+            background-color: #e2e8f0;
+            padding: 5px 10px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 15px;
+            border-left: 4px solid #2563eb;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        th {
+            background-color: #f1f5f9;
+            text-align: left;
+            padding: 10px;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 9pt;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .numeric {
+            text-align: right;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .ppm-badge {
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 8pt;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .signature-box {
+            margin-top: 60px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .signature-line {
+            width: 200px;
+            border-top: 1px solid #333;
+            text-align: center;
+            padding-top: 5px;
+            font-size: 9pt;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo-placeholder">BAKERY LAB LOGO</div>
+        <div class="report-title">
+            <h1>Reporte de Ensayo</h1>
+            <div>Código: <b>{{ ensayo.code }}</b></div>
+        </div>
+    </div>
+
+    <div class="metadata-grid">
+        <div class="metadata-item"><b>Proyecto:</b> {{ ensayo.project.name }}</div>
+        <div class="metadata-item"><b>Fecha:</b> {{ ensayo.date|date:"d/m/Y H:i" }}</div>
+        <div class="metadata-item"><b>Cliente:</b> {{ ensayo.project.client.name }}</div>
+        <div class="metadata-item"><b>Estado:</b> Finalizado</div>
+    </div>
+
+    {% if ensayo.description %}
+    <div class="section-title">Objetivo y Observaciones</div>
+    <p style="margin-bottom: 30px;">{{ ensayo.description }}</p>
+    {% endif %}
+
+    <div class="section-title">Formulación y Dosificación</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Ingrediente</th>
+                <th>Tipo</th>
+                <th class="numeric">Cantidad (KG)</th>
+                <th class="numeric">Dosificación (PPM)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detail in ensayo.details.all %}
+            <tr>
+                <td>{{ detail.ingredient.name }}</td>
+                <td>{% if detail.ingredient.is_base_flour %}Harina Base{% else %}Aditivo{% endif %}</td>
+                <td class="numeric">{{ detail.quantity|floatformat:4 }}</td>
+                <td class="numeric">
+                    {% if detail.dosage_ppm %}
+                    <span class="ppm-badge">{{ detail.dosage_ppm|floatformat:2 }} PPM</span>
+                    {% else %}-{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <div class="section-title">Conclusión Técnica</div>
+        <p>El ensayo cumple con los parámetros de dosificación requeridos para la optimización de la red de gluten. Los niveles de PPM se encuentran dentro del rango operativo estándar.</p>
+        
+        <div class="signature-box">
+            <div class="signature-line">
+                Firma Responsable Lab<br>
+                Bakery Lab ERP
+            </div>
+        </div>
+    </div>
+</body>
+</html>
