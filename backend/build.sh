@@ -9,9 +9,12 @@ pip install gunicorn
 
 python manage.py collectstatic --no-input
 python manage.py migrate
-# Crear superusuario automáticamente si no existe
-# La contraseña quedará como 'admin123' temporalmente (puedes cambiarla luego)
-echo "from django.contrib.auth import get_user_model; User = get_user_model(); \
-if not User.objects.filter(username='admin').exists(): \
-    User.objects.create_superuser('admin', 'jmaldonado2378@gmail.com', 'admin123')" \
-| python manage.py shell
+# Crear o actualizar superusuario
+echo "from django.contrib.auth import get_user_model; \
+User = get_user_model(); \
+u, created = User.objects.get_or_create(username='admin', defaults={'email': 'jmaldonado2378@gmail.com'}); \
+u.set_password('admin123'); \
+u.is_superuser = True; \
+u.is_staff = True; \
+u.save(); \
+print('>>> Superusuario admin actualizado con exito')" | python manage.py shell
