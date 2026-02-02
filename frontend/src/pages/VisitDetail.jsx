@@ -30,7 +30,7 @@ export default function VisitDetail() {
         setSaving(true);
 
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/visits/${id}/`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/visits/${id}/`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -54,7 +54,7 @@ export default function VisitDetail() {
 
         setSaving(true);
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/visits/${id}/`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/visits/${id}/`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'Realizada', description: formData.description })

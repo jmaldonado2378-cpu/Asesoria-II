@@ -62,13 +62,17 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Visit)
 class VisitAdmin(admin.ModelAdmin):
-    list_display = ('date', 'start_time', 'end_time', 'get_client', 'project')
-    list_filter = ('date', 'project__client', 'project')
+    list_display = ('date', 'start_time', 'end_time', 'get_client', 'project', 'kilometers', 'status')
+    list_filter = ('date', 'project__client', 'project', 'status')
     search_fields = ('description', 'project__name', 'project__client__name')
     ordering = ('-date', '-start_time')
     
     def get_client(self, obj):
-        return obj.project.client.name
+        if obj.project and obj.project.client:
+            return obj.project.client.name
+        if obj.client:
+            return obj.client.name
+        return "S/C"
     get_client.short_description = "Cliente"
 
 @admin.register(Ensayo)
