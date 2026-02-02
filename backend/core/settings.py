@@ -91,6 +91,7 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 CSRF_TRUSTED_ORIGINS = [
     "https://app-asesor.vercel.app",
+    "https://app-asesoria.onrender.com",
 ]
 
 LANGUAGE_CODE = 'es-ar'
