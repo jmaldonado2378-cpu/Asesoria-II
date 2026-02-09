@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, FlaskConical, Save, X, Edit3, Timer, Thermometer, ChefHat, Ruler, Scale, FileText, Image as ImageIcon, Trash2, Upload, Settings, CheckSquare, Square, ClipboardCheck, Plus, Printer, Wheat, Award } from 'lucide-react';
+import {
+    ArrowLeft, FlaskConical, Save, X, Edit3, Timer, Thermometer,
+    ChefHat, Ruler, Scale, FileText, Image as ImageIcon,
+    Trash2, Upload, Settings, CheckSquare, Square,
+    ClipboardCheck, Plus, Printer, Wheat, Award
+} from 'lucide-react';
 
 // --- COMPONENTES EXTERNOS (SOLUCIÓN AL PROBLEMA DE FOCO) ---
 const WebProcessRow = ({ label, name, unit, value, onChange, isEditing, formData }) => {
@@ -117,13 +122,25 @@ export default function EssayDetail() {
 
     const fetchData = () => {
         fetch(`${import.meta.env.VITE_API_URL}/api/ensayos/${id}/`).then(res => res.json()).then(data => {
-            setEnsayo(data); setFormData(data); setDetailsData(data.details); setImages(data.images || []);
+            if (!data || data.detail) {
+                console.error("Essay not found or API error", data);
+                setEnsayo(null);
+                setLoading(false);
+                return;
+            }
+            setEnsayo(data);
+            setFormData(data);
+            setDetailsData(Array.isArray(data.details) ? data.details : []);
+            setImages(data.images || []);
             if (data.evaluation_data && Object.keys(data.evaluation_data).length > 0) setEvalData(data.evaluation_data); else setEvalData(INITIAL_EVALUATION);
             setLoading(false);
             const autoDetected = LAB_FIELDS.filter(f => data[f.key] !== null && data[f.key] !== undefined && data[f.key] !== 0).map(f => f.key);
             const combined = Array.from(new Set([...visibleFields, ...autoDetected]));
             if (combined.length > visibleFields.length) setVisibleFields(combined);
-        }).catch(err => setLoading(false));
+        }).catch(err => {
+            console.error("Fetch error:", err);
+            setLoading(false);
+        });
     };
 
     const handleInputChange = (e) => { const { name, value, type } = e.target; setFormData(prev => ({ ...prev, [name]: (type === 'number' && value === '') ? null : value })); };

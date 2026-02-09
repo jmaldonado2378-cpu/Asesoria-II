@@ -4,7 +4,7 @@ import {
     ArrowLeft, Plus, GitCompare, Calendar, CheckSquare,
     Square, Building, PieChart, DollarSign, ShoppingBag,
     Trash2, TrendingUp, AlertCircle, Clock, Activity, Eye,
-    Pipette, Calculator, Save, FileSpreadsheet, Table, FileText
+    Pipette, Calculator, Save, FileSpreadsheet, FileText
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
