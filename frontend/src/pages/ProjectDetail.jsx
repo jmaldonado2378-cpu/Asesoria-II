@@ -47,25 +47,41 @@ export default function ProjectDetail() {
             fetch(`${import.meta.env.VITE_API_URL}/api/visits/`).then(r => r.json()),
             fetch(`${import.meta.env.VITE_API_URL}/api/technical-reports/?project=${id}`).then(r => r.json())
         ]).then(([projData, essaysData, visitsData, reportsData]) => {
+            if (!projData || projData.detail) {
+                console.error("Project not found or API error", projData);
+                setProject(null);
+                setLoading(false);
+                return;
+            }
+
             setProject(projData);
             setObservations(projData.technical_observations || '');
             setReportParams(prev => ({ ...prev, conclusions: projData.technical_observations || '' }));
 
-            // Filtros
-            const pEssays = essaysData.filter(e => e.project === parseInt(id));
-            const pVisits = visitsData.filter(v => v.project === parseInt(id));
+            // Filtros con seguridad
+            const pEssays = Array.isArray(essaysData) ? essaysData.filter(e => e.project === parseInt(id)) : [];
+            const pVisits = Array.isArray(visitsData) ? visitsData.filter(v => v.project === parseInt(id)) : [];
 
             setEssays(pEssays);
             setVisits(pVisits);
-            setReports(reportsData);
+            setReports(Array.isArray(reportsData) ? reportsData : []);
 
             // Cargar gastos materiales guardados localmente
-            const savedExpenses = JSON.parse(localStorage.getItem(`proj_expenses_${id}`)) || [];
-            setMaterialExpenses(savedExpenses);
+            try {
+                const savedExpenses = JSON.parse(localStorage.getItem(`proj_expenses_${id}`)) || [];
+                setMaterialExpenses(savedExpenses);
+                calculateFinancials(pEssays, pVisits, savedExpenses);
+            } catch (e) {
+                console.error("Error parsing local expenses", e);
+                setMaterialExpenses([]);
+                calculateFinancials(pEssays, pVisits, []);
+            }
 
-            calculateFinancials(pEssays, pVisits, savedExpenses);
             setLoading(false);
-        }).catch(err => { console.error(err); setLoading(false); });
+        }).catch(err => {
+            console.error("Fetch error:", err);
+            setLoading(false);
+        });
     }, [id]);
 
     const calculateFinancials = (pEssays, pVisits, pMatExpenses) => {
