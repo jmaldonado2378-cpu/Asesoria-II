@@ -226,9 +226,11 @@ export default function EssayDetail() {
     const isBatido = formData.baking_type === 'Batido';
 
     const baseFlourIndex = detailsData.findIndex(d =>
-        d.ingredient_name?.toLowerCase().includes('harina') ||
-        parseFloat(d.panadero_pct) === 100 ||
-        d.is_base_flour === true
+        d.is_base_flour === true ||
+        d.is_base_flour === 1 ||
+        d.is_base_flour === "1" ||
+        d.ingredient_name?.toLowerCase().includes('harina base') ||
+        parseFloat(d.panadero_pct) === 100
     );
 
     return (
@@ -511,7 +513,7 @@ export default function EssayDetail() {
                                 <tbody className="divide-y divide-slate-100">
                                     <tr className="font-bold bg-indigo-50/20 border-b border-indigo-100/50">
                                         <td className="py-2 pl-2 text-slate-900 uppercase tracking-tighter">
-                                            {detailsData.find(d => d.is_base_flour)?.ingredient_name || 'Harina Base'}
+                                            {detailsData.find(d => d.is_base_flour === true || d.is_base_flour === 1 || d.is_base_flour === "1")?.ingredient_name || detailsData[0]?.ingredient_name || 'Harina Base'}
                                         </td>
                                         <td className="text-right text-indigo-700">100.0000%</td>
                                         <td className="text-right text-slate-300">-</td>

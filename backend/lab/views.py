@@ -7,7 +7,10 @@ from django.utils import timezone
 import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from django.template.loader import render_to_string
-from xhtml2pdf import pisa
+try:
+    from xhtml2pdf import pisa
+except ImportError:
+    pisa = None
 import io
 from .models import (
     Client, Project, Ensayo, Ingredient, 
