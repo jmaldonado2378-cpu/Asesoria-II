@@ -121,8 +121,8 @@ def generate_technical_report_view(request):
                 'start_date': start_date,
                 'end_date': end_date,
                 'date': timezone.now(),
-                'conclusions': conclusions,
-                'essays': essays_data,
+                'conclusions': str(conclusions) if conclusions else "",
+                'essays': essays,  # Usamos queryset para que los filtros de template funcionen
                 'visits': visits,
             }
             html = render_to_string('reports/gestion_reporte_pdf.html', context)

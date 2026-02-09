@@ -3,312 +3,110 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Informe Técnico de Gestión - {{ project.name }}</title>
     <style>
         @page {
             size: A4;
-            margin: 1.5cm;
+            margin: 2cm;
         }
 
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            color: #1e293b;
-            line-height: 1.4;
+            font-family: sans-serif;
             font-size: 10pt;
-            margin: 0;
-            padding: 0;
+            color: #333;
         }
 
-        .header {
-            border-bottom: 3px solid #0f172a;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
-            width: 100%;
-        }
-
-        .header-table {
-            width: 100%;
-        }
-
-        .logo-box {
-            width: 120px;
-            height: 60px;
-            background-color: #f8fafc;
-            border: 1px dashed #cbd5e1;
-            color: #94a3b8;
-            font-size: 8pt;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .main-title {
-            text-align: right;
-        }
-
-        .main-title h1 {
-            margin: 0;
-            color: #0f172a;
+        h1 {
             font-size: 18pt;
-        }
-
-        .main-title .subtitle {
-            font-size: 9pt;
-            color: #64748b;
-            font-weight: bold;
-            margin-top: 5px;
-        }
-
-        .info-table {
-            width: 100%;
-            margin-bottom: 25px;
-        }
-
-        .info-box {
-            background-color: #f1f5f9;
-            padding: 10px 15px;
-            width: 33.33%;
-            vertical-align: top;
-            border-left: 4px solid #475569;
-        }
-
-        .info-label {
-            font-size: 7pt;
-            font-weight: bold;
-            color: #64748b;
-            margin-bottom: 3px;
-        }
-
-        .info-value {
-            font-size: 10pt;
-            font-weight: bold;
-            color: #1e293b;
-        }
-
-        .section {
-            margin-bottom: 25px;
-        }
-
-        .section-header {
-            background-color: #475569;
-            color: white;
-            padding: 6px 12px;
-            font-size: 10pt;
-            font-weight: bold;
-            margin-bottom: 12px;
-        }
-
-        .conclusions-text {
-            padding: 15px;
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            font-style: italic;
-            color: #334155;
-            min-height: 80px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-top: 20px;
         }
 
         th {
-            background-color: #f8fafc;
-            color: #475569;
-            font-size: 8pt;
-            font-weight: bold;
+            background-color: #f2f2f2;
             text-align: left;
-            padding: 8px 10px;
-            border-bottom: 2px solid #e2e8f0;
+            padding: 8px;
+            border: 1px solid #ccc;
         }
 
         td {
-            padding: 8px 10px;
-            font-size: 9pt;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: top;
+            padding: 8px;
+            border: 1px solid #eee;
         }
 
-        .badge {
-            padding: 2px 6px;
-            font-size: 7pt;
+        .header-info {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            background-color: #eee;
+            padding: 5px;
             font-weight: bold;
-        }
-
-        .badge-success {
-            background-color: #dcfce7;
-            color: #166534;
-        }
-
-        .badge-info {
-            background-color: #e0f2fe;
-            color: #0369a1;
-        }
-
-        .footer {
-            margin-top: 50px;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 20px;
-        }
-
-        .signature-table {
-            width: 100%;
-            margin-top: 40px;
-        }
-
-        .signature-block {
-            width: 50%;
-            text-align: center;
-            vertical-align: bottom;
-        }
-
-        .signature-line {
-            width: 200px;
-            margin: 0 auto 10px;
-            border-top: 1px solid #0f172a;
-        }
-
-        .signature-label {
-            font-size: 8pt;
-            color: #64748b;
-            font-weight: bold;
-        }
-
-        .confidentiality {
-            margin-top: 40px;
-            font-size: 7pt;
-            color: #94a3b8;
-            text-align: center;
+            margin-top: 20px;
         }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <table class="header-table">
-            <tr>
-                <td width="150" style="border:0;">
-                    <div class="logo-box" style="padding-top: 20px;">LOGO</div>
-                </td>
-                <td style="text-align: right; vertical-align: bottom; border:0;">
-                    <div class="main-title">
-                        <h1>Informe Técnico de Gestión</h1>
-                        <div class="subtitle">SEGUIMIENTO Y RESULTADOS INDUSTRIALES</div>
-                    </div>
-                </td>
-            </tr>
-        </table>
+    <h1>Informe Técnico de Gestión</h1>
+
+    <div class="header-info">
+        <p><b>Cliente:</b> {{ project.client.name }}</p>
+        <p><b>Proyecto:</b> {{ project.name }}</p>
+        <p><b>Fecha:</b> {{ date|date:"d/m/Y" }}</p>
     </div>
 
-    <table class="info-table">
-        <tr>
-            <td class="info-box">
-                <div class="info-label">Cliente</div>
-                <div class="info-value">{{ project.client.name }}</div>
-            </td>
-            <td width="10" style="border:0;"></td>
-            <td class="info-box">
-                <div class="info-label">Proyecto</div>
-                <div class="info-value">{{ project.name }}</div>
-            </td>
-            <td width="10" style="border:0;"></td>
-            <td class="info-box">
-                <div class="info-label">Referencia</div>
-                <div class="info-value">IT-{{ date|date:"Ymd" }}</div>
-            </td>
-        </tr>
+    <div class="section-title">Conclusiones y Observaciones</div>
+    <div style="padding: 10px; border: 1px solid #eee;">
+        {{ conclusions|default:"Sin observaciones registradas." }}
+    </div>
+
+    <div class="section-title">Ensayos Realizados</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Fecha</th>
+                <th>Puntaje</th>
+                <th>Conclusión</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in essays %}
+            <tr>
+                <td>{{ e.code }}</td>
+                <td>{{ e.date|date:"d/m/Y" }}</td>
+                <td>{{ e.final_score|default:"0" }} / 10</td>
+                <td>{{ e.conclusion|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
 
-    <div class="section">
-        <div class="section-header">Conclusiones y Observaciones Técnicas</div>
-        <div class="conclusions-text">
-            {{ conclusions|default:"No se han registrado observaciones adicionales para este periodo." }}
-        </div>
-    </div>
-
-    <div class="section">
-        <div class="section-header">Resultados de Laboratorio / Ensayos</div>
-        <table>
-            <thead>
-                <tr>
-                    <th width="15%">Código</th>
-                    <th width="15%">Fecha</th>
-                    <th width="20%">Harina Base</th>
-                    <th width="35%">Conclusión</th>
-                    <th width="15%" style="text-align: center;">Puntaje</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for e in essays %}
-                <tr>
-                    <td><b>{{ e.code }}</b></td>
-                    <td>{{ e.date|date:"d/m/Y" }}</td>
-                    <td>{{ e.base_flour_name }}</td>
-                    <td>{{ e.conclusion|truncatechars:100 }}</td>
-                    <td style="text-align: center;">
-                        <span class="badge">
-                            {{ e.final_score }} / 10
-                        </span>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" style="text-align: center; color: #94a3b8; font-style: italic; padding: 20px;">
-                        No se registraron ensayos en el periodo seleccionado.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="section">
-        <div class="section-header">Agenda de Visitas y Actividades</div>
-        <table>
-            <thead>
-                <tr>
-                    <th width="15%">Fecha</th>
-                    <th width="20%">Tipo</th>
-                    <th width="50%">Objetivo / Actividad</th>
-                    <th width="15%">Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for v in visits %}
-                <tr>
-                    <td>{{ v.date|date:"d/m/Y" }}</td>
-                    <td><b>{{ v.visit_type }}</b></td>
-                    <td>{{ v.objective }}</td>
-                    <td>{{ v.status }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" style="text-align: center; color: #94a3b8; font-style: italic; padding: 20px;">
-                        No se registraron visitas en el periodo seleccionado.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="footer">
-        <table class="signature-table">
+    <div class="section-title">Agenda de Visitas</div>
+    <table>
+        <thead>
             <tr>
-                <td class="signature-block" style="border:0;">
-                    <div class="signature-line"></div>
-                    <div class="signature-label">Firma del Profesional</div>
-                </td>
-                <td class="signature-block" style="border:0;">
-                    <div class="signature-line"></div>
-                    <div class="signature-label">Recepción Cliente</div>
-                </td>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Objetivo</th>
             </tr>
-        </table>
-        <div class="confidentiality">
-            DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL BAKERY LAB ERP • COPIA CONTROLADA
-        </div>
-    </div>
+        </thead>
+        <tbody>
+            {% for v in visits %}
+            <tr>
+                <td>{{ v.date|date:"d/m/Y" }}</td>
+                <td>{{ v.visit_type }}</td>
+                <td>{{ v.objective }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </body>
 
 </html>
