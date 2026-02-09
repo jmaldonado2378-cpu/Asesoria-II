@@ -173,19 +173,22 @@ export default function ProjectDetail() {
         }
     };
 
-    const downloadBackendReport = async (reportData) => {
+    const downloadBackendReport = async (reportData, targetFormat = 'excel') => {
         try {
             const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/generate-technical-report/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(reportData)
+                body: JSON.stringify({ ...reportData, format: targetFormat })
             });
             if (resp.ok) {
                 const blob = await resp.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `Informe_Tecnico_${project?.name?.replace(/\s+/g, '_')}_${reportData.report_date}.xlsx`;
+                const clientName = project?.client_name?.replace(/\s+/g, '_') || 'Sin_Cliente';
+                const projectName = project?.name?.replace(/\s+/g, '_') || 'Sin_Proyecto';
+                const extension = targetFormat === 'pdf' ? 'pdf' : 'xlsx';
+                a.download = `IT_${clientName}_${projectName}_${reportData.report_date}.${extension}`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
@@ -198,14 +201,23 @@ export default function ProjectDetail() {
     };
 
     const exportTechnicalExcel = (report) => {
-        // Ahora usamos el backend para redescargar reportes del historial también
         downloadBackendReport({
             project: report.project,
             start_date: report.start_date,
             end_date: report.end_date,
-            technical_observations: report.technical_observations,
-            report_date: report.report_date
-        });
+            report_date: report.report_date,
+            technical_observations: report.technical_observations
+        }, 'excel');
+    };
+
+    const exportTechnicalPDF = (report) => {
+        downloadBackendReport({
+            project: report.project,
+            start_date: report.start_date,
+            end_date: report.end_date,
+            report_date: report.report_date,
+            technical_observations: report.technical_observations
+        }, 'pdf');
     };
 
     const handleExportExcel = () => {
@@ -326,9 +338,14 @@ export default function ProjectDetail() {
                                             <td className="p-4 text-[9px] text-slate-400 font-bold uppercase tracking-widest">{rep.start_date} <ArrowLeft size={10} className="rotate-180 inline mx-1" /> {rep.end_date}</td>
                                             <td className="p-4 text-[9px] font-bold text-slate-500 uppercase truncate max-w-[200px]">{rep.technical_observations}</td>
                                             <td className="p-4 text-right">
-                                                <button onClick={() => exportTechnicalExcel(rep)} className="bg-slate-900 text-white px-4 py-2 rounded-sm text-[8px] font-black uppercase tracking-widest hover:bg-indigo-600 transition flex items-center gap-2 ml-auto shadow-lg shadow-indigo-100">
-                                                    <FileSpreadsheet size={12} /> Descargar
-                                                </button>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button onClick={() => exportTechnicalExcel(rep)} className="bg-slate-800 text-white px-3 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-widest hover:bg-indigo-600 transition flex items-center gap-2 shadow-lg">
+                                                        <FileSpreadsheet size={12} /> Excel
+                                                    </button>
+                                                    <button onClick={() => exportTechnicalPDF(rep)} className="bg-indigo-600 text-white px-3 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-widest hover:bg-slate-900 transition flex items-center gap-2 shadow-lg">
+                                                        <FileText size={12} /> PDF
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))

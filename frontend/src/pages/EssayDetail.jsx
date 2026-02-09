@@ -303,7 +303,9 @@ export default function EssayDetail() {
                                     <tbody className="divide-y divide-slate-100">
                                         {/* FILA DE HARINA BASE (Inteligente y Editable) */}
                                         <tr className="bg-white font-medium border-b border-slate-100">
-                                            <td className="p-3 text-slate-800 font-bold">Harina Base</td>
+                                            <td className="p-3 text-slate-800 font-bold">
+                                                {detailsData[baseFlourIndex]?.ingredient_name || 'Harina Base'}
+                                            </td>
                                             <td className="p-3 text-right font-mono text-blue-800 bg-blue-50/30 font-bold">
                                                 {isEditing && baseFlourIndex >= 0 ? (
                                                     <div className="flex items-center justify-end gap-2">
@@ -508,7 +510,9 @@ export default function EssayDetail() {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     <tr className="font-bold bg-indigo-50/20 border-b border-indigo-100/50">
-                                        <td className="py-2 pl-2 text-slate-900 uppercase tracking-tighter">Harina Base (Trigo)</td>
+                                        <td className="py-2 pl-2 text-slate-900 uppercase tracking-tighter">
+                                            {detailsData.find(d => d.is_base_flour)?.ingredient_name || 'Harina Base'}
+                                        </td>
                                         <td className="text-right text-indigo-700">100.0000%</td>
                                         <td className="text-right text-slate-300">-</td>
                                         <td className="text-right text-slate-900 font-bold">25.0000 kg</td>
