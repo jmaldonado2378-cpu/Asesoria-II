@@ -209,8 +209,14 @@ export default function ProjectDetail() {
                 a.click();
                 a.remove();
             } else {
-                const errorData = await resp.json().catch(() => ({}));
-                alert(errorData.error || 'Error al descargar el archivo desde el servidor.');
+                let errorMessage = 'Error al descargar el archivo.';
+                try {
+                    const errorData = await resp.json();
+                    errorMessage = errorData.error || errorData.detail || JSON.stringify(errorData);
+                } catch (e) {
+                    errorMessage = `Servidor respondió con código ${resp.status} (${resp.statusText})`;
+                }
+                alert(`Detalle Técnico:\n${errorMessage}`);
             }
         } catch (err) {
             console.error(err);
