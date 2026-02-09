@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     # APPS DE TERCEROS
     'rest_framework',
     'corsheaders',
+    'import_export',
     # TUS APPS
     'lab',
 ]

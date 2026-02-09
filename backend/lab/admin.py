@@ -1,6 +1,27 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from import_export import resources
+from import_export.admin import ExportMixin
 from .models import Client, Ingredient, Project, Visit, Ensayo, EnsayoDetail, EnsayoImage, ProjectIngredientPrice
+
+# --- RESOURCES FOR EXPORT ---
+
+class ClientResource(resources.ModelResource):
+    class Meta:
+        model = Client
+        fields = ('id', 'name', 'client_type', 'cuit', 'contact_1', 'email', 'phone_1', 'address')
+
+class VisitResource(resources.ModelResource):
+    class Meta:
+        model = Visit
+        fields = ('id', 'date', 'project__client__name', 'project__name', 'visit_type', 'status', 'kilometers', 'fees')
+
+class EnsayoResource(resources.ModelResource):
+    class Meta:
+        model = Ensayo
+        fields = ('id', 'code', 'project__client__name', 'project__name', 'date', 'baking_type', 'description', 'conclusion')
+
+# --- INLINES ---
 
 class EnsayoDetailInline(admin.TabularInline):
     model = EnsayoDetail
@@ -29,7 +50,8 @@ class ProjectIngredientPriceInline(admin.TabularInline):
     extra = 1
 
 @admin.register(Client)
-class ClientAdmin(admin.ModelAdmin):
+class ClientAdmin(ExportMixin, admin.ModelAdmin):
+    resource_class = ClientResource
     list_display = ('name', 'client_type', 'contact_1', 'phone_display', 'view_on_maps')
     list_filter = ('client_type',)
     search_fields = ('name', 'contact_1', 'contact_2', 'contact_3', 'cuit')
@@ -61,7 +83,8 @@ class ProjectAdmin(admin.ModelAdmin):
     inlines = [ProjectIngredientPriceInline]
 
 @admin.register(Visit)
-class VisitAdmin(admin.ModelAdmin):
+class VisitAdmin(ExportMixin, admin.ModelAdmin):
+    resource_class = VisitResource
     list_display = ('date', 'start_time', 'end_time', 'get_client', 'project', 'kilometers', 'status')
     list_filter = ('date', 'project__client', 'project', 'status')
     search_fields = ('description', 'project__name', 'project__client__name')
@@ -76,7 +99,8 @@ class VisitAdmin(admin.ModelAdmin):
     get_client.short_description = "Cliente"
 
 @admin.register(Ensayo)
-class EnsayoAdmin(admin.ModelAdmin):
+class EnsayoAdmin(ExportMixin, admin.ModelAdmin):
+    resource_class = EnsayoResource
     list_display = ('code', 'project', 'date', 'baking_type')
     list_filter = ('date', 'baking_type', 'project__client', 'project')
     search_fields = ('code', 'description', 'conclusion')
