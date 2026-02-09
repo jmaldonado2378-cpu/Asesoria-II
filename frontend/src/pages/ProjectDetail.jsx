@@ -209,7 +209,8 @@ export default function ProjectDetail() {
                 a.click();
                 a.remove();
             } else {
-                alert('Error al descargar el archivo desde el servidor.');
+                const errorData = await resp.json().catch(() => ({}));
+                alert(errorData.error || 'Error al descargar el archivo desde el servidor.');
             }
         } catch (err) {
             console.error(err);

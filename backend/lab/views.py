@@ -83,30 +83,33 @@ def generate_technical_report_view(request):
     conclusions = request.data.get('technical_observations', '')
     requested_format = request.data.get('format', 'excel').lower()
 
-    project = get_object_or_404(Project, id=project_id)
-    
-    # Datos técnicos
-    essays = Ensayo.objects.filter(project=project, date__range=[start_date, end_date]).order_by('date')
-    visits = Visit.objects.filter(project=project, date__range=[start_date, end_date]).order_by('date')
+    try:
+        project = get_object_or_404(Project, id=project_id)
+        
+        # Datos técnicos
+        essays = Ensayo.objects.filter(project=project, date__range=[start_date, end_date]).order_by('date')
+        visits = Visit.objects.filter(project=project, date__range=[start_date, end_date]).order_by('date')
 
-    # Nombre de archivo estandarizado
-    client_name = project.client.name.replace(' ', '_') if project.client else "Sin_Cliente"
-    proj_name = project.name.replace(' ', '_')
-    report_date_str = request.data.get('report_date', timezone.now().strftime('%Y-%m-%d'))
-    
-    # Preparar datos para inyección dinámica de nombres de harina en ensayos
-    essays_data = []
-    for e in essays:
-        base_flour_detail = e.details.filter(ingredient__is_base_flour=True).first()
-        e_data = {
-            'code': e.code,
-            'date': e.date,
-            'base_flour_name': base_flour_detail.ingredient.name if base_flour_detail else "No especificada",
-            'description': e.description,
-            'final_score': e.final_score,
-            'conclusion': e.conclusion
-        }
-        essays_data.append(e_data)
+        # Nombre de archivo estandarizado
+        client_name = project.client.name.replace(' ', '_') if project.client else "Sin_Cliente"
+        proj_name = project.name.replace(' ', '_')
+        report_date_str = request.data.get('report_date', timezone.now().strftime('%Y-%m-%d'))
+        
+        # Preparar datos para inyección dinámica de nombres de harina en ensayos
+        essays_data = []
+        for e in essays:
+            base_flour_detail = e.details.filter(ingredient__is_base_flour=True).first()
+            e_data = {
+                'code': e.code,
+                'date': e.date,
+                'base_flour_name': base_flour_detail.ingredient.name if base_flour_detail else "No especificada",
+                'description': e.description,
+                'final_score': e.final_score,
+                'conclusion': e.conclusion
+            }
+            essays_data.append(e_data)
+    except Exception as e:
+        return Response({"error": f"Error preparando datos: {str(e)}"}, status=500)
 
     if requested_format == 'pdf':
         context = {
