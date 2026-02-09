@@ -1,4 +1,4 @@
-from django.contrib import admin
+﻿from django.contrib import admin
 from django.utils.html import format_html
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
@@ -62,12 +62,12 @@ class ClientAdmin(ImportExportModelAdmin):
 
     def view_on_maps(self, obj):
         if obj.maps_url:
-            return format_html('<a href="{}" target="_blank">📍 Ver Mapa</a>', obj.maps_url)
+            return format_html('<a href="{}" target="_blank">ðŸ“ Ver Mapa</a>', obj.maps_url)
         elif obj.address:
             url = f"https://www.google.com/maps/search/?api=1&query={obj.address.replace(' ', '+')}"
-            return format_html('<a href="{}" target="_blank">🔍 Buscar</a>', url)
+            return format_html('<a href="{}" target="_blank">ðŸ” Buscar</a>', url)
         return "-"
-    view_on_maps.short_description = "Ubicación"
+    view_on_maps.short_description = "UbicaciÃ³n"
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
@@ -111,9 +111,9 @@ class EnsayoAdmin(ImportExportModelAdmin):
         ('Datos Generales', {
             'fields': (('project', 'date'), ('code', 'baking_type'))
         }),
-        ('Análisis de Laboratorio', {
+        ('AnÃ¡lisis de Laboratorio', {
             'classes': ('collapse',),
-            'description': 'Parámetros físico-químicos y reológicos de la harina/mezcla',
+            'description': 'ParÃ¡metros fÃ­sico-quÃ­micos y reolÃ³gicos de la harina/mezcla',
             'fields': (
                 ('humidity_pct', 'ash_pct', 'protein_pct'),
                 ('gluten_wet_pct', 'gluten_dry_pct', 'gluten_index_pct'),
