@@ -62,12 +62,12 @@ class ClientAdmin(ImportExportModelAdmin):
 
     def view_on_maps(self, obj):
         if obj.maps_url:
-            return format_html('<a href="{}" target="_blank">ðŸ“ Ver Mapa</a>', obj.maps_url)
+            return format_html('<a href="{}" target="_blank">📍 Ver Mapa</a>', obj.maps_url)
         elif obj.address:
             url = f"https://www.google.com/maps/search/?api=1&query={obj.address.replace(' ', '+')}"
-            return format_html('<a href="{}" target="_blank">ðŸ” Buscar</a>', url)
+            return format_html('<a href="{}" target="_blank">🔍 Buscar</a>', url)
         return "-"
-    view_on_maps.short_description = "UbicaciÃ³n"
+    view_on_maps.short_description = "Ubicación"
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
@@ -76,9 +76,10 @@ class IngredientAdmin(admin.ModelAdmin):
     search_fields = ('name', 'brand', 'observations')
 
 @admin.register(Project)
-class ProjectAdmin(admin.ModelAdmin):
+class ProjectAdmin(ImportExportModelAdmin):
     list_display = ('name', 'client', 'project_type', 'status', 'frequency', 'start_date')
-    list_filter = ('project_type', 'status', 'frequency', 'client')
+    list_filter = ('start_date', 'project_type', 'status', 'frequency', 'client')
+    date_hierarchy = 'start_date'
     search_fields = ('name', 'client__name', 'objective')
     inlines = [ProjectIngredientPriceInline]
 
@@ -87,6 +88,7 @@ class VisitAdmin(ImportExportModelAdmin):
     resource_class = VisitResource
     list_display = ('date', 'start_time', 'end_time', 'get_client', 'project', 'kilometers', 'status')
     list_filter = ('date', 'project__client', 'project', 'status')
+    date_hierarchy = 'date'
     search_fields = ('description', 'project__name', 'project__client__name')
     ordering = ('-date', '-start_time')
     
@@ -103,6 +105,7 @@ class EnsayoAdmin(ImportExportModelAdmin):
     resource_class = EnsayoResource
     list_display = ('code', 'project', 'date', 'baking_type')
     list_filter = ('date', 'baking_type', 'project__client', 'project')
+    date_hierarchy = 'date'
     search_fields = ('code', 'description', 'conclusion')
     readonly_fields = ('code',)
     inlines = [EnsayoDetailInline, EnsayoImageInline]
@@ -111,9 +114,9 @@ class EnsayoAdmin(ImportExportModelAdmin):
         ('Datos Generales', {
             'fields': (('project', 'date'), ('code', 'baking_type'))
         }),
-        ('AnÃ¡lisis de Laboratorio', {
+        ('Análisis de Laboratorio', {
             'classes': ('collapse',),
-            'description': 'ParÃ¡metros fÃ­sico-quÃ­micos y reolÃ³gicos de la harina/mezcla',
+            'description': 'Parámetros físico-químicos y reológicos de la harina/mezcla',
             'fields': (
                 ('humidity_pct', 'ash_pct', 'protein_pct'),
                 ('gluten_wet_pct', 'gluten_dry_pct', 'gluten_index_pct'),
