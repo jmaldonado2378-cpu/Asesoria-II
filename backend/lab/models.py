@@ -88,6 +88,7 @@ class Project(models.Model):
     start_date = models.DateField("Fecha de Inicio", default=timezone.now)
     end_date = models.DateField("Fecha de Cierre", blank=True, null=True)
     objective = models.TextField("Objetivo Principal", blank=True, null=True)
+    technical_observations = models.TextField("Observaciones Técnicas / Conclusiones", blank=True, null=True)
     fixed_fee = models.DecimalField("Honorarios Fijos", max_digits=12, decimal_places=2, default=0.00)
     
     custom_prices = models.ManyToManyField('Ingredient', through='ProjectIngredientPrice')
@@ -286,3 +287,19 @@ class EnsayoDetail(models.Model):
         total_harina_kg = self._get_total_harina_kg()
         if total_harina_kg == 0: return 0
         return (self.quantity / total_harina_kg) * 25000
+
+class TechnicalReport(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="reports", verbose_name="Proyecto")
+    report_date = models.DateField("Fecha del Informe", default=timezone.now)
+    start_date = models.DateField("Fecha Inicio Rango")
+    end_date = models.DateField("Fecha Fin Rango")
+    technical_observations = models.TextField("Observaciones Técnicas / Conclusiones")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Informe Técnico"
+        verbose_name_plural = "Historial de Informes Técnicos"
+        ordering = ['-report_date', '-created_at']
+
+    def __str__(self):
+        return f"Informe {self.project.name} - {self.report_date}"

@@ -21,6 +21,13 @@ class EnsayoResource(resources.ModelResource):
         model = Ensayo
         fields = ('id', 'code', 'project__client__name', 'project__name', 'date', 'baking_type', 'description', 'conclusion')
 
+class ProjectResource(resources.ModelResource):
+    class Meta:
+        model = Project
+        # Excluimos cualquier campo que pudiera tener datos sensibles o financieros si los hubiera. 
+        # Actualmente el modelo es técnico, pero aseguramos los campos base.
+        fields = ('id', 'name', 'client__name', 'project_type', 'status', 'frequency', 'start_date', 'objective')
+
 # --- INLINES ---
 
 class EnsayoDetailInline(admin.TabularInline):
@@ -77,6 +84,7 @@ class IngredientAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(ImportExportModelAdmin):
+    resource_class = ProjectResource
     list_display = ('name', 'client', 'project_type', 'status', 'frequency', 'start_date')
     list_filter = ('start_date', 'project_type', 'status', 'frequency', 'client')
     date_hierarchy = 'start_date'

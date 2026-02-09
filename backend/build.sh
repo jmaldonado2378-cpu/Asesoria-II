@@ -1,6 +1,12 @@
-#!/usr/bin/env bash
-set -o errexit
+# --- FRONTEND BUILD ---
+echo ">>> Iniciando construcción de Frontend (React/Vite)..."
+cd frontend
+npm install
+npm run build
+cd ..
 
+# --- BACKEND BUILD ---
+echo ">>> Iniciando construcción de Backend (Django)..."
 cd backend
 
 # Forzamos la instalación de gunicorn junto con el resto

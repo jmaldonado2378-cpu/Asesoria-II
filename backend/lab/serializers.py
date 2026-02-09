@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from .models import (
     Client, Project, Ensayo, Ingredient, 
-    ProjectIngredientPrice, Visit, EnsayoDetail, EnsayoImage
+    ProjectIngredientPrice, Visit, EnsayoDetail, EnsayoImage,
+    TechnicalReport
 )
 
 # --- CLIENTES ---
@@ -98,3 +99,10 @@ class VisitSerializer(serializers.ModelSerializer):
         if obj.project:
             return obj.project.client.name
         return "N/A"
+
+# --- INFORMES TÉCNICOS ---
+class TechnicalReportSerializer(serializers.ModelSerializer):
+    project_name = serializers.ReadOnlyField(source='project.name')
+    class Meta:
+        model = TechnicalReport
+        fields = '__all__'

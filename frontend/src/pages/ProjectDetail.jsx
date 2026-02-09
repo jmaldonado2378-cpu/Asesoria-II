@@ -4,8 +4,9 @@ import {
     ArrowLeft, Plus, GitCompare, Calendar, CheckSquare,
     Square, Building, PieChart, DollarSign, ShoppingBag,
     Trash2, TrendingUp, AlertCircle, Clock, Activity, Eye,
-    Pipette, Calculator
+    Pipette, Calculator, Save, FileSpreadsheet
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export default function ProjectDetail() {
     const { id } = useParams();
@@ -16,6 +17,15 @@ export default function ProjectDetail() {
     const [loading, setLoading] = useState(true);
     const [selectedIds, setSelectedIds] = useState([]);
     const [activeTab, setActiveTab] = useState('ensayos');
+    const [observations, setObservations] = useState('');
+    const [reports, setReports] = useState([]);
+    const [showReportForm, setShowReportForm] = useState(false);
+    const [reportParams, setReportParams] = useState({
+        startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0],
+        conclusions: ""
+    });
+    const [savingObs, setSavingObs] = useState(false);
 
     // Estado para Gastos de Materiales (Simulado en localStorage por simplicidad)
     const [materialExpenses, setMaterialExpenses] = useState([]);
@@ -34,9 +44,12 @@ export default function ProjectDetail() {
         Promise.all([
             fetch(`${import.meta.env.VITE_API_URL}/api/projects/${id}/`).then(r => r.json()),
             fetch(`${import.meta.env.VITE_API_URL}/api/ensayos/`).then(r => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/api/visits/`).then(r => r.json())
-        ]).then(([projData, essaysData, visitsData]) => {
+            fetch(`${import.meta.env.VITE_API_URL}/api/visits/`).then(r => r.json()),
+            fetch(`${import.meta.env.VITE_API_URL}/api/technical-reports/?project=${id}`).then(r => r.json())
+        ]).then(([projData, essaysData, visitsData, reportsData]) => {
             setProject(projData);
+            setObservations(projData.technical_observations || '');
+            setReportParams(prev => ({ ...prev, conclusions: projData.technical_observations || '' }));
 
             // Filtros
             const pEssays = essaysData.filter(e => e.project === parseInt(id));
@@ -44,6 +57,7 @@ export default function ProjectDetail() {
 
             setEssays(pEssays);
             setVisits(pVisits);
+            setReports(reportsData);
 
             // Cargar gastos materiales guardados localmente
             const savedExpenses = JSON.parse(localStorage.getItem(`proj_expenses_${id}`)) || [];
@@ -99,6 +113,107 @@ export default function ProjectDetail() {
     const toggleSelection = (eid) => setSelectedIds(prev => prev.includes(eid) ? prev.filter(i => i !== eid) : [...prev, eid]);
     const handleCompare = () => selectedIds.length >= 2 && navigate(`/essays/compare?ids=${selectedIds.join(',')}`);
 
+    const handleSaveObservations = async () => {
+        setSavingObs(true);
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/projects/${id}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ technical_observations: observations })
+            });
+            if (response.ok) {
+                const updatedProj = await response.json();
+                setProject(updatedProj);
+                alert('Observaciones guardadas con éxito.');
+            } else {
+                alert('Error al guardar observaciones.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error de conexión.');
+        } finally {
+            setSavingObs(false);
+        }
+    };
+
+    const handleGenerateReport = async () => {
+        setSavingObs(true);
+        try {
+            // 1. Guardar en Base de Datos para el historial
+            const reportData = {
+                project: id,
+                start_date: reportParams.startDate,
+                end_date: reportParams.endDate,
+                technical_observations: reportParams.conclusions,
+                report_date: new Date().toISOString().split('T')[0]
+            };
+
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/technical-reports/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reportData)
+            });
+
+            if (response.ok) {
+                const savedReport = await response.json();
+                setReports(prev => [savedReport, ...(Array.isArray(prev) ? prev : [])]);
+                setShowReportForm(false);
+
+                // 2. Generar Excel vía BACKEND
+                await downloadBackendReport(reportData);
+                alert('Informe generado y guardado con éxito.');
+            } else {
+                alert('Error al guardar el informe en el historial.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error de conexión al generar informe.');
+        } finally {
+            setSavingObs(false);
+        }
+    };
+
+    const downloadBackendReport = async (reportData) => {
+        try {
+            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/generate-technical-report/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reportData)
+            });
+            if (resp.ok) {
+                const blob = await resp.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Informe_Tecnico_${project?.name?.replace(/\s+/g, '_')}_${reportData.report_date}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } else {
+                alert('Error al descargar el archivo desde el servidor.');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const exportTechnicalExcel = (report) => {
+        // Ahora usamos el backend para redescargar reportes del historial también
+        downloadBackendReport({
+            project: report.project,
+            start_date: report.start_date,
+            end_date: report.end_date,
+            technical_observations: report.technical_observations,
+            report_date: report.report_date
+        });
+    };
+
+    const handleExportExcel = () => {
+        // Obsoleto, pero mantenemos por compatibilidad interna si fuera necesario un dump rápido.
+        // El usuario pidió reestructurar hacia TechnicalReport.
+        setShowReportForm(true);
+    };
+
     if (loading) return (
         <div className="min-h-screen bg-slate-100 flex items-center justify-center font-mono text-[10px] uppercase tracking-[0.3em] text-slate-400">
             <Clock className="animate-spin mr-3 text-orange-600" size={20} /> Desencriptando Hub de Proyecto...
@@ -132,6 +247,94 @@ export default function ProjectDetail() {
                     </div>
                     <div className={`px-4 py-2 rounded-sm text-[10px] font-black uppercase border-2 ${project.status === 'En Curso' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
                         {project.status}
+                    </div>
+                    <button onClick={() => setShowReportForm(true)} className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-sm shadow-xl hover:bg-orange-600 transition font-black text-[10px] uppercase tracking-widest border border-slate-700 ml-4">
+                        <FileSpreadsheet size={16} /> Generar Informe Técnico
+                    </button>
+                </div>
+
+                {/* GENERADOR DE INFORME (MODAL SIMULADO) */}
+                {showReportForm && (
+                    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="bg-white w-full max-w-2xl rounded-sm shadow-2xl p-10 space-y-8 animate-in zoom-in-95 duration-200">
+                            <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                                <h2 className="text-xl font-serif font-black text-slate-900 uppercase tracking-tighter italic">Configurar Informe Técnico</h2>
+                                <button onClick={() => setShowReportForm(false)} className="text-slate-400 hover:text-slate-900 transition"><ArrowLeft size={24} /></button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-8">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Fecha Inicio</label>
+                                    <input
+                                        type="date"
+                                        value={reportParams.startDate}
+                                        onChange={e => setReportParams({ ...reportParams, startDate: e.target.value })}
+                                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-sm font-mono text-sm outline-none focus:border-orange-600"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Fecha Fin</label>
+                                    <input
+                                        type="date"
+                                        value={reportParams.endDate}
+                                        onChange={e => setReportParams({ ...reportParams, endDate: e.target.value })}
+                                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-sm font-mono text-sm outline-none focus:border-orange-600"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Conclusiones & Observaciones</label>
+                                <textarea
+                                    value={reportParams.conclusions}
+                                    onChange={e => setReportParams({ ...reportParams, conclusions: e.target.value })}
+                                    placeholder="Redacte las conclusiones técnicas para este periodo..."
+                                    className="w-full h-40 p-4 bg-slate-50 border border-slate-200 rounded-sm text-sm outline-none focus:border-orange-600"
+                                />
+                            </div>
+
+                            <button onClick={handleGenerateReport} disabled={savingObs} className="w-full bg-slate-900 text-white py-5 rounded-sm font-black text-sm uppercase tracking-[0.3em] hover:bg-orange-600 transition shadow-2xl disabled:bg-slate-200">
+                                {savingObs ? 'Procesando...' : 'Generar y Guardar Informe'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* HISTORIAL DE INFORMES */}
+                <div className="bg-white shadow-2xl border border-slate-300 rounded-sm p-8 mb-8">
+                    <h2 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 mb-6 text-indigo-600">
+                        <Clock size={18} /> Historial de Informes Generados
+                    </h2>
+
+                    <div className="overflow-hidden border border-slate-100 rounded-sm">
+                        <table className="w-full text-left font-mono">
+                            <thead className="bg-slate-50 p-4 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] border-b border-slate-100">
+                                <tr>
+                                    <th className="p-4">FECHA REPORTE</th>
+                                    <th className="p-4">PERIODO</th>
+                                    <th className="p-4">OBSERVACIONES</th>
+                                    <th className="p-4 text-right">ACCIONES</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {(!Array.isArray(reports) || reports.length === 0) ? (
+                                    <tr><td colSpan="4" className="p-10 text-center text-slate-300 uppercase text-[9px] font-bold tracking-widest italic">No hay informes generados todavía.</td></tr>
+                                ) : (
+                                    reports.map(rep => (
+                                        <tr key={rep.id} className="hover:bg-indigo-50/30 transition-colors group">
+                                            <td className="p-4 text-[10px] font-black text-slate-900 uppercase tracking-tighter">{rep.report_date}</td>
+                                            <td className="p-4 text-[9px] text-slate-400 font-bold uppercase tracking-widest">{rep.start_date} <ArrowLeft size={10} className="rotate-180 inline mx-1" /> {rep.end_date}</td>
+                                            <td className="p-4 text-[9px] font-bold text-slate-500 uppercase truncate max-w-[200px]">{rep.technical_observations}</td>
+                                            <td className="p-4 text-right">
+                                                <button onClick={() => exportTechnicalExcel(rep)} className="bg-slate-900 text-white px-4 py-2 rounded-sm text-[8px] font-black uppercase tracking-widest hover:bg-indigo-600 transition flex items-center gap-2 ml-auto shadow-lg shadow-indigo-100">
+                                                    <FileSpreadsheet size={12} /> Descargar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
