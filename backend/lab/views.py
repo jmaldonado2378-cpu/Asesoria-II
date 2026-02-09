@@ -113,6 +113,9 @@ def generate_technical_report_view(request):
 
     try:
         if requested_format == 'pdf':
+            if pisa is None:
+                return Response({"error": "Librería xhtml2pdf no está instalada en el servidor."}, status=500)
+                
             context = {
                 'project': project,
                 'start_date': start_date,
@@ -133,15 +136,20 @@ def generate_technical_report_view(request):
             filename = f"IT_{client_name}_{proj_name}_{report_date_str}.pdf"
             return FileResponse(buffer, as_attachment=True, filename=filename)
 
-        # --- LÓGICA EXCEL (Mejorada) ---
+        # --- LÓGICA EXCEL (Mejorada y Corregida) ---
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "INFORME TÉCNICO"
 
-        # Configuración de Página (A4 Vertical, Márgenes Estrechos)
-        ws.page_setup.paperSize = ws.PAPERSIZE_A4
-        ws.page_setup.orientation = ws.ORIENTATION_PORTRAIT
-        ws.page_margins = openpyxl.worksheet.pageutils.PageMargins(left=0.3, right=0.3, top=0.5, bottom=0.5)
+        # Configuración de Página (Valores literales para robustez)
+        ws.page_setup.paperSize = 9 # A4
+        ws.page_setup.orientation = 'portrait'
+        
+        # Márgenes seguros
+        ws.page_margins.left = 0.3
+        ws.page_margins.right = 0.3
+        ws.page_margins.top = 0.5
+        ws.page_margins.bottom = 0.5
 
         # Estilos de Alto Nivel
         title_font = Font(name='Arial', bold=True, size=18, color="0F172A")
@@ -173,36 +181,29 @@ def generate_technical_report_view(request):
         # 2. CUADROS DE INFORMACIÓN (Estilo PDF)
         # CLIENTE
         ws.merge_cells('A4:B5')
-        ws['A4'] = "CLIENTE"
-        ws['A4'].font = label_font
-        ws['A4'].alignment = Alignment(horizontal='left', vertical='top')
-        ws['A4'].fill = info_box_fill
-        ws['A4'].border = Border(left=Side(style='thick', color="475569"))
+        ws.cell(row=4, column=1, value="CLIENTE").font = label_font
+        ws.cell(row=4, column=1).alignment = Alignment(horizontal='left', vertical='top')
+        ws.cell(row=4, column=1).fill = info_box_fill
+        ws.cell(row=4, column=1).border = Border(left=Side(style='thick', color="475569"))
         
-        ws.merge_cells('A5:B5')
-        ws['A5'] = project.client.name if project.client else "-"
-        ws['A5'].font = value_font
-        ws['A5'].fill = info_box_fill
+        ws.cell(row=5, column=1, value=project.client.name if project.client else "-").font = value_font
+        ws.cell(row=5, column=1).fill = info_box_fill
 
         # PROYECTO
         ws.merge_cells('C4:E5')
-        ws['C4'] = "PROYECTO"
-        ws['C4'].font = label_font
-        ws['C4'].fill = info_box_fill
-        ws['C4'].border = Border(left=Side(style='thick', color="475569"))
-        ws['C5'] = project.name
-        ws['C5'].font = value_font
-        ws['C5'].fill = info_box_fill
+        ws.cell(row=4, column=3, value="PROYECTO").font = label_font
+        ws.cell(row=4, column=3).fill = info_box_fill
+        ws.cell(row=4, column=3).border = Border(left=Side(style='thick', color="475569"))
+        ws.cell(row=5, column=3, value=project.name).font = value_font
+        ws.cell(row=5, column=3).fill = info_box_fill
 
         # REFERENCIA / FECHA
         ws.merge_cells('F4:G5')
-        ws['F4'] = "REFERENCIA / FECHA"
-        ws['F4'].font = label_font
-        ws['F4'].fill = info_box_fill
-        ws['F4'].border = Border(left=Side(style='thick', color="475569"))
-        ws['F5'] = f"IT-{report_date_str.replace('-','')}"
-        ws['F5'].font = value_font
-        ws['F5'].fill = info_box_fill
+        ws.cell(row=4, column=6, value="REFERENCIA / FECHA").font = label_font
+        ws.cell(row=4, column=6).fill = info_box_fill
+        ws.cell(row=4, column=6).border = Border(left=Side(style='thick', color="475569"))
+        ws.cell(row=5, column=6, value=f"IT-{report_date_str.replace('-','') or ''}").font = value_font
+        ws.cell(row=5, column=6).fill = info_box_fill
 
         # 3. SECCIONES
         def draw_section_header(row, text):
@@ -215,10 +216,9 @@ def generate_technical_report_view(request):
         # CONCLUSIONES
         draw_section_header(7, "CONCLUSIONES Y OBSERVACIONES TÉCNICAS")
         ws.merge_cells('A8:G12')
-        ws['A8'] = conclusions
+        ws['A8'] = str(conclusions or '')
         ws['A8'].alignment = Alignment(horizontal='left', vertical='top', wrap_text=True)
-        ws['A8'].border = thin_border
-        # Forzar bordes en el rango mergeado
+        # Aplicar bordes
         for r in range(8, 13):
             for c in range(1, 8):
                 ws.cell(row=r, column=c).border = thin_border
@@ -234,16 +234,17 @@ def generate_technical_report_view(request):
             cell = ws.cell(row=current_row, column=i, value=label)
             cell.font = table_header_font
             cell.border = Border(bottom=Side(style='medium', color="E2E8F0"))
-            ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
+            from openpyxl.utils import get_column_letter
+            ws.column_dimensions[get_column_letter(i)].width = width
 
         current_row += 1
         for ed in essays_data:
-            ws.cell(row=current_row, column=1, value=ed['code']).border = thin_border
-            ws.cell(row=current_row, column=2, value=str(ed['date'])).border = thin_border
-            ws.cell(row=current_row, column=3, value=ed['base_flour_name']).border = thin_border
-            ws.cell(row=current_row, column=4, value=ed['description']).border = thin_border
-            ws.cell(row=current_row, column=5, value=f"{ed['final_score']} / 10").border = thin_border
-            ws.cell(row=current_row, column=6, value=ed['conclusion']).border = thin_border
+            ws.cell(row=current_row, column=1, value=str(ed.get('code', ''))).border = thin_border
+            ws.cell(row=current_row, column=2, value=str(ed.get('date', ''))).border = thin_border
+            ws.cell(row=current_row, column=3, value=str(ed.get('base_flour_name', ''))).border = thin_border
+            ws.cell(row=current_row, column=4, value=str(ed.get('description', ''))).border = thin_border
+            ws.cell(row=current_row, column=5, value=f"{ed.get('final_score',0)} / 10").border = thin_border
+            ws.cell(row=current_row, column=6, value=str(ed.get('conclusion', ''))).border = thin_border
             current_row += 1
 
         # AGENDA
@@ -259,9 +260,9 @@ def generate_technical_report_view(request):
         current_row += 1
         for v in visits:
             ws.cell(row=current_row, column=1, value=str(v.date)).border = thin_border
-            ws.cell(row=current_row, column=2, value=v.visit_type).border = thin_border
-            ws.cell(row=current_row, column=3, value=v.objective).border = thin_border
-            ws.cell(row=current_row, column=4, value=v.status).border = thin_border
+            ws.cell(row=current_row, column=2, value=str(v.visit_type)).border = thin_border
+            ws.cell(row=current_row, column=3, value=str(v.objective)).border = thin_border
+            ws.cell(row=current_row, column=4, value=str(v.status)).border = thin_border
             current_row += 1
 
         # 4. PIE DE PÁGINA (Firma y Confidencialidad)
@@ -288,4 +289,7 @@ def generate_technical_report_view(request):
         filename = f"IT_{client_name}_{proj_name}_{report_date_str}.xlsx"
         return FileResponse(buffer, as_attachment=True, filename=filename)
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(error_details)
         return Response({"error": f"Error en generación final: {str(e)}"}, status=500)
