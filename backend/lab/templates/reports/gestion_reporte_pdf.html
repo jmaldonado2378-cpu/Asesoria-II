@@ -8,12 +8,6 @@
         @page {
             size: A4;
             margin: 1.5cm;
-
-            @bottom-right {
-                content: "Página " counter(page) " de " counter(pages);
-                font-size: 8pt;
-                color: #64748b;
-            }
         }
 
         body {
@@ -44,7 +38,6 @@
             color: #94a3b8;
             font-size: 8pt;
             font-weight: bold;
-            text-transform: uppercase;
             text-align: center;
         }
 
@@ -56,31 +49,23 @@
             margin: 0;
             color: #0f172a;
             font-size: 18pt;
-            text-transform: uppercase;
-            letter-spacing: -0.5px;
         }
 
         .main-title .subtitle {
             font-size: 9pt;
             color: #64748b;
             font-weight: bold;
-            letter-spacing: 1px;
             margin-top: 5px;
         }
 
-        .info-grid {
-            display: table;
+        .info-table {
             width: 100%;
             margin-bottom: 25px;
-            border-collapse: separate;
-            border-spacing: 10px 0;
         }
 
         .info-box {
-            display: table-cell;
             background-color: #f1f5f9;
             padding: 10px 15px;
-            border-radius: 4px;
             width: 33.33%;
             vertical-align: top;
             border-left: 4px solid #475569;
@@ -90,9 +75,7 @@
             font-size: 7pt;
             font-weight: bold;
             color: #64748b;
-            text-transform: uppercase;
             margin-bottom: 3px;
-            display: block;
         }
 
         .info-value {
@@ -111,17 +94,13 @@
             padding: 6px 12px;
             font-size: 10pt;
             font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
             margin-bottom: 12px;
-            border-radius: 2px;
         }
 
         .conclusions-text {
             padding: 15px;
             background-color: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 4px;
             font-style: italic;
             color: #334155;
             min-height: 80px;
@@ -138,7 +117,6 @@
             color: #475569;
             font-size: 8pt;
             font-weight: bold;
-            text-transform: uppercase;
             text-align: left;
             padding: 8px 10px;
             border-bottom: 2px solid #e2e8f0;
@@ -151,21 +129,10 @@
             vertical-align: top;
         }
 
-        .row-even {
-            background-color: #ffffff;
-        }
-
-        .row-odd {
-            background-color: #fbfcfd;
-        }
-
         .badge {
-            display: inline-block;
             padding: 2px 6px;
-            border-radius: 10px;
             font-size: 7pt;
             font-weight: bold;
-            text-transform: uppercase;
         }
 
         .badge-success {
@@ -184,14 +151,12 @@
             padding-top: 20px;
         }
 
-        .signature-area {
-            display: table;
+        .signature-table {
             width: 100%;
             margin-top: 40px;
         }
 
         .signature-block {
-            display: table-cell;
             width: 50%;
             text-align: center;
             vertical-align: bottom;
@@ -214,8 +179,6 @@
             font-size: 7pt;
             color: #94a3b8;
             text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 1px;
         }
     </style>
 </head>
@@ -224,10 +187,10 @@
     <div class="header">
         <table class="header-table">
             <tr>
-                <td width="150">
+                <td width="150" style="border:0;">
                     <div class="logo-box" style="padding-top: 20px;">LOGO</div>
                 </td>
-                <td style="text-align: right; vertical-align: bottom;">
+                <td style="text-align: right; vertical-align: bottom; border:0;">
                     <div class="main-title">
                         <h1>Informe Técnico de Gestión</h1>
                         <div class="subtitle">SEGUIMIENTO Y RESULTADOS INDUSTRIALES</div>
@@ -237,20 +200,24 @@
         </table>
     </div>
 
-    <div class="info-grid">
-        <div class="info-box">
-            <span class="info-label">Cliente</span>
-            <span class="info-value">{{ project.client.name }}</span>
-        </div>
-        <div class="info-box">
-            <span class="info-label">Proyecto</span>
-            <span class="info-value">{{ project.name }}</span>
-        </div>
-        <div class="info-box">
-            <span class="info-label">Referencia</span>
-            <span class="info-value">IT-{{ date|date:"Ymd" }}</span>
-        </div>
-    </div>
+    <table class="info-table">
+        <tr>
+            <td class="info-box">
+                <div class="info-label">Cliente</div>
+                <div class="info-value">{{ project.client.name }}</div>
+            </td>
+            <td width="10" style="border:0;"></td>
+            <td class="info-box">
+                <div class="info-label">Proyecto</div>
+                <div class="info-value">{{ project.name }}</div>
+            </td>
+            <td width="10" style="border:0;"></td>
+            <td class="info-box">
+                <div class="info-label">Referencia</div>
+                <div class="info-value">IT-{{ date|date:"Ymd" }}</div>
+            </td>
+        </tr>
+    </table>
 
     <div class="section">
         <div class="section-header">Conclusiones y Observaciones Técnicas</div>
@@ -273,13 +240,13 @@
             </thead>
             <tbody>
                 {% for e in essays %}
-                <tr class="{% cycle 'row-even' 'row-odd' %}">
+                <tr>
                     <td><b>{{ e.code }}</b></td>
                     <td>{{ e.date|date:"d/m/Y" }}</td>
                     <td>{{ e.base_flour_name }}</td>
                     <td>{{ e.conclusion|truncatechars:100 }}</td>
                     <td style="text-align: center;">
-                        <span class="badge {% if e.final_score >= 8 %}badge-success{% else %}badge-info{% endif %}">
+                        <span class="badge">
                             {{ e.final_score }} / 10
                         </span>
                     </td>
@@ -308,7 +275,7 @@
             </thead>
             <tbody>
                 {% for v in visits %}
-                <tr class="{% cycle 'row-even' 'row-odd' %}">
+                <tr>
                     <td>{{ v.date|date:"d/m/Y" }}</td>
                     <td><b>{{ v.visit_type }}</b></td>
                     <td>{{ v.objective }}</td>
@@ -326,16 +293,18 @@
     </div>
 
     <div class="footer">
-        <div class="signature-area">
-            <div class="signature-block">
-                <div class="signature-line"></div>
-                <div class="signature-label">Firma del Profesional</div>
-            </div>
-            <div class="signature-block">
-                <div class="signature-line"></div>
-                <div class="signature-label">Recepción Cliente</div>
-            </div>
-        </div>
+        <table class="signature-table">
+            <tr>
+                <td class="signature-block" style="border:0;">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Firma del Profesional</div>
+                </td>
+                <td class="signature-block" style="border:0;">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Recepción Cliente</div>
+                </td>
+            </tr>
+        </table>
         <div class="confidentiality">
             DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL BAKERY LAB ERP • COPIA CONTROLADA
         </div>

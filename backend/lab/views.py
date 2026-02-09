@@ -183,32 +183,39 @@ def generate_technical_report_view(request):
         ws['C1'].font = title_font
         ws['C1'].alignment = Alignment(horizontal='right', vertical='center')
 
-        # 2. CUADROS DE INFORMACIÓN (Estilo PDF)
+        # 2. CUADROS DE INFORMACIÓN
         # CLIENTE
-        ws.merge_cells('A4:B5')
+        ws.merge_cells('A4:B4')
         ws.cell(row=4, column=1, value="CLIENTE").font = label_font
-        ws.cell(row=4, column=1).alignment = Alignment(horizontal='left', vertical='top')
         ws.cell(row=4, column=1).fill = info_box_fill
         ws.cell(row=4, column=1).border = Border(left=Side(style='thick', color="475569"))
         
+        ws.merge_cells('A5:B5')
         ws.cell(row=5, column=1, value=project.client.name if project.client else "-").font = value_font
         ws.cell(row=5, column=1).fill = info_box_fill
+        ws.cell(row=5, column=1).border = Border(left=Side(style='thick', color="475569"))
 
         # PROYECTO
-        ws.merge_cells('C4:E5')
+        ws.merge_cells('C4:E4')
         ws.cell(row=4, column=3, value="PROYECTO").font = label_font
         ws.cell(row=4, column=3).fill = info_box_fill
         ws.cell(row=4, column=3).border = Border(left=Side(style='thick', color="475569"))
+        
+        ws.merge_cells('C5:E5')
         ws.cell(row=5, column=3, value=project.name).font = value_font
         ws.cell(row=5, column=3).fill = info_box_fill
+        ws.cell(row=5, column=3).border = Border(left=Side(style='thick', color="475569"))
 
         # REFERENCIA / FECHA
-        ws.merge_cells('F4:G5')
+        ws.merge_cells('F4:G4')
         ws.cell(row=4, column=6, value="REFERENCIA / FECHA").font = label_font
         ws.cell(row=4, column=6).fill = info_box_fill
         ws.cell(row=4, column=6).border = Border(left=Side(style='thick', color="475569"))
+        
+        ws.merge_cells('F5:G5')
         ws.cell(row=5, column=6, value=f"IT-{report_date_str.replace('-','') or ''}").font = value_font
         ws.cell(row=5, column=6).fill = info_box_fill
+        ws.cell(row=5, column=6).border = Border(left=Side(style='thick', color="475569"))
 
         # 3. SECCIONES
         def draw_section_header(row, text):
