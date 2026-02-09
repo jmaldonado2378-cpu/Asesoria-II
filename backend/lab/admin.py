@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from import_export import resources
-from import_export.admin import ExportMixin
+from import_export.admin import ImportExportModelAdmin
 from .models import Client, Ingredient, Project, Visit, Ensayo, EnsayoDetail, EnsayoImage, ProjectIngredientPrice
 
 # --- RESOURCES FOR EXPORT ---
@@ -50,7 +50,7 @@ class ProjectIngredientPriceInline(admin.TabularInline):
     extra = 1
 
 @admin.register(Client)
-class ClientAdmin(ExportMixin, admin.ModelAdmin):
+class ClientAdmin(ImportExportModelAdmin):
     resource_class = ClientResource
     list_display = ('name', 'client_type', 'contact_1', 'phone_display', 'view_on_maps')
     list_filter = ('client_type',)
@@ -83,7 +83,7 @@ class ProjectAdmin(admin.ModelAdmin):
     inlines = [ProjectIngredientPriceInline]
 
 @admin.register(Visit)
-class VisitAdmin(ExportMixin, admin.ModelAdmin):
+class VisitAdmin(ImportExportModelAdmin):
     resource_class = VisitResource
     list_display = ('date', 'start_time', 'end_time', 'get_client', 'project', 'kilometers', 'status')
     list_filter = ('date', 'project__client', 'project', 'status')
@@ -99,7 +99,7 @@ class VisitAdmin(ExportMixin, admin.ModelAdmin):
     get_client.short_description = "Cliente"
 
 @admin.register(Ensayo)
-class EnsayoAdmin(ExportMixin, admin.ModelAdmin):
+class EnsayoAdmin(ImportExportModelAdmin):
     resource_class = EnsayoResource
     list_display = ('code', 'project', 'date', 'baking_type')
     list_filter = ('date', 'baking_type', 'project__client', 'project')
