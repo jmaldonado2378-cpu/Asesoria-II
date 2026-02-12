@@ -13,7 +13,15 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.SeparateDatabaseAndState(
-            database_operations=[],  # Skip SQL if table already exists
+            database_operations=[
+                migrations.RunSQL("CREATE TABLE IF NOT EXISTS lab_technicalreport (id bigserial PRIMARY KEY);"),
+                migrations.RunSQL("ALTER TABLE lab_technicalreport ADD COLUMN IF NOT EXISTS report_date date;"),
+                migrations.RunSQL("ALTER TABLE lab_technicalreport ADD COLUMN IF NOT EXISTS start_date date;"),
+                migrations.RunSQL("ALTER TABLE lab_technicalreport ADD COLUMN IF NOT EXISTS end_date date;"),
+                migrations.RunSQL("ALTER TABLE lab_technicalreport ADD COLUMN IF NOT EXISTS technical_observations text;"),
+                migrations.RunSQL("ALTER TABLE lab_technicalreport ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now();"),
+                migrations.RunSQL("ALTER TABLE lab_technicalreport ADD COLUMN IF NOT EXISTS project_id bigint;"),
+            ],
             state_operations=[
                 migrations.CreateModel(
                     name='TechnicalReport',

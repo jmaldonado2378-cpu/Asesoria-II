@@ -13,7 +13,23 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.SeparateDatabaseAndState(
-            database_operations=[],  # Skip SQL if tables already exist
+            database_operations=[
+                migrations.RunSQL("CREATE TABLE IF NOT EXISTS lab_complaint (id bigserial PRIMARY KEY);"),
+                migrations.RunSQL("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS project_id bigint;"),
+                migrations.RunSQL("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS delivery_date date;"),
+                migrations.RunSQL("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS loading_date date;"),
+                migrations.RunSQL("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS batch varchar(100);"),
+                migrations.RunSQL("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS flour_type varchar(255);"),
+                migrations.RunSQL("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS product_made varchar(255);"),
+                migrations.RunSQL("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS process_type varchar(255);"),
+                migrations.RunSQL("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS description text;"),
+                migrations.RunSQL("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now();"),
+                
+                migrations.RunSQL("CREATE TABLE IF NOT EXISTS lab_complaintimage (id bigserial PRIMARY KEY);"),
+                migrations.RunSQL("ALTER TABLE lab_complaintimage ADD COLUMN IF NOT EXISTS complaint_id bigint;"),
+                migrations.RunSQL("ALTER TABLE lab_complaintimage ADD COLUMN IF NOT EXISTS image varchar(100);"),
+                migrations.RunSQL("ALTER TABLE lab_complaintimage ADD COLUMN IF NOT EXISTS caption varchar(255);"),
+            ],
             state_operations=[
                 migrations.CreateModel(
                     name='Complaint',
