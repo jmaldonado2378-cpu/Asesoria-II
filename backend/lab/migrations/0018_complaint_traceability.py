@@ -6,13 +6,18 @@ class Migration(migrations.Migration):
         ('lab', '0017_sync_database_schema'),
     ]
 
+    def add_columns_if_postgres(apps, schema_editor):
+        if schema_editor.connection.vendor != 'postgresql':
+            return
+        cursor = schema_editor.connection.cursor()
+        cursor.execute("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS status varchar(20) DEFAULT 'Abierto';")
+        cursor.execute("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS technical_conclusion text;")
+        cursor.execute("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS corrective_action text;")
+
     operations = [
+        migrations.RunPython(add_columns_if_postgres),
         migrations.SeparateDatabaseAndState(
-            database_operations=[
-                migrations.RunSQL("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS status varchar(20) DEFAULT 'Abierto';"),
-                migrations.RunSQL("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS technical_conclusion text;"),
-                migrations.RunSQL("ALTER TABLE lab_complaint ADD COLUMN IF NOT EXISTS corrective_action text;"),
-            ],
+            database_operations=[], # Se maneja arriba o por Django si no es postgres
             state_operations=[
                 migrations.AddField(
                     model_name='complaint',

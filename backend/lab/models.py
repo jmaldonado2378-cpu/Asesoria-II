@@ -316,6 +316,7 @@ class Complaint(models.Model):
     loading_date = models.DateField("Fecha Carga", default=timezone.now)
     batch = models.CharField("Lote / Partida", max_length=100, blank=True, null=True)
     flour_type = models.CharField("Tipo de Harina", max_length=255, blank=True, null=True)
+    contact = models.CharField("Contacto (Nombre y Tel)", max_length=255, blank=True, null=True)
     product_made = models.CharField("Producto Elaborado", max_length=255, blank=True, null=True)
     process_type = models.CharField("Tipo de Proceso", max_length=255, blank=True, null=True)
     description = models.TextField("Descripción del Reclamo", blank=True, null=True)

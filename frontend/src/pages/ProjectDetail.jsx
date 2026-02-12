@@ -36,6 +36,7 @@ export default function ProjectDetail() {
         delivery_date: '',
         batch: '',
         flour_type: '',
+        contact: '',
         product_made: '',
         process_type: '',
         description: '',
@@ -895,6 +896,16 @@ export default function ProjectDetail() {
                                                 <option value="Cerrado">🟢 Cerrado</option>
                                             </select>
                                         </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Contacto (Nombre/Tel)</label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-slate-50 border-none p-3 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-orange-500 transition-all font-medium"
+                                            placeholder="Ej: Juan Pérez - 11 5432..."
+                                            value={complaintForm.contact}
+                                            onChange={(e) => setComplaintForm({ ...complaintForm, contact: e.target.value })}
+                                        />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tipo de Harina</label>

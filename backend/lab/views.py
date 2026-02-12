@@ -89,8 +89,8 @@ class ComplaintImageViewSet(viewsets.ModelViewSet):
 @parser_classes([MultiPartParser])
 def import_complaints_excel(request):
     """
-    Importa reclamos desde un archivo Excel.
-    Orden: 1. Cliente | 2. F. Entrega | 3. F. Carga | 4. Lote | 5. Harina | 6. Producto | 7. Proceso | 8. Descripción
+    Importa reclamos desde un archivo Excel con formato robusto.
+    Busca la fila donde comienza 'Cliente_Nombre' para soportar encabezados decorativos.
     """
     file_obj = request.FILES.get('file')
     project_id = request.data.get('project')
@@ -101,7 +101,7 @@ def import_complaints_excel(request):
     
     try:
         import openpyxl
-        wb = openpyxl.load_workbook(file_obj)
+        wb = openpyxl.load_workbook(file_obj, data_only=True)
         ws = wb.active
         
         def parse_date(val):
@@ -115,28 +115,43 @@ def import_complaints_excel(request):
                         continue
             return None
 
+        # 1. BUSCAR LA FILA DE ENCABEZADO
+        header_row_index = 0
+        for i, row in enumerate(ws.iter_rows(values_only=True), 1):
+            # Normalizamos los nombres para buscar: minúsculas, sin espacios extras ni guiones bajos
+            row_normalized = [str(cell).strip().lower().replace("_", " ") for cell in row if cell]
+            if "cliente nombre" in row_normalized:
+                header_row_index = i
+                break
+        
+        if not header_row_index:
+            return Response({"error": "No se encontró la cabecera 'Cliente_Nombre' en el archivo."}, status=400)
+
         complaints_created = 0
-        # Saltamos encabezado (asumiendo fila 1 es header)
-        for row in ws.iter_rows(min_row=2, values_only=True):
-            if not row[0]: continue # Si no hay cliente, saltar
+        # Empezamos a leer desde la fila SIGUIENTE al encabezado
+        for row in ws.iter_rows(min_row=header_row_index + 1, values_only=True):
+            if not row or not row[0]: continue # Saltar filas vacías o sin cliente
             
-            # El usuario pide asociar al proyecto enviado, pero el Excel trae "Cliente_Nombre" en la col 1.
-            # Verificamos si el cliente coincide por si acaso, pero la consigna dice "asociar automáticamente el reclamo al proyecto correspondiente".
-            
+            # El ejemplo en el Excel debe saltarse si detectamos que es el ejemplo
+            if "Panadería Los Abuelos" in str(row[0]): continue
+
             Complaint.objects.create(
                 project=project,
-                delivery_date=parse_date(row[1]),
-                loading_date=parse_date(row[2]) or timezone.now().date(),
+                contact=str(row[1]) if row[1] else "",
+                delivery_date=parse_date(row[2]),
                 batch=str(row[3]) if row[3] else "",
-                flour_type=str(row[4]) if row[4] else "",
-                product_made=str(row[5]) if row[5] else "",
-                process_type=str(row[6]) if row[6] else "",
-                description=str(row[7]) if row[7] else ""
+                loading_date=parse_date(row[4]) or timezone.now().date(),
+                flour_type=str(row[5]) if row[5] else "",
+                product_made=str(row[6]) if row[6] else "",
+                process_type=str(row[7]) if row[7] else "",
+                description=str(row[8]) if row[8] else ""
             )
             complaints_created += 1
             
         return Response({"message": f"Se importaron {complaints_created} reclamos con éxito."}, status=201)
     except Exception as e:
+        import traceback
+        print(traceback.format_exc())
         return Response({"error": f"Error importando Excel: {str(e)}"}, status=500)
 
 @api_view(['GET'])
@@ -150,12 +165,13 @@ def download_complaint_template(request):
     
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Plantilla Reclamos"
+    ws.title = "Reclamo Técnico"
     
     # Define styles
-    header_fill = PatternFill(start_color="444444", end_color="444444", fill_type="solid")
-    header_font = Font(color="FFFFFF", bold=True)
-    center_align = Alignment(horizontal="center", vertical="center")
+    header_fill = PatternFill(start_color="333333", end_color="333333", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True, size=12)
+    sub_header_fill = PatternFill(start_color="555555", end_color="555555", fill_type="solid")
+    center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
     thin_border = Border(
         left=Side(style='thin'), 
         right=Side(style='thin'), 
@@ -163,32 +179,68 @@ def download_complaint_template(request):
         bottom=Side(style='thin')
     )
     
+    # 1. ENCABEZADO SUPERIOR (COMBINADO)
+    # Título principal
+    ws.merge_cells('A1:G2')
+    title_cell = ws['A1']
+    title_cell.value = "RECLAMO TÉCNICO DE CLIENTES"
+    title_cell.fill = header_fill
+    title_cell.font = Font(color="FFFFFF", bold=True, size=16)
+    title_cell.alignment = center_align
+    title_cell.border = thin_border
+    
+    # Recuadro SGC
+    ws.merge_cells('H1:I2')
+    sgc_cell = ws['H1']
+    sgc_cell.value = "SISTEMA DE GESTIÓN DE CALIDAD"
+    sgc_cell.fill = header_fill
+    sgc_cell.font = Font(color="FFFFFF", bold=True, size=10)
+    sgc_cell.alignment = center_align
+    sgc_cell.border = thin_border
+    
+    # 2. DEFINICIÓN DE COLUMNAS
     headers = [
-        "Cliente_Nombre", "Fecha_Entrega", "Fecha_Carga", "Lote_Partida", 
-        "Tipo_Harina", "Producto_Elaborado", "Tipo_Proceso", "Descripcion_Reclamo"
+        "Cliente Nombre", "Contacto", "Fecha Entrega", "Lote Partida", 
+        "Fecha Carga", "Tipo Harina", "Producto Elaborado", "Tipo Proceso", "Descripcion Reclamo"
     ]
     
-    # Write headers
+    # Escribir encabezados en fila 4 (dejamos la 3 libre para aire visual o metadatos)
     for col_num, header_title in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col_num)
+        cell = ws.cell(row=4, column=col_num)
         cell.value = header_title
-        cell.fill = header_fill
-        cell.font = header_font
+        cell.fill = sub_header_fill
+        cell.font = Font(color="FFFFFF", bold=True)
         cell.alignment = center_align
         cell.border = thin_border
         
-        # Adjust column width
-        ws.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = 25
-        
-    # Add an example row (optional, but helpful)
+        # Ajustar anchos
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = 22
+    
+    ws.column_dimensions['I'].width = 50 # Descripción más ancha
+    
+    # 3. FILA DE EJEMPLO (Fila 5)
     example_row = [
-        "Cliente Ejemplo", "12/02/2026", "10/02/2026", "LOTE-123", 
-        "0000", "Pan Francés", "Artesanal", "Falta de fuerza en la masa"
+        "Panadería Los Abuelos", 
+        "Juan Pérez - 11 5432-6789", 
+        timezone.now().strftime('%d/%m/%Y'), 
+        "LOTE-A24", 
+        (timezone.now() - timezone.timedelta(days=2)).strftime('%d/%m/%Y'),
+        "Harina 0000", 
+        "Pan de Molde", 
+        "Industrial con Sobado", 
+        "La masa presenta falta de extensibilidad y se corta al estirar."
     ]
+    
     for col_num, value in enumerate(example_row, 1):
-        cell = ws.cell(row=2, column=col_num)
+        cell = ws.cell(row=5, column=col_num)
         cell.value = value
         cell.border = thin_border
+        cell.alignment = Alignment(vertical="center", wrap_text=True)
+
+    # Aplicar bordes al "recuadro" del título para que se vea continuo
+    for r in range(1, 3):
+        for c in range(1, 10):
+            ws.cell(row=r, column=c).border = thin_border
 
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
