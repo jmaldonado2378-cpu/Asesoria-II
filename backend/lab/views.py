@@ -216,18 +216,25 @@ def generate_technical_report_view(request):
     conclusions = request.data.get('technical_observations', '')
     requested_format = request.data.get('format', 'excel').lower()
 
+    if not project_id:
+        return Response({"error": "ID de proyecto es requerido."}, status=400)
+
     try:
         project = get_object_or_404(Project, id=project_id)
         
+        # Valores por defecto para evitar NotImplemented en filtros
+        s_date = start_date if start_date else "2000-01-01"
+        e_date = end_date if end_date else "2100-12-31"
+
         # Datos técnicos
-        essays = Ensayo.objects.filter(project=project, date__range=[start_date, end_date]).order_by('date')
-        visits = Visit.objects.filter(project=project, date__range=[start_date, end_date]).order_by('date')
-        complaints = Complaint.objects.filter(project=project, loading_date__range=[start_date, end_date]).order_by('loading_date')
+        essays = Ensayo.objects.filter(project=project, date__range=[s_date, e_date]).order_by('date')
+        visits = Visit.objects.filter(project=project, date__range=[s_date, e_date]).order_by('date')
+        complaints = Complaint.objects.filter(project=project, loading_date__range=[s_date, e_date]).order_by('loading_date')
 
         # Nombre de archivo estandarizado
-        client_name = project.client.name.replace(' ', '_') if project.client else "Sin_Cliente"
-        proj_name = project.name.replace(' ', '_')
-        report_date_str = request.data.get('report_date', timezone.now().strftime('%Y-%m-%d'))
+        client_name = str(project.client.name).replace(' ', '_') if project.client else "Sin_Cliente"
+        proj_name = str(project.name).replace(' ', '_')
+        report_date_str = str(request.data.get('report_date', timezone.now().strftime('%Y-%m-%d')))
         
         # Preparar datos para inyección dinámica de nombres de harina en ensayos
         essays_data = []

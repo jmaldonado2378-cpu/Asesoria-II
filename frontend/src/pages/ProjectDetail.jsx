@@ -357,16 +357,19 @@ export default function ProjectDetail() {
                 a.remove();
             } else {
                 let errorMessage = 'Error al descargar el archivo.';
+                let trace = '';
                 try {
                     const errorData = await resp.json();
                     errorMessage = errorData.error || errorData.detail || JSON.stringify(errorData);
+                    trace = errorData.traceback || '';
                 } catch (e) {
                     errorMessage = `Servidor respondió con código ${resp.status} (${resp.statusText})`;
                 }
-                alert(`Detalle Técnico:\n${errorMessage}`);
+                alert(`DETALLE TÉCNICO:\n${errorMessage}\n\nTRACEBACK:\n${trace.substring(0, 500)}...`);
             }
         } catch (err) {
             console.error(err);
+            alert(`Error de conexión: ${err.message}`);
         }
     };
 
