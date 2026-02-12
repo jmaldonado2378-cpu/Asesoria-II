@@ -200,40 +200,42 @@
             </tr>
             {% endfor %}
         </tbody>
-        <div class="section-title">Resumen de Reclamos Técnicos</div>
-        <table>
-            <thead>
-                <tr>
-                    <th>F. Carga</th>
-                    <th>Lote</th>
-                    <th>Estado</th>
-                    <th>Descripción</th>
-                    <th>Conclusión Técnica</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for c in complaints %}
-                <tr>
-                    <td>{{ c.loading_date|date:"d/m/Y" }}</td>
-                    <td>{{ c.batch|default:"-" }}</td>
-                    <td><span
-                            style="color: {% if c.status == 'Cerrado' %}#10b981{% elif c.status == 'En Proceso' %}#f59e0b{% else %}#ef4444{% endif %}; font-weight: bold;">{{
-                            c.status }}</span></td>
-                    <td>{{ c.description|truncatewords:15|default:"-" }}</td>
-                    <td>{{ c.technical_conclusion|truncatewords:20|default:"---" }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" style="text-align: center; color: #94a3b8;">No se registraron reclamos en este
-                        período.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    </table>
 
-        <div class="footer">
-            DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL BAKERY LAB ERP
-        </div>
+    <div class="section-title">Resumen de Reclamos Técnicos</div>
+    <table>
+        <thead>
+            <tr>
+                <th>F. Carga</th>
+                <th>Lote</th>
+                <th>Estado</th>
+                <th>Descripción</th>
+                <th>Conclusión Técnica</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in complaints %}
+            <tr>
+                <td>{{ c.loading_date|date:"d/m/Y" }}</td>
+                <td>{{ c.batch|default:"-" }}</td>
+                <td><span
+                        style="color: {% if c.status == 'Cerrado' %}#10b981{% elif c.status == 'En Proceso' %}#f59e0b{% else %}#ef4444{% endif %}; font-weight: bold;">{{
+                        c.status }}</span></td>
+                <td>{{ c.description|truncatewords:15|default:"-" }}</td>
+                <td>{{ c.technical_conclusion|truncatewords:20|default:"---" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: #94a3b8;">No se registraron reclamos en este
+                    período.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL BAKERY LAB ERP
+    </div>
 </body>
 
 </html>
