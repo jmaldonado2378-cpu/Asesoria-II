@@ -10,9 +10,19 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='project',
-            name='technical_observations',
-            field=models.TextField(blank=True, null=True, verbose_name='Observaciones Técnicas / Conclusiones'),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql="ALTER TABLE lab_project ADD COLUMN IF NOT EXISTS technical_observations text;",
+                    reverse_sql="ALTER TABLE lab_project DROP COLUMN IF EXISTS technical_observations;",
+                ),
+            ],
+            state_operations=[
+                migrations.AddField(
+                    model_name='project',
+                    name='technical_observations',
+                    field=models.TextField(blank=True, null=True, verbose_name='Observaciones Técnicas / Conclusiones'),
+                ),
+            ]
         ),
     ]
