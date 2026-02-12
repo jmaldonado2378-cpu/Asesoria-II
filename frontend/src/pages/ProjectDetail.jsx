@@ -300,37 +300,22 @@ export default function ProjectDetail() {
     };
 
     const handleGenerateReport = async () => {
+        if (!reportParams.startDate || !reportParams.endDate) {
+            alert('Por favor seleccione ambas fechas.');
+            return;
+        }
         setSavingObs(true);
         try {
-            // 1. Guardar en Base de Datos para el historial
-            const reportData = {
+            await downloadBackendReport({
                 project: id,
                 start_date: reportParams.startDate,
                 end_date: reportParams.endDate,
                 technical_observations: reportParams.conclusions,
-                report_date: new Date().toISOString().split('T')[0]
-            };
-
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/technical-reports/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(reportData)
+                save_to_history: true,
+                format: 'pdf'
             });
-
-            if (response.ok) {
-                const savedReport = await response.json();
-                setReports(prev => [savedReport, ...(Array.isArray(prev) ? prev : [])]);
-                setShowReportForm(false);
-
-                // 2. Generar Excel vía BACKEND
-                await downloadBackendReport(reportData);
-                alert('Informe generado y guardado con éxito.');
-            } else {
-                alert('Error al guardar el informe en el historial.');
-            }
-        } catch (error) {
-            console.error(error);
-            alert('Error de conexión al generar informe.');
+            setShowReportForm(false);
+            fetchProject(); // Refrescar historial
         } finally {
             setSavingObs(false);
         }
@@ -379,7 +364,9 @@ export default function ProjectDetail() {
             start_date: report.start_date,
             end_date: report.end_date,
             report_date: report.report_date,
-            technical_observations: report.technical_observations
+            technical_observations: report.technical_observations,
+            save_to_history: false,
+            format: 'excel'
         }, 'excel');
     };
 
@@ -389,7 +376,9 @@ export default function ProjectDetail() {
             start_date: report.start_date,
             end_date: report.end_date,
             report_date: report.report_date,
-            technical_observations: report.technical_observations
+            technical_observations: report.technical_observations,
+            save_to_history: false,
+            format: 'pdf'
         }, 'pdf');
     };
 
@@ -518,7 +507,9 @@ export default function ProjectDetail() {
                                                             start_date: rep.start_date,
                                                             end_date: rep.end_date,
                                                             technical_observations: rep.technical_observations,
-                                                            report_date: rep.report_date
+                                                            report_date: rep.report_date,
+                                                            save_to_history: false,
+                                                            format: 'excel'
                                                         })}
                                                         className="bg-slate-800 text-white px-3 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-widest hover:bg-indigo-600 transition flex items-center gap-2 shadow-lg"
                                                     >
@@ -530,7 +521,9 @@ export default function ProjectDetail() {
                                                             start_date: rep.start_date,
                                                             end_date: rep.end_date,
                                                             technical_observations: rep.technical_observations,
-                                                            report_date: rep.report_date
+                                                            report_date: rep.report_date,
+                                                            save_to_history: false,
+                                                            format: 'pdf'
                                                         })}
                                                         className="bg-indigo-600 text-white px-3 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-widest hover:bg-slate-900 transition flex items-center gap-2 shadow-lg"
                                                     >

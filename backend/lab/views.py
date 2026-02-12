@@ -215,6 +215,7 @@ def generate_technical_report_view(request):
     end_date = request.data.get('end_date')
     conclusions = request.data.get('technical_observations', '')
     requested_format = request.data.get('format', 'excel').lower()
+    save_to_history = request.data.get('save_to_history', False)
 
     if not project_id:
         return Response({"error": "ID de proyecto es requerido."}, status=400)
@@ -250,17 +251,18 @@ def generate_technical_report_view(request):
             }
             essays_data.append(e_data)
 
-        # --- GUARDAR EN HISTORIAL ---
-        try:
-            history = TechnicalReport.objects.create(
-                project=project,
-                report_date=timezone.now().date(),
-                start_date=start_date,
-                end_date=end_date,
-                technical_observations=conclusions
-            )
-        except Exception as he:
-            print(f"Error guardando historial: {str(he)}")
+        # --- GUARDAR EN HISTORIAL (Opcional) ---
+        if save_to_history:
+            try:
+                TechnicalReport.objects.create(
+                    project=project,
+                    report_date=timezone.now().date(),
+                    start_date=s_date,
+                    end_date=e_date,
+                    technical_observations=conclusions
+                )
+            except Exception as he:
+                print(f"Error guardando historial: {str(he)}")
 
     except Exception as e:
         return Response({"error": f"Error preparando datos: {str(e)}"}, status=500)
@@ -470,24 +472,30 @@ def generate_technical_report_view(request):
         buffer.seek(0)
         filename = f"IT_{client_name}_{proj_name}_{report_date_str}.xlsx"
 
-        # --- ENVÍO AUTOMÁTICO DE EMAIL ---
+        # --- ENVÍO AUTOMÁTICO DE EMAIL (NO BLOQUEANTE) ---
         try:
             subject = f"Informe Técnico: {project.client.name} - {project.name}"
-            body = f"Hola,\n\nSe adjunta el Informe Técnico de Gestión para el proyecto {project.name}.\n\nSaludos,\nBakery Lab ERP"
+            body = f"Hola,\n\nSe adjunta el Informe Técnico de Gestión para el periodo {s_date} a {e_date}.\n\nSaludos,\nBakery Lab ERP"
             recipients = ["jmaldonado2378@gmail.com"]
             if project.client and project.client.email:
                 recipients.append(project.client.email)
             
+            # Definir el tipo MIME según el formato
+            mime_type = "application/pdf" if requested_format == 'pdf' else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            
             email = EmailMessage(
                 subject,
                 body,
-                to=recipients,
+                'no-reply@bakerylab.com',
+                recipients,
             )
-            email.attach(filename, buffer.getvalue(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            email.send()
-        except Exception as em:
-            print(f"Error enviando email: {str(em)}")
+            email.attach(filename, buffer.getvalue(), mime_type)
+            # Importante: fail_silently=True para que no de timeout si el SMTP falla
+            email.send(fail_silently=True)
+        except Exception as ee:
+            print(f"Error enviando email: {str(ee)}")
 
+        buffer.seek(0)
         return FileResponse(buffer, as_attachment=True, filename=filename)
     except Exception as e:
         import traceback
