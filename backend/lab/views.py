@@ -158,127 +158,49 @@ def import_complaints_excel(request):
 @api_view(['GET'])
 def download_complaint_template(request):
     """
-    BAKERY FORM PROTOCOL: VERTICAL RIGID RECONSTRUCTION
-    Reference: 'ultima descarga.xlsx' (Gold Standard)
-    Motor: XlsxWriter (Absolute positioning)
+    GOLD STANDARD PROTOCOL: CLONE OF reclamo.xlsx
+    Reference: reclamo.xlsx (Hand-designed by USER)
+    Motor: openpyxl (Template loading)
+    Status: Final deployment for Complaint Module
     """
+    import openpyxl
     project_id = request.query_params.get('project')
     project = None
     if project_id:
         project = Project.objects.filter(id=project_id).first()
 
+    template_path = os.path.join(os.path.dirname(__file__), 'static', 'templates', 'reclamo.xlsx')
+    
+    if not os.path.exists(template_path):
+        return Response({"error": "Plantilla 'reclamo.xlsx' no encontrada en el servidor."}, status=404)
+
+    # Cargar el 'Estándar de Oro' del usuario
+    wb = openpyxl.load_workbook(template_path)
+    ws = wb.active # Según inspección, el diseño está en la primera hoja activa
+
+    # --- INYECCIÓN DINÁMICA DE CAMPOS (Mapeo de Usuario) ---
+    if project:
+        # Molinos Burzaco SA -> Cliente
+        ws['B6'] = project.client.name if project.client else "---"
+        # Gestion Laboratorio -> Proyecto
+        ws['F6'] = project.name
+    else:
+        ws['B6'] = "---"
+        ws['F6'] = "---"
+
+    # Preservación absoluta: No tocamos celdas combinadas, colores ni encabezados
+    # Todo lo descrito por el usuario (C1:G3, H1:I5, etc.) ya existe en el archivo
+    
     output = io.BytesIO()
-    workbook = xlsxwriter.Workbook(output)
-    ws = workbook.add_worksheet("PLANILLA DE PANIFICACION")
-
-    # --- DEFINICIÓN DE FORMATOS ---
-    fmt_logo_box = workbook.add_format({'border': 2})
-    fmt_title_sec = workbook.add_format({
-        'bold': True, 'font_size': 14, 'bg_color': '#1A1A1A', 
-        'font_color': 'white', 'align': 'center', 'valign': 'vcenter', 'border': 1
-    })
-    fmt_label = workbook.add_format({'bold': True, 'bg_color': '#F1F5F9', 'border': 1, 'font_name': 'Arial'})
-    fmt_value = workbook.add_format({'border': 1, 'bg_color': 'white', 'font_name': 'Arial'})
-    fmt_header_table = workbook.add_format({
-        'bold': True, 'font_color': 'white', 'bg_color': '#333333',
-        'align': 'center', 'border': 1
-    })
-    fmt_box = workbook.add_format({'border': 1})
-    fmt_legal = workbook.add_format({'italic': True, 'font_size': 9, 'align': 'center'})
-
-    # Ajuste de Columnas (A:25, B:20, C:20, D:20, E:20, F:20...)
-    ws.set_column('A:A', 25)
-    ws.set_column('B:I', 20)
-
-    # --- 1. ENCABEZADO E IDENTIDAD ---
-    # Logo en A1:B2 (Espacio asegurado)
-    ws.merge_range('A1:B2', "", fmt_logo_box)
-    logo_path = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo_institucional.png')
-    if os.path.exists(logo_path):
-        ws.insert_image('A1', logo_path, {'x_offset': 15, 'y_offset': 5, 'x_scale': 0.6, 'y_scale': 0.6})
-
-    ws.merge_range('C1:I2', "FORMULARIO DE ENSAYO DE PANIFICACIÓN", fmt_title_sec)
-
-    # Fila 3: Fecha de Entrega
-    ws.write('A3', 'Fecha de Entrega:', fmt_label)
-    ws.write('B3', '', fmt_value)
-
-    # Fila 5: Lote Nro.
-    ws.write('A5', 'Lote Nro.:', fmt_label)
-    ws.write('B5', '', fmt_value)
-
-    # Fila 6: CLIENTE Y PROYECTO (DINÁMICOS)
-    ws.write('A6', 'CLIENTE:', fmt_label)
-    ws.merge_range('B6:D6', project.client.name if project and project.client else "---", fmt_value)
-    ws.write('E6', 'PROYECTO:', fmt_label)
-    ws.merge_range('F6:H6', project.name if project else "---", fmt_value)
-
-    # Filas 8-10: Harina y Marca
-    ws.write('A8', 'Tipo de Harina:', fmt_label)
-    ws.write('B8', '', fmt_value)
-    ws.write('A10', 'Marca:', fmt_label)
-    ws.write('B10', '', fmt_value)
-
-    # Fila 13: Producto Elaborado
-    ws.write('A13', 'Producto Elaborado:', fmt_label)
-    ws.merge_range('B13:H13', '', fmt_value)
-
-    # --- 2. SECCIÓN INGREDIENTES (R17) ---
-    ws.merge_range('A16:C16', "SECCIÓN INGREDIENTES", fmt_title_sec)
-    ws.write('A17', 'Ingredientes', fmt_header_table)
-    ws.write('B17', 'Cada 50 kg', fmt_header_table)
-    ws.write('C17', 'Marca', fmt_header_table)
-
-    ingredientes = ["Agua", "Levadura", "Grasa", "Aditivo", "", ""]
-    for i, ing in enumerate(ingredientes, 18):
-        ws.write(f'A{i}', ing, fmt_box if ing else fmt_box)
-        ws.write(f'B{i}', '', fmt_box)
-        ws.write(f'C{i}', '', fmt_box)
-
-    # --- 3. SECCIÓN PROCESO (R29+) ---
-    ws.merge_range('A28:I28', "SECCIÓN PROCESO", fmt_title_sec)
-
-    # Amasado
-    ws.write('A31', 'Amasado', fmt_label)
-    ws.write('B31', 'Tipo de Amasadora', fmt_box)
-    ws.write('C31', '', fmt_box)
-    ws.write('D31', 'Tiempo de Amasado', fmt_box)
-    ws.write('E31', '', fmt_box)
-
-    # Descanso
-    ws.write('A36', 'Tiempo descanso', fmt_label)
-    ws.write('B36', '', fmt_box)
-
-    # Fermentación
-    ws.write('A38', 'Fermentación', fmt_label)
-    ws.write('A40', 'Camara de ferm.', fmt_box)
-    ws.write('B40', 'si [  ]', fmt_box)
-    ws.write('C40', 'no [  ]', fmt_box)
-    ws.write('A42', 'Temp.', fmt_box)
-    ws.write('B42', '', fmt_box)
-    ws.write('A43', 'Humedad', fmt_box)
-    ws.write('B43', '', fmt_box)
-    ws.write('A44', 'Tiempo', fmt_box)
-    ws.write('B44', '', fmt_box)
-
-    # Cocción
-    ws.write('A46', 'Cocción', fmt_label)
-    ws.write('A47', 'Horno tipo', fmt_box)
-    ws.write('B47', '', fmt_box)
-    ws.write('A49', 'Tiempo', fmt_box)
-    ws.write('B49', '', fmt_box)
-
-    # --- PIE DE PÁGINA ---
-    ws.merge_range('A55:I55', 'DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO', fmt_legal)
-
-    workbook.close()
+    wb.save(output)
     output.seek(0)
     
     response = HttpResponse(
         output.read(), 
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-    response["Content-Disposition"] = "attachment; filename=formulario_ensayo.xlsx"
+    # Nombre de archivo solicitado para evitar confusiones de versiones
+    response["Content-Disposition"] = "attachment; filename=reclamo_oficial.xlsx"
     return response
     for col_num, (header, width) in enumerate(zip(headers, col_widths)):
         ws.set_column(col_num, col_num, width)
