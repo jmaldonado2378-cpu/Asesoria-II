@@ -199,11 +199,19 @@ def download_complaint_template(request):
 
     # 3. ENCABEZADO INSTITUCIONAL
     # Bloque Logo
+    from openpyxl.drawing.image import Image as XLImage
+    import os
+    logo_path = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo_institucional.png')
     ws.merge_cells('A1:B2')
-    ws['A1'] = "[ LOGO ]"
-    ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
-    ws['A1'].fill = PatternFill(start_color="F8FAF6", end_color="F8FAF6", fill_type="solid")
-    ws['A1'].font = Font(italic=True, color="94A3B8")
+    if os.path.exists(logo_path):
+        img = XLImage(logo_path)
+        img.width = 100
+        img.height = 100
+        ws.add_image(img, 'A1')
+    else:
+        ws['A1'] = "[ LOGO ]"
+        ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+        ws['A1'].font = Font(italic=True, color="94A3B8")
     ws['A1'].border = thin_border
 
     # Título Principal
@@ -439,12 +447,20 @@ def generate_technical_report_view(request):
                              top=Side(style='thin', color="E2E8F0"), 
                              bottom=Side(style='thin', color="E2E8F0"))
 
-        # 1. ENCABEZADO (Logo placeholder y Título)
+        # 1. ENCABEZADO (Logo y Título)
+        from openpyxl.drawing.image import Image as XLImage
+        import os
+        logo_path = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo_institucional.png')
         ws.merge_cells('A1:B2')
-        ws['A1'] = "[ LOGO ]"
-        ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
-        ws['A1'].fill = PatternFill(start_color="F8FAF6", end_color="F8FAF6", fill_type="solid")
-        ws['A1'].font = Font(italic=True, color="94A3B8")
+        if os.path.exists(logo_path):
+            img = XLImage(logo_path)
+            img.width = 80
+            img.height = 80
+            ws.add_image(img, 'A1')
+        else:
+            ws['A1'] = "[ LOGO ]"
+            ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+            ws['A1'].font = Font(italic=True, color="94A3B8")
 
         ws.merge_cells('C1:G2')
         ws['C1'] = "GESTIÓN TÉCNICA Y DESARROLLO - Harinas y Panificados"
