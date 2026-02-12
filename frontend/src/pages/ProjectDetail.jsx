@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
     Pipette, Calculator, Save, FileSpreadsheet, FileText, ChevronRight,
-    MessageSquare, Upload, Image as ImageIcon
+    MessageSquare, Upload, Image as ImageIcon, Calendar, DollarSign,
+    Activity, Building, ArrowLeft, Clock, GitCompare, TrendingUp,
+    ShoppingBag, PieChart, Plus, Trash2, AlertCircle
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 

@@ -2,7 +2,7 @@
 from django.utils.html import format_html
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from .models import Client, Ingredient, Project, Visit, Ensayo, EnsayoDetail, EnsayoImage, ProjectIngredientPrice, Complaint, ComplaintImage
+from .models import Client, Ingredient, Project, Visit, Ensayo, EnsayoDetail, EnsayoImage, ProjectIngredientPrice, Complaint, ComplaintImage, TechnicalReport
 
 # --- RESOURCES FOR EXPORT ---
 
@@ -162,23 +162,17 @@ class EnsayoAdmin(ImportExportModelAdmin):
         # We handle auto-coding in models.py, but we can add meta-data here if needed
         super().save_model(request, obj, form, change)
 
+@admin.register(TechnicalReport)
+class TechnicalReportAdmin(admin.ModelAdmin):
+    list_display = ('report_date', 'project', 'start_date', 'end_date')
+    list_filter = ('report_date', 'project')
+
 @admin.register(Complaint)
 class ComplaintAdmin(admin.ModelAdmin):
-    list_display = ('loading_date', 'project', 'batch', 'flour_type', 'description_short')
-    list_filter = ('loading_date', 'project', 'flour_type')
+    list_display = ('loading_date', 'project', 'batch', 'flour_type')
+    list_filter = ('loading_date', 'project')
     search_fields = ('batch', 'description', 'flour_type')
-    date_hierarchy = 'loading_date'
-    
-    def description_short(self, obj):
-        return (obj.description[:50] + '...') if obj.description and len(obj.description) > 50 else obj.description
-    description_short.short_description = "Descripción"
 
 @admin.register(ComplaintImage)
 class ComplaintImageAdmin(admin.ModelAdmin):
-    list_display = ('complaint', 'caption', 'image_preview')
-    
-    def image_preview(self, obj):
-        if obj.image:
-            return format_html('<img src="{}" width="50" height="50" style="object-fit: cover;" />', obj.image.url)
-        return "-"
-    image_preview.short_description = "Vista Previa"
+    list_display = ('complaint', 'caption')
