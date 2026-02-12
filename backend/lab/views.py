@@ -158,10 +158,13 @@ def import_complaints_excel(request):
 @api_view(['GET'])
 def download_complaint_template(request):
     """
-    GOLD STANDARD PROTOCOL: CLONE OF reclamo.xlsx
-    Reference: reclamo.xlsx (Hand-designed by USER)
-    Motor: openpyxl (Template loading)
-    Status: Final deployment for Complaint Module
+    PROTOCOL: FINAL CLONE OF USER TEMPLATE
+    Reference: Google Sheets (la definitiva.xlsx)
+    Motor: openpyxl
+    Rules: 
+    1. NO Ingredients/Bakery data.
+    2. ONLY fill B6 (Client) and F6 (Project).
+    3. Preserve EXACT user design.
     """
     import openpyxl
     project_id = request.query_params.get('project')
@@ -172,29 +175,23 @@ def download_complaint_template(request):
     template_path = os.path.join(os.path.dirname(__file__), 'static', 'templates', 'reclamo.xlsx')
     
     if not os.path.exists(template_path):
-        return Response({"error": "Plantilla 'reclamo.xlsx' no encontrada en el servidor."}, status=404)
+        return Response({"error": "Template file not found."}, status=404)
 
-    # Cargar el 'Estándar de Oro' del usuario (Google Sheets Sync)
     wb = openpyxl.load_workbook(template_path)
-    # Seleccionamos la hoja maestra de Google Sheets
+    # Seleccionamos la hoja del usuario (PLANTILLA_RECLAMOS o activa)
     if "PLANTILLA_RECLAMOS" in wb.sheetnames:
         ws = wb["PLANTILLA_RECLAMOS"]
     else:
         ws = wb.active
 
-    # --- INYECCIÓN DINÁMICA DE CAMPOS (Mapeo de Usuario) ---
+    # --- INYECCIÓN DINÁMICA MÍNIMA ---
     if project:
-        # Molinos Burzaco SA -> Cliente
         ws['B6'] = project.client.name if project.client else "---"
-        # Gestion Laboratorio -> Proyecto
         ws['F6'] = project.name
     else:
         ws['B6'] = "---"
         ws['F6'] = "---"
 
-    # Preservación absoluta: No tocamos celdas combinadas, colores ni encabezados
-    # Todo lo descrito por el usuario (C1:G3, H1:I5, etc.) ya existe en el archivo
-    
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
@@ -203,7 +200,6 @@ def download_complaint_template(request):
         output.read(), 
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-    # Nombre de archivo solicitado para evitar confusiones de versiones
     response["Content-Disposition"] = "attachment; filename=reclamo_oficial.xlsx"
     return response
     for col_num, (header, width) in enumerate(zip(headers, col_widths)):
