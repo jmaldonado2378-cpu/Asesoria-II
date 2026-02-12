@@ -307,7 +307,8 @@ class TechnicalReport(models.Model):
         ordering = ['-report_date', '-created_at']
 
     def __str__(self):
-        return f"Informe {self.project.name} - {self.report_date}"
+        p_name = self.project.name if self.project else "S/P"
+        return f"Informe {p_name} - {self.report_date}"
 # --- RECLAMOS TÉCNICOS ---
 class Complaint(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="complaints", verbose_name="Proyecto")
@@ -326,7 +327,8 @@ class Complaint(models.Model):
         ordering = ['-loading_date', '-created_at']
 
     def __str__(self):
-        return f"Reclamo - {self.project.client.name} - {self.loading_date}"
+        c_name = self.project.client.name if self.project and self.project.client else "S/C"
+        return f"Reclamo - {c_name} - {self.loading_date}"
 
 class ComplaintImage(models.Model):
     complaint = models.ForeignKey(Complaint, on_delete=models.CASCADE, related_name='images')
