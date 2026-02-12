@@ -158,93 +158,51 @@ def import_complaints_excel(request):
 @api_view(['GET'])
 def download_complaint_template(request):
     """
-    ENGINEERING PROTOCOL: RIGID CELL-BY-CELL RECONSTRUCTION
-    Motor: XlsxWriter (Method-based design)
-    Status: Final compliance with Burzaco aesthetic
+    GOLD STANDARD PROTOCOL: TEMPLATE-BASED EXPORT
+    Template: reclamo.xlsx (Hand-designed by USER)
+    Motor: openpyxl (Preserve layout, colors, and merging)
     """
+    import openpyxl
     project_id = request.query_params.get('project')
     project = None
     if project_id:
         project = Project.objects.filter(id=project_id).first()
 
+    template_path = os.path.join(os.path.dirname(__file__), 'static', 'templates', 'reclamo.xlsx')
+    
+    if not os.path.exists(template_path):
+        # Fallback if template is missing (should not happen after push)
+        return Response({"error": "Template 'reclamo.xlsx' not found."}, status=404)
+
+    # Cargar la plantilla 'Estándar de Oro'
+    wb = openpyxl.load_workbook(template_path)
+    # Intentamos seleccionar la hoja 'PLANTILLA' o la primera disponible
+    if "PLANTILLA" in wb.sheetnames:
+        ws = wb["PLANTILLA"]
+    else:
+        ws = wb.active
+
+    # --- INYECCIÓN DE DATOS DINÁMICOS ---
+    # Según diseño manual B6:D6 (Cliente) y F6:H6 (Proyecto)
+    if project:
+        ws['B6'] = project.client.name if project.client else "---"
+        ws['F6'] = project.name
+    else:
+        ws['B6'] = "---"
+        ws['F6'] = "---"
+
+    # Preservar el fondo oscuro y letras blancas (ya vienen en la plantilla)
+    
     output = io.BytesIO()
-    workbook = xlsxwriter.Workbook(output)
-    ws = workbook.add_worksheet("PLANTILLA")
-
-    # --- DEFINICIÓN DE FORMATOS (CONTROL TOTAL) ---
-    # Formato Título: .set_bg_color('#1A1A1A') - MANDATORIO
-    fmt_title = workbook.add_format()
-    fmt_title.set_bold()
-    fmt_title.set_font_size(18)
-    fmt_title.set_font_color('white')
-    fmt_title.set_bg_color('#1A1A1A') # PRUEBA DE CONTROL PASADA
-    fmt_title.set_align('center')
-    fmt_title.set_align('vcenter')
-    fmt_title.set_border(1)
-    fmt_title.set_font_name('Arial')
-
-    # Formato Subtítulo: .set_bg_color('#404040')
-    fmt_subtitle = workbook.add_format()
-    fmt_subtitle.set_font_size(12)
-    fmt_subtitle.set_font_color('white')
-    fmt_subtitle.set_bg_color('#404040') # PRUEBA DE CONTROL PASADA
-    fmt_subtitle.set_align('center')
-    fmt_subtitle.set_align('vcenter')
-    fmt_subtitle.set_border(1)
-    fmt_subtitle.set_font_name('Arial')
-
-    fmt_ref = workbook.add_format({'bold': True, 'font_size': 10, 'align': 'center', 'valign': 'vcenter', 'border': 2, 'text_wrap': True, 'font_name': 'Arial'})
+    wb.save(output)
+    output.seek(0)
     
-    fmt_label = workbook.add_format()
-    fmt_label.set_bold()
-    fmt_label.set_bg_color('#F1F5F9')
-    fmt_label.set_border(2) # Borde grueso según protocolo
-    fmt_label.set_align('left')
-    fmt_label.set_font_name('Arial')
-
-    fmt_value = workbook.add_format({'border': 2, 'bg_color': 'white', 'align': 'left', 'font_name': 'Arial'}) # Bordes gruesos
-    
-    fmt_header = workbook.add_format()
-    fmt_header.set_bold()
-    fmt_header.set_font_color('white')
-    fmt_header.set_bg_color('#333333')
-    fmt_header.set_align('center')
-    fmt_header.set_valign('vcenter')
-    fmt_header.set_border(1)
-    fmt_header.set_text_wrap()
-    fmt_header.set_font_name('Arial')
-
-    fmt_legal = workbook.add_format({'italic': True, 'font_size': 9, 'align': 'center', 'font_name': 'Arial'})
-
-    # --- CONSTRUCCIÓN RÍGIDA ---
-    
-    # 1. BLOQUE DE IDENTIDAD (Filas 1-5)
-    # A1:B5 - Logo Circular (Objeto de imagen real)
-    ws.merge_range('A1:B5', "", workbook.add_format({'border': 2})) # Borde grueso exterior
-    logo_path = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo_institucional.png')
-    if os.path.exists(logo_path):
-        # Insertamos el logo ocupando hasta la fila 5
-        ws.insert_image('A1', logo_path, {'x_offset': 20, 'y_offset': 10, 'x_scale': 0.75, 'y_scale': 0.75})
-
-    # C1:G3 - Título .merge_range() - MANDATORIO
-    ws.merge_range('C1:G3', "GESTIÓN TÉCNICA Y DESARROLLO", fmt_title)
-
-    # C4:G5 - Subtítulo
-    ws.merge_range('C4:G5', "Harinas y Panificados", fmt_subtitle)
-
-    # H1:I5 - Referencia (Borde grueso)
-    ws.merge_range('H1:I5', "REFERENCIA\n\nMOD-RECLAMO", fmt_ref)
-
-    # 2. BLOQUE DE PROYECTO (Fila 7) - BORDES GRUESOS
-    ws.write('A7', 'CLIENTE:', fmt_label)
-    ws.merge_range('B7:D7', project.client.name if project and project.client else "---", fmt_value)
-    ws.write('E7', 'PROYECTO:', fmt_label)
-    ws.merge_range('F7:H7', project.name if project else "---", fmt_value)
-
-    # 3. ENCABEZADOS DE DATOS (Fila 10) - FONDO #333333
-    headers = ["Cliente Directo", "Contacto / Tel", "F. Carga", "Lote", "Harina", "Producto", "Proceso", "Descripción del Reclamo (Detallado)"]
-    # Anchos fijos exactos: A:25, B:20, C:15, D:15, E:15, F:20, G:20, H:60
-    col_widths = [25, 20, 15, 15, 15, 20, 20, 60]
+    response = HttpResponse(
+        output.read(), 
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = "attachment; filename=la_definitiva.xlsx"
+    return response
     for col_num, (header, width) in enumerate(zip(headers, col_widths)):
         ws.set_column(col_num, col_num, width)
         ws.write(9, col_num, header, fmt_header)
