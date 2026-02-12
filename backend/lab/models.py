@@ -308,3 +308,27 @@ class TechnicalReport(models.Model):
 
     def __str__(self):
         return f"Informe {self.project.name} - {self.report_date}"
+# --- RECLAMOS TÉCNICOS ---
+class Complaint(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="complaints", verbose_name="Proyecto")
+    delivery_date = models.DateField("Fecha Entrega", null=True, blank=True)
+    loading_date = models.DateField("Fecha Carga", default=timezone.now)
+    batch = models.CharField("Lote / Partida", max_length=100, blank=True, null=True)
+    flour_type = models.CharField("Tipo de Harina", max_length=255, blank=True, null=True)
+    product_made = models.CharField("Producto Elaborado", max_length=255, blank=True, null=True)
+    process_type = models.CharField("Tipo de Proceso", max_length=255, blank=True, null=True)
+    description = models.TextField("Descripción del Reclamo", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Reclamo"
+        verbose_name_plural = "Reclamos Técnicos"
+        ordering = ['-loading_date', '-created_at']
+
+    def __str__(self):
+        return f"Reclamo - {self.project.client.name} - {self.loading_date}"
+
+class ComplaintImage(models.Model):
+    complaint = models.ForeignKey(Complaint, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField("Imagen Reclamo", upload_to='complaint_photos/')
+    caption = models.CharField("Nota", max_length=255, blank=True, null=True)

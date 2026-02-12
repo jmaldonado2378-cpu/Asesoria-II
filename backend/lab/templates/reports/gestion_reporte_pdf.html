@@ -200,11 +200,39 @@
             </tr>
             {% endfor %}
         </tbody>
-    </table>
+        <div class="section-title">Resumen de Reclamos Técnicos</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>F. Carga</th>
+                    <th>Lote</th>
+                    <th>Harina</th>
+                    <th>Producto</th>
+                    <th>Descripción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in complaints %}
+                <tr>
+                    <td>{{ c.loading_date|date:"d/m/Y" }}</td>
+                    <td>{{ c.batch|default:"-" }}</td>
+                    <td>{{ c.flour_type|default:"-" }}</td>
+                    <td>{{ c.product_made|default:"-" }}</td>
+                    <td>{{ c.description|truncatewords:20|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #94a3b8;">No se registraron reclamos en este
+                        período.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-    <div class="footer">
-        DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL BAKERY LAB ERP
-    </div>
+        <div class="footer">
+            DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL BAKERY LAB ERP
+        </div>
 </body>
 
 </html>

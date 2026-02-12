@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-    ArrowLeft, Plus, GitCompare, Calendar, CheckSquare,
-    Square, Building, PieChart, DollarSign, ShoppingBag,
-    Trash2, TrendingUp, AlertCircle, Clock, Activity, Eye,
-    Pipette, Calculator, Save, FileSpreadsheet, FileText, ChevronRight
+    Pipette, Calculator, Save, FileSpreadsheet, FileText, ChevronRight,
+    MessageSquare, Upload, Image as ImageIcon
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -14,6 +12,7 @@ export default function ProjectDetail() {
     const [project, setProject] = useState(null);
     const [essays, setEssays] = useState([]);
     const [visits, setVisits] = useState([]);
+    const [complaints, setComplaints] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedIds, setSelectedIds] = useState([]);
     const [activeTab, setActiveTab] = useState('ensayos');
@@ -45,8 +44,9 @@ export default function ProjectDetail() {
             fetch(`${import.meta.env.VITE_API_URL}/api/projects/${id}/`).then(r => r.json()),
             fetch(`${import.meta.env.VITE_API_URL}/api/ensayos/`).then(r => r.json()),
             fetch(`${import.meta.env.VITE_API_URL}/api/visits/`).then(r => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/api/technical-reports/?project=${id}`).then(r => r.json())
-        ]).then(([projData, essaysData, visitsData, reportsData]) => {
+            fetch(`${import.meta.env.VITE_API_URL}/api/technical-reports/?project=${id}`).then(r => r.json()),
+            fetch(`${import.meta.env.VITE_API_URL}/api/complaints/?project=${id}`).then(r => r.json())
+        ]).then(([projData, essaysData, visitsData, reportsData, complaintsData]) => {
             if (!projData || projData.detail) {
                 console.error("Project not found or API error", projData);
                 setProject(null);
@@ -64,6 +64,7 @@ export default function ProjectDetail() {
 
             setEssays(pEssays);
             setVisits(pVisits);
+            setComplaints(Array.isArray(complaintsData) ? complaintsData : []);
             setReports(Array.isArray(reportsData) ? reportsData : []);
 
             // Cargar gastos materiales guardados localmente
@@ -128,6 +129,57 @@ export default function ProjectDetail() {
 
     const toggleSelection = (eid) => setSelectedIds(prev => prev.includes(eid) ? prev.filter(i => i !== eid) : [...prev, eid]);
     const handleCompare = () => selectedIds.length >= 2 && navigate(`/essays/compare?ids=${selectedIds.join(',')}`);
+
+    const handleImportComplaints = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('project', id);
+
+        try {
+            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/import-complaints/`, {
+                method: 'POST',
+                body: formData
+            });
+            if (resp.ok) {
+                const result = await resp.json();
+                alert(result.message);
+                // Recargar reclamos
+                const freshReclamos = await fetch(`${import.meta.env.VITE_API_URL}/api/complaints/?project=${id}`).then(r => r.json());
+                setComplaints(freshReclamos);
+            } else {
+                alert('Error al importar Excel.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error de conexión.');
+        }
+    };
+
+    const handleUploadComplaintImage = async (complaintId, file) => {
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('complaint', complaintId);
+        formData.append('image', file);
+
+        try {
+            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/complaint-images/`, {
+                method: 'POST',
+                body: formData
+            });
+            if (resp.ok) {
+                // Recargar reclamos para ver la imagen
+                const freshReclamos = await fetch(`${import.meta.env.VITE_API_URL}/api/complaints/?project=${id}`).then(r => r.json());
+                setComplaints(freshReclamos);
+            } else {
+                alert('Error al subir imagen.');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     const handleSaveObservations = async () => {
         setSavingObs(true);
@@ -382,6 +434,7 @@ export default function ProjectDetail() {
                 <div className="flex gap-1 mb-8">
                     <TabButton active={activeTab === 'ensayos'} onClick={() => setActiveTab('ensayos')} icon={<Pipette size={16} />} label={`Ensayos Técs. (${essays.length})`} />
                     <TabButton active={activeTab === 'visitas'} onClick={() => setActiveTab('visitas')} icon={<Calendar size={16} />} label={`Agenda / Visitas (${visits.length})`} />
+                    <TabButton active={activeTab === 'reclamos'} onClick={() => setActiveTab('reclamos')} icon={<MessageSquare size={16} />} label={`Reclamos (${complaints.length})`} />
                     <TabButton active={activeTab === 'finanzas'} onClick={() => setActiveTab('finanzas')} icon={<DollarSign size={16} />} label="Estado de Resultados" />
                 </div>
 
@@ -486,6 +539,85 @@ export default function ProjectDetail() {
                                         </Link>
                                     ))
                                 )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- TAB RECLAMOS --- */}
+                    {activeTab === 'reclamos' && (
+                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                            <div className="flex justify-between items-center bg-white p-6 shadow-xl border border-slate-300 rounded-sm">
+                                <div>
+                                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Gestión de Reclamos Técnicos</h3>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Cargue archivos Excel con el formato estándar para actualización masiva.</p>
+                                </div>
+                                <label className="flex items-center gap-2 bg-slate-900 text-white px-6 py-4 rounded-sm shadow-xl hover:bg-orange-600 transition font-black text-[10px] uppercase tracking-widest cursor-pointer border border-slate-700">
+                                    <Upload size={16} /> Subir Excel de Reclamos
+                                    <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleImportComplaints} />
+                                </label>
+                            </div>
+
+                            <div className="bg-white shadow-2xl border border-slate-300 rounded-sm overflow-hidden">
+                                <table className="w-full text-left font-mono">
+                                    <thead className="bg-slate-900 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] border-b border-slate-800">
+                                        <tr>
+                                            <th className="p-5">F. CARGA / ENTREGA</th>
+                                            <th className="p-5">LOTE / HARINA</th>
+                                            <th className="p-5">PRODUCTO / PROCESO</th>
+                                            <th className="p-5">DESCRIPCIÓN</th>
+                                            <th className="p-5 text-right">FOTOS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {complaints.length === 0 ? (
+                                            <tr><td colSpan="5" className="p-20 text-center text-slate-300 uppercase text-[10px] font-bold tracking-widest italic">No se han registrado reclamos técnicos.</td></tr>
+                                        ) : (
+                                            complaints.map(c => (
+                                                <tr key={c.id} className="hover:bg-red-50/30 transition-colors group">
+                                                    <td className="p-5">
+                                                        <div className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{c.loading_date}</div>
+                                                        <div className="text-[8px] text-slate-400 font-bold uppercase">Ent: {c.delivery_date || '-'}</div>
+                                                    </td>
+                                                    <td className="p-5">
+                                                        <div className="text-[10px] font-bold text-slate-900 uppercase">{c.batch || 'S/N'}</div>
+                                                        <div className="text-[9px] text-orange-600 font-black uppercase tracking-tighter">{c.flour_type || '-'}</div>
+                                                    </td>
+                                                    <td className="p-5">
+                                                        <div className="text-[10px] font-bold text-slate-700 uppercase">{c.product_made || '-'}</div>
+                                                        <div className="text-[8px] text-slate-400 font-bold uppercase">{c.process_type || '-'}</div>
+                                                    </td>
+                                                    <td className="p-5 text-[9px] font-bold text-slate-500 uppercase max-w-xs truncate">{c.description}</td>
+                                                    <td className="p-5 text-right">
+                                                        <div className="flex justify-end items-center gap-3">
+                                                            {c.images && c.images.length > 0 ? (
+                                                                <div className="flex -space-x-2">
+                                                                    {c.images.slice(0, 3).map((img, idx) => (
+                                                                        <img key={img.id} src={img.image} className="w-8 h-8 rounded-full border-2 border-white object-cover shadow-sm bg-slate-100" alt="Reclamo" />
+                                                                    ))}
+                                                                    {c.images.length > 3 && (
+                                                                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[8px] font-black text-white border-2 border-white">
+                                                                            +{c.images.length - 3}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ) : null}
+
+                                                            <label className="bg-slate-100 p-2 rounded-sm text-slate-400 hover:bg-orange-600 hover:text-white transition cursor-pointer">
+                                                                <ImageIcon size={14} />
+                                                                <input
+                                                                    type="file"
+                                                                    className="hidden"
+                                                                    accept="image/*"
+                                                                    onChange={(e) => handleUploadComplaintImage(c.id, e.target.files[0])}
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     )}

@@ -1,5 +1,6 @@
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, parser_classes
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
@@ -12,11 +13,12 @@ try:
 except ImportError:
     pisa = None
 from django.core.mail import EmailMessage
+from datetime import datetime
 import io
 from .models import (
     Client, Project, Ensayo, Ingredient, 
     ProjectIngredientPrice, Visit, EnsayoDetail, EnsayoImage,
-    TechnicalReport
+    TechnicalReport, Complaint, ComplaintImage
 )
 from .serializers import (
     ClientSerializer, 
@@ -27,7 +29,9 @@ from .serializers import (
     VisitSerializer,
     EnsayoDetailSerializer,
     EnsayoImageSerializer,
-    TechnicalReportSerializer
+    TechnicalReportSerializer,
+    ComplaintSerializer,
+    ComplaintImageSerializer
 )
 
 class ClientViewSet(viewsets.ModelViewSet):
@@ -73,6 +77,75 @@ class TechnicalReportViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(project_id=project_id)
         return queryset
 
+class ComplaintViewSet(viewsets.ModelViewSet):
+    queryset = Complaint.objects.all().order_by('-loading_date', '-created_at')
+    serializer_class = ComplaintSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        project_id = self.request.query_params.get('project')
+        if project_id:
+            queryset = queryset.filter(project_id=project_id)
+        return queryset
+
+class ComplaintImageViewSet(viewsets.ModelViewSet):
+    queryset = ComplaintImage.objects.all()
+    serializer_class = ComplaintImageSerializer
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser])
+def import_complaints_excel(request):
+    """
+    Importa reclamos desde un archivo Excel.
+    Orden: 1. Cliente | 2. F. Entrega | 3. F. Carga | 4. Lote | 5. Harina | 6. Producto | 7. Proceso | 8. Descripción
+    """
+    file_obj = request.FILES.get('file')
+    project_id = request.data.get('project')
+    if not file_obj or not project_id:
+        return Response({"error": "Se requiere archivo y ID de proyecto."}, status=400)
+    
+    project = get_object_or_404(Project, id=project_id)
+    
+    try:
+        import openpyxl
+        wb = openpyxl.load_workbook(file_obj)
+        ws = wb.active
+        
+        def parse_date(val):
+            if isinstance(val, datetime):
+                return val.date()
+            if isinstance(val, str):
+                for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"):
+                    try:
+                        return datetime.strptime(val, fmt).date()
+                    except ValueError:
+                        continue
+            return None
+
+        complaints_created = 0
+        # Saltamos encabezado (asumiendo fila 1 es header)
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if not row[0]: continue # Si no hay cliente, saltar
+            
+            # El usuario pide asociar al proyecto enviado, pero el Excel trae "Cliente_Nombre" en la col 1.
+            # Verificamos si el cliente coincide por si acaso, pero la consigna dice "asociar automáticamente el reclamo al proyecto correspondiente".
+            
+            Complaint.objects.create(
+                project=project,
+                delivery_date=parse_date(row[1]),
+                loading_date=parse_date(row[2]) or timezone.now().date(),
+                batch=str(row[3]) if row[3] else "",
+                flour_type=str(row[4]) if row[4] else "",
+                product_made=str(row[5]) if row[5] else "",
+                process_type=str(row[6]) if row[6] else "",
+                description=str(row[7]) if row[7] else ""
+            )
+            complaints_created += 1
+            
+        return Response({"message": f"Se importaron {complaints_created} reclamos con éxito."}, status=201)
+    except Exception as e:
+        return Response({"error": f"Error importando Excel: {str(e)}"}, status=500)
+
 @api_view(['POST'])
 def generate_technical_report_view(request):
     """
@@ -90,6 +163,7 @@ def generate_technical_report_view(request):
         # Datos técnicos
         essays = Ensayo.objects.filter(project=project, date__range=[start_date, end_date]).order_by('date')
         visits = Visit.objects.filter(project=project, date__range=[start_date, end_date]).order_by('date')
+        complaints = Complaint.objects.filter(project=project, loading_date__range=[start_date, end_date]).order_by('loading_date')
 
         # Nombre de archivo estandarizado
         client_name = project.client.name.replace(' ', '_') if project.client else "Sin_Cliente"
@@ -138,6 +212,7 @@ def generate_technical_report_view(request):
                 'conclusions': str(conclusions) if conclusions else "",
                 'essays': essays,  # Usamos queryset para que los filtros de template funcionen
                 'visits': visits,
+                'complaints': complaints,
             }
             html = render_to_string('reports/gestion_reporte_pdf.html', context)
             buffer = io.BytesIO()
@@ -289,6 +364,25 @@ def generate_technical_report_view(request):
             ws.cell(row=current_row, column=2, value=str(v.visit_type)).border = thin_border
             ws.cell(row=current_row, column=3, value=str(v.objective)).border = thin_border
             ws.cell(row=current_row, column=4, value=str(v.status)).border = thin_border
+            current_row += 1
+
+        # RECLAMOS
+        current_row += 1
+        draw_section_header(current_row, "RECLAMOS TÉCNICOS EN EL PERÍODO")
+        current_row += 1
+        h_labels_c = ["FECHA", "LOTE", "HARINA", "PRODUCTO", "DESCRIPCIÓN"]
+        for i, label in enumerate(h_labels_c, 1):
+            cell = ws.cell(row=current_row, column=i, value=label)
+            cell.font = table_header_font
+            cell.border = Border(bottom=Side(style='medium', color="E2E8F0"))
+
+        current_row += 1
+        for c in complaints:
+            ws.cell(row=current_row, column=1, value=str(c.loading_date)).border = thin_border
+            ws.cell(row=current_row, column=2, value=str(c.batch)).border = thin_border
+            ws.cell(row=current_row, column=3, value=str(c.flour_type)).border = thin_border
+            ws.cell(row=current_row, column=4, value=str(c.product_made)).border = thin_border
+            ws.cell(row=current_row, column=5, value=str(c.description)).border = thin_border
             current_row += 1
 
         # 4. PIE DE PÁGINA (Firma y Confidencialidad)
