@@ -12,21 +12,26 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='TechnicalReport',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('report_date', models.DateField(default=django.utils.timezone.now, verbose_name='Fecha del Informe')),
-                ('start_date', models.DateField(verbose_name='Fecha Inicio Rango')),
-                ('end_date', models.DateField(verbose_name='Fecha Fin Rango')),
-                ('technical_observations', models.TextField(verbose_name='Observaciones Técnicas / Conclusiones')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reports', to='lab.project', verbose_name='Proyecto')),
-            ],
-            options={
-                'verbose_name': 'Informe Técnico',
-                'verbose_name_plural': 'Historial de Informes Técnicos',
-                'ordering': ['-report_date', '-created_at'],
-            },
+        migrations.SeparateDatabaseAndState(
+            database_operations=[],  # Skip SQL if table already exists
+            state_operations=[
+                migrations.CreateModel(
+                    name='TechnicalReport',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('report_date', models.DateField(default=django.utils.timezone.now, verbose_name='Fecha del Informe')),
+                        ('start_date', models.DateField(verbose_name='Fecha Inicio Rango')),
+                        ('end_date', models.DateField(verbose_name='Fecha Fin Rango')),
+                        ('technical_observations', models.TextField(verbose_name='Observaciones Técnicas / Conclusiones')),
+                        ('created_at', models.DateTimeField(auto_now_add=True)),
+                        ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reports', to='lab.project', verbose_name='Proyecto')),
+                    ],
+                    options={
+                        'verbose_name': 'Informe Técnico',
+                        'verbose_name_plural': 'Historial de Informes Técnicos',
+                        'ordering': ['-report_date', '-created_at'],
+                    },
+                ),
+            ]
         ),
     ]
