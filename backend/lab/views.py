@@ -157,147 +157,98 @@ def import_complaints_excel(request):
 @api_view(['GET'])
 def download_complaint_template(request):
     """
-    Generates a high-fidelity Excel template for technical complaints
-    using exact Burzaco coordinates and openpyxl styles.
+    Generates a technical report template using XlsxWriter with RIGID Burzaco protocol.
+    Coordinates: Logo A1:B5, Title C1:G3 (#212121), Subtitle C4:G5 (#424242).
     """
-    import openpyxl
-    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    import xlsxwriter
     from django.http import HttpResponse
-    
+    import os
+    from django.utils import timezone
+
     project_id = request.query_params.get('project')
     project = None
     if project_id:
         project = Project.objects.filter(id=project_id).first()
 
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "PLANTILLA_RECLAMOS"
-    
-    # 0. CONFIGURACIÓN DE PÁGINA
-    ws.page_setup.paperSize = 9 # A4
-    ws.page_setup.orientation = 'portrait'
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output)
+    worksheet = workbook.add_worksheet("PLANTILLA_RECLAMOS")
 
-    # --- ESTILOS BURZACO (ENGINEERING PROMPT) ---
-    burzaco_dark = "333333"
-    burzaco_gray_light = "F1F5F9"
-    white_font_16_bold = Font(name='Arial', bold=True, size=16, color="FFFFFF")
-    white_font_9_bold = Font(name='Arial', bold=True, size=9, color="FFFFFF")
-    slogan_font = Font(name='Arial', italic=True, size=11, color="666666")
-    label_font = Font(name='Arial', bold=True, size=9, color="333333")
-    value_font = Font(name='Arial', size=10, color="000000")
-    
-    dark_fill = PatternFill(start_color=burzaco_dark, end_color=burzaco_dark, fill_type="solid")
-    light_fill = PatternFill(start_color=burzaco_gray_light, end_color=burzaco_gray_light, fill_type="solid")
-    
-    thin_border = Border(
-        left=Side(style='thin', color="000000"), 
-        right=Side(style='thin', color="000000"), 
-        top=Side(style='thin', color="000000"), 
-        bottom=Side(style='thin', color="000000")
-    )
+    # --- FORMATOS RÍGIDOS ---
+    fmt_title = workbook.add_format({
+        'bold': True, 'font_size': 18, 'font_color': 'white',
+        'bg_color': '#212121', 'align': 'center', 'valign': 'vcenter', 'border': 1
+    })
+    fmt_subtitle = workbook.add_format({
+        'bold': False, 'font_size': 12, 'font_color': 'white',
+        'bg_color': '#424242', 'align': 'center', 'valign': 'vcenter', 'border': 1
+    })
+    fmt_ref = workbook.add_format({
+        'bold': True, 'font_size': 9, 'align': 'center', 'valign': 'vcenter',
+        'border': 2, 'text_wrap': True
+    })
+    fmt_label = workbook.add_format({
+        'bold': True, 'bg_color': '#F1F5F9', 'border': 1, 'align': 'left'
+    })
+    fmt_value = workbook.add_format({
+        'border': 1, 'bg_color': 'white', 'align': 'left'
+    })
+    fmt_header = workbook.add_format({
+        'bold': True, 'font_color': 'white', 'bg_color': '#333333',
+        'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True
+    })
+    fmt_legal = workbook.add_format({
+        'italic': True, 'font_size': 7, 'align': 'center'
+    })
 
-    # 1. ENCABEZADO INSTITUCIONAL (FILAS 1-4)
-    # Logo: A1:B4
-    ws.merge_cells('A1:B4')
-    from openpyxl.drawing.image import Image as XLImage
-    import os
+    # 1. ENCABEZADO (A1:I5)
+    # Logo: Combiná A1:B5
+    worksheet.merge_range('A1:B5', "", fmt_value)
     logo_path = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo_institucional.png')
     if os.path.exists(logo_path):
-        img = XLImage(logo_path)
-        img.width = 100
-        img.height = 100
-        ws.add_image(img, 'A1')
-    ws['A1'].border = thin_border
+        worksheet.insert_image('A1', logo_path, {
+            'x_offset': 10, 'y_offset': 10, 'x_scale': 0.8, 'y_scale': 0.8
+        })
 
-    # Nombre de Marca: C1:G2
-    ws.merge_cells('C1:G2')
-    cell_brand = ws['C1']
-    cell_brand.value = "GESTIÓN TÉCNICA Y DESARROLLO"
-    cell_brand.fill = dark_fill
-    cell_brand.font = white_font_16_bold
-    cell_brand.alignment = Alignment(horizontal='center', vertical='center')
-    cell_brand.border = thin_border
+    # Título: Combiná C1:G3
+    worksheet.merge_range('C1:G3', "GESTIÓN TÉCNICA Y DESARROLLO", fmt_title)
 
-    # Slogan: C3:G4
-    ws.merge_cells('C3:G4')
-    cell_slogan = ws['C3']
-    cell_slogan.value = "Harinas y Panificados"
-    cell_slogan.font = slogan_font
-    cell_slogan.alignment = Alignment(horizontal='center', vertical='center')
-    cell_slogan.border = thin_border
+    # Subtítulo: Combiná C4:G5
+    worksheet.merge_range('C4:G5', "Harinas y Panificados", fmt_subtitle)
 
-    # Referencia: H1:I4
-    ws.merge_cells('H1:I4')
-    cell_ref = ws['H1']
-    ref_code = f"MOD-RECL-{timezone.now().strftime('%Y%m')}"
-    cell_ref.value = f"REFERENCIA / FECHA\n\n{ref_code}"
-    cell_ref.font = Font(name='Arial', bold=True, size=8, color="333333")
-    cell_ref.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-    cell_ref.border = thin_border
+    # Referencia: Combiná H1:I5
+    ref_date = timezone.now().strftime('%d/%m/%Y')
+    worksheet.merge_range('H1:I5', f"MOD-RECLAMO\n{ref_date}", fmt_ref)
 
-    # 2. BLOQUE DE DATOS DEL PROYECTO (FILAS 6-7)
-    # CLIENTE
-    ws['A6'] = "CLIENTE:"
-    ws['A6'].font = label_font
-    ws['A6'].fill = light_fill
-    ws['A6'].border = thin_border
+    # 2. CUERPO DEL FORMULARIO (A7:I9)
+    worksheet.write('A7', 'CLIENTE:', fmt_label)
+    worksheet.merge_range('B7:D7', project.client.name if project and project.client else "---", fmt_value)
     
-    ws.merge_cells('B6:D6')
-    ws['B6'] = project.client.name if project and project.client else "---"
-    ws['B6'].font = value_font
-    ws['B6'].border = thin_border
+    worksheet.write('E7', 'PROYECTO:', fmt_label)
+    worksheet.merge_range('F7:H7', project.name if project else "---", fmt_value)
 
-    # PROYECTO
-    ws['E6'] = "PROYECTO:"
-    ws['E6'].font = label_font
-    ws['E6'].fill = light_fill
-    ws['E6'].border = thin_border
-    
-    ws.merge_cells('F6:H6')
-    ws['F6'] = project.name if project else "---"
-    ws['F6'].font = value_font
-    ws['F6'].border = thin_border
-
-    # 3. CUERPO DE RECLAMOS (FILA 9)
+    # 3. TABLA DE INGRESO (Fila 10)
     headers = [
-        "Cliente Directo", "Contacto / Tel", "Fecha Carga", "Lote Partida", 
-        "Tipo Harina", "Producto Final", "Procesamiento", "Descripción del Reclamo (Detallado)"
+        "Cliente Directo", "Contacto / Tel", "F. Carga", "Lote", 
+        "Harina", "Producto", "Proceso", "Descripción del Reclamo (Detallado)"
     ]
-    for col_num, header_title in enumerate(headers, 1):
-        cell = ws.cell(row=9, column=col_num)
-        cell.value = header_title
-        cell.fill = dark_fill
-        cell.font = white_font_9_bold
-        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-        cell.border = thin_border
+    # Anchos fijos
+    col_widths = [25, 20, 12, 12, 15, 20, 20, 60]
+    for col_num, (header, width) in enumerate(zip(headers, col_widths)):
+        worksheet.set_column(col_num, col_num, width)
+        worksheet.write(9, col_num, header, fmt_header)
 
-    # Ajustar anchos
-    widths = [20, 25, 15, 15, 18, 20, 20, 50]
-    for col_num, width in enumerate(widths, 1):
-        ws.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = width
+    # 4. PIE DE PÁGINA LEGAL (Fila 40)
+    worksheet.merge_range('A40:I40', 'DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO', fmt_legal)
 
-    # 4. PIE DE PÁGINA FIXO
-    last_row = 35
-    # Firmas
-    ws.cell(row=last_row, column=2, value="Firma del Profesional").font = label_font
-    ws.cell(row=last_row, column=2).alignment = Alignment(horizontal='center')
-    ws.cell(row=last_row-1, column=2).border = Border(top=Side(style='thin'))
+    workbook.close()
+    output.seek(0)
     
-    ws.cell(row=last_row, column=7, value="Recepción Cliente").font = label_font
-    ws.cell(row=last_row, column=7).alignment = Alignment(horizontal='center')
-    ws.cell(row=last_row-1, column=7).border = Border(top=Side(style='thin'))
-
-    # Leyenda Legal
-    ws.merge_cells(f'A{last_row+2}:I{last_row+2}')
-    cell_legal = ws.cell(row=last_row+2, column=1)
-    cell_legal.value = "DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO"
-    cell_legal.font = Font(name='Arial', size=7, italic=True, color="666666")
-    cell_legal.alignment = Alignment(horizontal='center')
-
-    # Guardar
-    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response["Content-Disposition"] = "attachment; filename=Plantilla_Reclamos_Burzaco.xlsx"
-    wb.save(response)
+    response = HttpResponse(
+        output.read(), 
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = "attachment; filename=Plantilla_Reclamos_Tecnicos_Burzaco.xlsx"
     return response
 
 @api_view(['POST'])
@@ -398,136 +349,74 @@ def generate_technical_report_view(request):
             filename = f"IT_{client_name}_{proj_name}_{report_date_str}.pdf"
             return FileResponse(buffer, as_attachment=True, filename=filename)
 
-        # --- LÓGICA EXCEL BURZACO HIGH-FIDELITY (COORDINATES PROMPT) ---
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "INFORME TÉCNICO"
+        # --- LÓGICA EXCEL BURZACO RÍGIDA (XlsxWriter) ---
+        import xlsxwriter
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output)
+        ws = workbook.add_worksheet("INFORME TÉCNICO")
 
-        # --- ESTILOS BURZACO ---
-        burzaco_dark = "333333"
-        burzaco_gray_light = "F1F5F9"
-        white_font_16_bold = Font(name='Arial', bold=True, size=16, color="FFFFFF")
-        white_font_9_bold = Font(name='Arial', bold=True, size=9, color="FFFFFF")
-        sec_title_font = Font(name='Arial', bold=True, size=11, color="FFFFFF")
-        label_font = Font(name='Arial', bold=True, size=9, color="333333")
-        value_font = Font(name='Arial', size=10, color="000000")
-        dark_fill = PatternFill(start_color=burzaco_dark, end_color=burzaco_dark, fill_type="solid")
-        light_fill = PatternFill(start_color=burzaco_gray_light, end_color=burzaco_gray_light, fill_type="solid")
-        
-        thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+        # Formatos
+        fmt_title = workbook.add_format({'bold': True, 'font_size': 18, 'font_color': 'white', 'bg_color': '#212121', 'align': 'center', 'valign': 'vcenter', 'border': 1})
+        fmt_subtitle = workbook.add_format({'bold': False, 'font_size': 12, 'font_color': 'white', 'bg_color': '#424242', 'align': 'center', 'valign': 'vcenter', 'border': 1})
+        fmt_label = workbook.add_format({'bold': True, 'bg_color': '#F1F5F9', 'border': 1})
+        fmt_value = workbook.add_format({'border': 1, 'bg_color': 'white'})
+        fmt_header = workbook.add_format({'bold': True, 'font_color': 'white', 'bg_color': '#333333', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
+        fmt_sec = workbook.add_format({'bold': True, 'font_color': 'white', 'bg_color': '#333333', 'border': 1})
+        fmt_legal = workbook.add_format({'italic': True, 'font_size': 7, 'align': 'center'})
 
-        # 1. ENCABEZADO INSTITUCIONAL (F1-4)
-        # Logo: A1:B4
-        ws.merge_cells('A1:B4')
-        from openpyxl.drawing.image import Image as XLImage
-        import os
+        # 1. ENCABEZADO
+        ws.merge_range('A1:B5', "", fmt_value)
         logo_path = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo_institucional.png')
         if os.path.exists(logo_path):
-            img = XLImage(logo_path)
-            img.width = 100
-            img.height = 100
-            ws.add_image(img, 'A1')
-        ws['A1'].border = thin_border
+            ws.insert_image('A1', logo_path, {'x_offset': 10, 'y_offset': 10, 'x_scale': 0.8, 'y_scale': 0.8})
 
-        # Nombre de Marca: C1:G2
-        ws.merge_cells('C1:G2')
-        ws['C1'] = "GESTIÓN TÉCNICA Y DESARROLLO"
-        ws['C1'].fill = dark_fill
-        ws['C1'].font = white_font_16_bold
-        ws['C1'].alignment = Alignment(horizontal='center', vertical='center')
-        ws['C1'].border = thin_border
+        ws.merge_range('C1:G3', "GESTIÓN TÉCNICA Y DESARROLLO", fmt_title)
+        ws.merge_range('C4:G5', "Harinas y Panificados", fmt_subtitle)
+        ref_date = timezone.now().strftime('%d/%m/%Y')
+        ws.merge_range('H1:I5', f"IT-RECLAMO\n{ref_date}", workbook.add_format({'border': 2, 'align': 'center', 'valign': 'vcenter', 'text_wrap': True}))
 
-        # Slogan: C3:G4
-        ws.merge_cells('C3:G4')
-        ws['C3'] = "Harinas y Panificados"
-        ws['C3'].font = Font(name='Arial', italic=True, size=11, color="666666")
-        ws['C3'].alignment = Alignment(horizontal='center', vertical='center')
-        ws['C3'].border = thin_border
+        # 2. DATOS
+        ws.write('A7', 'CLIENTE:', fmt_label)
+        ws.merge_range('B7:D7', project.client.name if project.client else "---", fmt_value)
+        ws.write('E7', 'PROYECTO:', fmt_label)
+        ws.merge_range('F7:H7', project.name, fmt_value)
 
-        # Referencia: H1:I4
-        ws.merge_cells('H1:I4')
-        ws['H1'] = f"REFERENCIA / FECHA\n\nIT-{report_date_str.replace('-','') or ''}"
-        ws['H1'].font = Font(name='Arial', bold=True, size=8, color="333333")
-        ws['H1'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-        ws['H1'].border = thin_border
+        # 3. CONTENIDO
+        curr = 9
+        ws.write(curr, 0, "CONCLUSIONES Y OBSERVACIONES TÉCNICAS", fmt_sec)
+        ws.merge_range(curr, 0, curr, 8, "CONCLUSIONES Y OBSERVACIONES TÉCNICAS", fmt_sec)
+        curr += 1
+        ws.merge_range(curr, 0, curr+4, 8, str(conclusions or ''), workbook.add_format({'border': 1, 'valign': 'top', 'text_wrap': True}))
+        curr += 6
 
-        # 2. BLOQUES DE IDENTIFICACIÓN (F6)
-        ws['A6'] = "CLIENTE:"
-        ws['A6'].font = label_font
-        ws['A6'].fill = light_fill
-        ws.merge_cells('B6:D6')
-        ws['B6'] = project.client.name if project.client else "---"
-        ws['B6'].font = value_font
-        ws['B6'].border = thin_border
-
-        ws['E6'] = "PROYECTO:"
-        ws['E6'].font = label_font
-        ws['E6'].fill = light_fill
-        ws.merge_cells('F6:H6')
-        ws['F6'] = project.name
-        ws['F6'].font = value_font
-        ws['F6'].border = thin_border
-
-        current_row = 9
-
-        def draw_burzaco_section(row, text):
-            ws.merge_cells(f'A{row}:I{row}')
-            cell = ws.cell(row=row, column=1, value=text)
-            cell.font = sec_title_font
-            cell.fill = dark_fill
-            cell.alignment = Alignment(horizontal='left', vertical='center', indent=1)
-            return row + 1
-
-        # CONCLUSIONES
-        current_row = draw_burzaco_section(current_row, "CONCLUSIONES Y OBSERVACIONES TÉCNICAS")
-        ws.merge_cells(f'A{current_row}:I{current_row+4}')
-        ws.cell(row=current_row, column=1, value=str(conclusions or '')).alignment = Alignment(horizontal='left', vertical='top', wrap_text=True)
-        for r in range(current_row, current_row + 5):
-            for c in range(1, 10):
-                ws.cell(row=r, column=c).border = thin_border
-        current_row += 6
-
-        # RESULTADOS
-        current_row = draw_burzaco_section(current_row, "RESULTADOS DE LABORATORIO / ENSAYOS")
+        ws.merge_range(curr, 0, curr, 8, "RESULTADOS DE ENSAYOS", fmt_sec)
+        curr += 1
         h_labels = ["CÓDIGO", "FECHA", "HARINA BASE", "DESCRIPCIÓN", "PUNTAJE", "CONCLUSIÓN"]
-        for i, label in enumerate(h_labels, 1):
-            cell = ws.cell(row=current_row, column=i, value=label)
-            cell.font = white_font_9_bold
-            cell.fill = dark_fill
-            cell.border = thin_border
+        col_widths = [15, 12, 15, 30, 10, 40]
+        for i, (label, w) in enumerate(zip(h_labels, col_widths)):
+            ws.set_column(i, i, w)
+            ws.write(curr, i, label, fmt_header)
         
-        current_row += 1
+        curr += 1
         for ed in essays_data:
-            ws.cell(row=current_row, column=1, value=str(ed.get('code', ''))).border = thin_border
-            ws.cell(row=current_row, column=2, value=str(ed.get('date', ''))).border = thin_border
-            ws.cell(row=current_row, column=3, value=str(ed.get('base_flour_name', ''))).border = thin_border
-            ws.cell(row=current_row, column=4, value=str(ed.get('description', ''))).border = thin_border
-            ws.cell(row=current_row, column=5, value=f"{ed.get('final_score',0)}/10").border = thin_border
-            ws.cell(row=current_row, column=6, value=str(ed.get('conclusion', ''))).border = thin_border
-            current_row += 1
+            ws.write(curr, 0, str(ed.get('code', '')), fmt_value)
+            ws.write(curr, 1, str(ed.get('date', '')), fmt_value)
+            ws.write(curr, 2, str(ed.get('base_flour_name', '')), fmt_value)
+            ws.write(curr, 3, str(ed.get('description', '')), fmt_value)
+            ws.write(curr, 4, str(ed.get('final_score', 0)), fmt_value)
+            ws.write(curr, 5, str(ed.get('conclusion', '')), fmt_value)
+            curr += 1
 
-        # Ajuste de columnas
-        col_widths = [15, 15, 20, 30, 10, 40]
-        for i, w in enumerate(col_widths, 1):
-            ws.column_dimensions[get_column_letter(i)].width = w
+        # Pie legal
+        ws.merge_range(40, 0, 40, 8, 'DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO', fmt_legal)
 
-        # Pie de página
-        current_row += 4
-        ws.cell(row=current_row, column=2, value="Firma del Profesional").font = label_font
-        ws.cell(row=current_row-1, column=2).border = Border(top=Side(style='thin'))
-        ws.cell(row=current_row, column=7, value="Recepción Cliente").font = label_font
-        ws.cell(row=current_row-1, column=7).border = Border(top=Side(style='thin'))
-
-        current_row += 2
-        ws.merge_cells(f'A{current_row}:I{current_row}')
-        ws.cell(row=current_row, column=1, value="DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO").font = Font(size=7, italic=True, color="666666")
-        ws.cell(row=current_row, column=1).alignment = Alignment(horizontal='center')
-
+        workbook.close()
         buffer = io.BytesIO()
-        wb.save(buffer)
+        buffer.write(output.getvalue())
         buffer.seek(0)
         filename = f"IT_{client_name}_{proj_name}_{report_date_str}.xlsx"
         return FileResponse(buffer, as_attachment=True, filename=filename)
+
 
 
     except Exception as e:
