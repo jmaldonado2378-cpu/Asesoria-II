@@ -174,9 +174,13 @@ def download_complaint_template(request):
     if not os.path.exists(template_path):
         return Response({"error": "Plantilla 'reclamo.xlsx' no encontrada en el servidor."}, status=404)
 
-    # Cargar el 'Estándar de Oro' del usuario
+    # Cargar el 'Estándar de Oro' del usuario (Google Sheets Sync)
     wb = openpyxl.load_workbook(template_path)
-    ws = wb.active # Según inspección, el diseño está en la primera hoja activa
+    # Seleccionamos la hoja maestra de Google Sheets
+    if "PLANTILLA_RECLAMOS" in wb.sheetnames:
+        ws = wb["PLANTILLA_RECLAMOS"]
+    else:
+        ws = wb.active
 
     # --- INYECCIÓN DINÁMICA DE CAMPOS (Mapeo de Usuario) ---
     if project:
