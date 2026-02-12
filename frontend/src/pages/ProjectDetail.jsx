@@ -512,10 +512,28 @@ export default function ProjectDetail() {
                                             <td className="p-4 text-[9px] font-bold text-slate-500 uppercase truncate max-w-[200px]">{rep.technical_observations}</td>
                                             <td className="p-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">
-                                                    <button onClick={() => exportTechnicalExcel(rep)} className="bg-slate-800 text-white px-3 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-widest hover:bg-indigo-600 transition flex items-center gap-2 shadow-lg">
+                                                    <button
+                                                        onClick={() => exportTechnicalExcel({
+                                                            project: id,
+                                                            start_date: rep.start_date,
+                                                            end_date: rep.end_date,
+                                                            technical_observations: rep.technical_observations,
+                                                            report_date: rep.report_date
+                                                        })}
+                                                        className="bg-slate-800 text-white px-3 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-widest hover:bg-indigo-600 transition flex items-center gap-2 shadow-lg"
+                                                    >
                                                         <FileSpreadsheet size={12} /> Excel
                                                     </button>
-                                                    <button onClick={() => exportTechnicalPDF(rep)} className="bg-indigo-600 text-white px-3 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-widest hover:bg-slate-900 transition flex items-center gap-2 shadow-lg">
+                                                    <button
+                                                        onClick={() => exportTechnicalPDF({
+                                                            project: id,
+                                                            start_date: rep.start_date,
+                                                            end_date: rep.end_date,
+                                                            technical_observations: rep.technical_observations,
+                                                            report_date: rep.report_date
+                                                        })}
+                                                        className="bg-indigo-600 text-white px-3 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-widest hover:bg-slate-900 transition flex items-center gap-2 shadow-lg"
+                                                    >
                                                         <FileText size={12} /> PDF
                                                     </button>
                                                 </div>
