@@ -488,4 +488,8 @@ def generate_technical_report_view(request):
         print("--- CRITICAL ERROR IN REPORT GENERATION ---")
         print(error_details)
         print("-------------------------------------------")
-        return Response({"error": f"Error en generación final: {str(e)}"}, status=500)
+        # EXPOMEMOS EL TRACEBACK PARA DEPURACIÓN EN DESPLIEGUE
+        return Response({
+            "error": f"Error en generación final: {str(e)}",
+            "traceback": error_details 
+        }, status=500)
