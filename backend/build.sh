@@ -1,3 +1,6 @@
+# --- pip upgrade ---
+python -m pip install --upgrade pip
+
 # --- FRONTEND BUILD ---
 echo ">>> Iniciando construcción de Frontend (React/Vite)..."
 cd frontend

@@ -231,6 +231,11 @@ class Ensayo(models.Model):
     def __str__(self):
         return f"{self.code} - {self.project.client.name}"
     
+    def get_base_flour_name(self):
+        """Devuelve el nombre de la harina base del ensayo."""
+        detail = self.details.filter(ingredient__is_base_flour=True).first()
+        return detail.ingredient.name if detail else "No especificada"
+
     def save(self, *args, **kwargs):
         if not self.code:
             current_year = timezone.now().year

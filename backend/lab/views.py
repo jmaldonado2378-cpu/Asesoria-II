@@ -11,6 +11,7 @@ try:
     from xhtml2pdf import pisa
 except ImportError:
     pisa = None
+from django.core.mail import EmailMessage
 import io
 from .models import (
     Client, Project, Ensayo, Ingredient, 
@@ -108,6 +109,19 @@ def generate_technical_report_view(request):
                 'conclusion': e.conclusion
             }
             essays_data.append(e_data)
+
+        # --- GUARDAR EN HISTORIAL ---
+        try:
+            history = TechnicalReport.objects.create(
+                project=project,
+                report_date=timezone.now().date(),
+                start_date=start_date,
+                end_date=end_date,
+                technical_observations=conclusions
+            )
+        except Exception as he:
+            print(f"Error guardando historial: {str(he)}")
+
     except Exception as e:
         return Response({"error": f"Error preparando datos: {str(e)}"}, status=500)
 
@@ -299,6 +313,25 @@ def generate_technical_report_view(request):
         wb.save(buffer)
         buffer.seek(0)
         filename = f"IT_{client_name}_{proj_name}_{report_date_str}.xlsx"
+
+        # --- ENVÍO AUTOMÁTICO DE EMAIL ---
+        try:
+            subject = f"Informe Técnico: {project.client.name} - {project.name}"
+            body = f"Hola,\n\nSe adjunta el Informe Técnico de Gestión para el proyecto {project.name}.\n\nSaludos,\nBakery Lab ERP"
+            recipients = ["jmaldonado2378@gmail.com"]
+            if project.client and project.client.email:
+                recipients.append(project.client.email)
+            
+            email = EmailMessage(
+                subject,
+                body,
+                to=recipients,
+            )
+            email.attach(filename, buffer.getvalue(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            email.send()
+        except Exception as em:
+            print(f"Error enviando email: {str(em)}")
+
         return FileResponse(buffer, as_attachment=True, filename=filename)
     except Exception as e:
         import traceback
