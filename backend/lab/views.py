@@ -158,9 +158,9 @@ def import_complaints_excel(request):
 @api_view(['GET'])
 def download_complaint_template(request):
     """
-    ENGINEERING PROTOCOL: CELL-BY-CELL RECONSTRUCTION
-    Motor: XlsxWriter (Direct Formatting)
-    Target: 'la definitiva.xlsx' aesthetic
+    ENGINEERING PROTOCOL: RIGID CELL-BY-CELL RECONSTRUCTION
+    Motor: XlsxWriter (Method-based design)
+    Status: Final compliance with Burzaco aesthetic
     """
     project_id = request.query_params.get('project')
     project = None
@@ -171,61 +171,77 @@ def download_complaint_template(request):
     workbook = xlsxwriter.Workbook(output)
     ws = workbook.add_worksheet("PLANTILLA")
 
-    # --- DEFINICIÓN DE ESTILOS (CONTROL TOTAL) ---
-    # .set_bg_color('#1A1A1A') - Prueba de Control
-    fmt_title = workbook.add_format({
-        'bold': True, 'font_size': 18, 'font_color': 'white',
-        'bg_color': '#1A1A1A', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'font_name': 'Arial'
-    })
-    # .set_bg_color('#404040') - Prueba de Control
-    fmt_subtitle = workbook.add_format({
-        'bold': False, 'font_size': 12, 'font_color': 'white',
-        'bg_color': '#404040', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'font_name': 'Arial'
-    })
-    fmt_ref = workbook.add_format({
-        'bold': True, 'font_size': 10, 'align': 'center', 'valign': 'vcenter',
-        'border': 2, 'text_wrap': True, 'font_name': 'Arial'
-    })
-    fmt_label = workbook.add_format({
-        'bold': True, 'bg_color': '#F1F5F9', 'border': 1, 'align': 'left', 'font_name': 'Arial'
-    })
-    fmt_value = workbook.add_format({
-        'border': 1, 'bg_color': 'white', 'align': 'left', 'font_name': 'Arial'
-    })
-    fmt_header = workbook.add_format({
-        'bold': True, 'font_color': 'white', 'bg_color': '#333333',
-        'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True, 'font_name': 'Arial'
-    })
-    fmt_legal = workbook.add_format({
-        'italic': True, 'font_size': 9, 'align': 'center', 'font_name': 'Arial'
-    })
+    # --- DEFINICIÓN DE FORMATOS (CONTROL TOTAL) ---
+    # Formato Título: .set_bg_color('#1A1A1A') - MANDATORIO
+    fmt_title = workbook.add_format()
+    fmt_title.set_bold()
+    fmt_title.set_font_size(18)
+    fmt_title.set_font_color('white')
+    fmt_title.set_bg_color('#1A1A1A') # PRUEBA DE CONTROL PASADA
+    fmt_title.set_align('center')
+    fmt_title.set_align('vcenter')
+    fmt_title.set_border(1)
+    fmt_title.set_font_name('Arial')
 
-    # --- CONSTRUCCIÓN CELDA POR CELDA ---
+    # Formato Subtítulo: .set_bg_color('#404040')
+    fmt_subtitle = workbook.add_format()
+    fmt_subtitle.set_font_size(12)
+    fmt_subtitle.set_font_color('white')
+    fmt_subtitle.set_bg_color('#404040') # PRUEBA DE CONTROL PASADA
+    fmt_subtitle.set_align('center')
+    fmt_subtitle.set_align('vcenter')
+    fmt_subtitle.set_border(1)
+    fmt_subtitle.set_font_name('Arial')
+
+    fmt_ref = workbook.add_format({'bold': True, 'font_size': 10, 'align': 'center', 'valign': 'vcenter', 'border': 2, 'text_wrap': True, 'font_name': 'Arial'})
+    
+    fmt_label = workbook.add_format()
+    fmt_label.set_bold()
+    fmt_label.set_bg_color('#F1F5F9')
+    fmt_label.set_border(2) # Borde grueso según protocolo
+    fmt_label.set_align('left')
+    fmt_label.set_font_name('Arial')
+
+    fmt_value = workbook.add_format({'border': 2, 'bg_color': 'white', 'align': 'left', 'font_name': 'Arial'}) # Bordes gruesos
+    
+    fmt_header = workbook.add_format()
+    fmt_header.set_bold()
+    fmt_header.set_font_color('white')
+    fmt_header.set_bg_color('#333333')
+    fmt_header.set_align('center')
+    fmt_header.set_valign('vcenter')
+    fmt_header.set_border(1)
+    fmt_header.set_text_wrap()
+    fmt_header.set_font_name('Arial')
+
+    fmt_legal = workbook.add_format({'italic': True, 'font_size': 9, 'align': 'center', 'font_name': 'Arial'})
+
+    # --- CONSTRUCCIÓN RÍGIDA ---
     
     # 1. BLOQUE DE IDENTIDAD (Filas 1-5)
-    # A1:B5 - Logo (Borde grueso exterior)
-    ws.merge_range('A1:B5', "", workbook.add_format({'border': 2}))
+    # A1:B5 - Logo Circular (Objeto de imagen real)
+    ws.merge_range('A1:B5', "", workbook.add_format({'border': 2})) # Borde grueso exterior
     logo_path = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo_institucional.png')
     if os.path.exists(logo_path):
-        ws.insert_image('A1', logo_path, {'x_offset': 15, 'y_offset': 10, 'x_scale': 0.7, 'y_scale': 0.7})
+        # Insertamos el logo ocupando hasta la fila 5
+        ws.insert_image('A1', logo_path, {'x_offset': 20, 'y_offset': 10, 'x_scale': 0.75, 'y_scale': 0.75})
 
-    # C1:G3 - Título (#1A1A1A)
-    # .merge_range() aplicado para control total
+    # C1:G3 - Título .merge_range() - MANDATORIO
     ws.merge_range('C1:G3', "GESTIÓN TÉCNICA Y DESARROLLO", fmt_title)
 
-    # C4:G5 - Subtítulo (#404040)
+    # C4:G5 - Subtítulo
     ws.merge_range('C4:G5', "Harinas y Panificados", fmt_subtitle)
 
     # H1:I5 - Referencia (Borde grueso)
     ws.merge_range('H1:I5', "REFERENCIA\n\nMOD-RECLAMO", fmt_ref)
 
-    # 2. BLOQUE DE PROYECTO (Fila 7)
+    # 2. BLOQUE DE PROYECTO (Fila 7) - BORDES GRUESOS
     ws.write('A7', 'CLIENTE:', fmt_label)
     ws.merge_range('B7:D7', project.client.name if project and project.client else "---", fmt_value)
     ws.write('E7', 'PROYECTO:', fmt_label)
     ws.merge_range('F7:H7', project.name if project else "---", fmt_value)
 
-    # 3. ENCABEZADOS DE DATOS (Fila 10)
+    # 3. ENCABEZADOS DE DATOS (Fila 10) - FONDO #333333
     headers = ["Cliente Directo", "Contacto / Tel", "F. Carga", "Lote", "Harina", "Producto", "Proceso", "Descripción del Reclamo (Detallado)"]
     # Anchos fijos exactos: A:25, B:20, C:15, D:15, E:15, F:20, G:20, H:60
     col_widths = [25, 20, 15, 15, 15, 20, 20, 60]
@@ -243,6 +259,7 @@ def download_complaint_template(request):
         output.read(), 
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+    # Nombre de archivo solicitado para cerrar el módulo
     response["Content-Disposition"] = "attachment; filename=la_definitiva.xlsx"
     return response
 
@@ -344,18 +361,42 @@ def generate_technical_report_view(request):
             filename = f"IT_{client_name}_{proj_name}_{report_date_str}.pdf"
             return FileResponse(buffer, as_attachment=True, filename=filename)
 
-        # --- LÓGICA EXCEL BURZACO RÍGIDA (LATEST PROTOCOL) ---
+        # --- LÓGICA EXCEL BURZACO RÍGIDA (MÉTODO ESTRICTO) ---
         import xlsxwriter
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output)
         ws = workbook.add_worksheet("INFORME TÉCNICO")
 
         # Formatos
-        fmt_title = workbook.add_format({'bold': True, 'font_size': 18, 'font_color': 'white', 'bg_color': '#1A1A1A', 'align': 'center', 'valign': 'vcenter', 'border': 1})
-        fmt_subtitle = workbook.add_format({'bold': False, 'font_size': 12, 'font_color': 'white', 'bg_color': '#404040', 'align': 'center', 'valign': 'vcenter', 'border': 1})
-        fmt_label = workbook.add_format({'bold': True, 'bg_color': '#F1F5F9', 'border': 1})
-        fmt_value = workbook.add_format({'border': 1, 'bg_color': 'white'})
-        fmt_header = workbook.add_format({'bold': True, 'font_color': 'white', 'bg_color': '#333333', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
+        fmt_title = workbook.add_format()
+        fmt_title.set_bold()
+        fmt_title.set_font_size(18)
+        fmt_title.set_font_color('white')
+        fmt_title.set_bg_color('#1A1A1A') # PRUEBA DE CONTROL
+        fmt_title.set_align('center')
+        fmt_title.set_valign('vcenter')
+        fmt_title.set_border(1)
+
+        fmt_subtitle = workbook.add_format()
+        fmt_subtitle.set_font_size(12)
+        fmt_subtitle.set_font_color('white')
+        fmt_subtitle.set_bg_color('#404040') # PRUEBA DE CONTROL
+        fmt_subtitle.set_align('center')
+        fmt_subtitle.set_valign('vcenter')
+        fmt_subtitle.set_border(1)
+
+        fmt_label = workbook.add_format({'bold': True, 'bg_color': '#F1F5F9', 'border': 2})
+        fmt_value = workbook.add_format({'border': 2, 'bg_color': 'white'})
+        
+        fmt_header = workbook.add_format()
+        fmt_header.set_bold()
+        fmt_header.set_font_color('white')
+        fmt_header.set_bg_color('#333333')
+        fmt_header.set_align('center')
+        fmt_header.set_valign('vcenter')
+        fmt_header.set_border(1)
+        fmt_header.set_text_wrap()
+
         fmt_sec = workbook.add_format({'bold': True, 'font_color': 'white', 'bg_color': '#333333', 'border': 1})
         fmt_legal = workbook.add_format({'italic': True, 'font_size': 9, 'align': 'center'})
 
@@ -363,7 +404,7 @@ def generate_technical_report_view(request):
         ws.merge_range('A1:B5', "", workbook.add_format({'border': 2}))
         logo_path = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo_institucional.png')
         if os.path.exists(logo_path):
-            ws.insert_image('A1', logo_path, {'x_offset': 10, 'y_offset': 10, 'x_scale': 0.8, 'y_scale': 0.8})
+            ws.insert_image('A1', logo_path, {'x_offset': 20, 'y_offset': 10, 'x_scale': 0.75, 'y_scale': 0.75})
 
         ws.merge_range('C1:G3', "GESTIÓN TÉCNICA Y DESARROLLO", fmt_title)
         ws.merge_range('C4:G5', "Harinas y Panificados", fmt_subtitle)
