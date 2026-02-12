@@ -1,3 +1,4 @@
+set -e
 # --- pip upgrade ---
 python -m pip install --upgrade pip
 

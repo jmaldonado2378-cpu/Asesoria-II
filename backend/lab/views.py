@@ -5,16 +5,9 @@ from rest_framework.response import Response
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-import openpyxl
-from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
-from django.template.loader import render_to_string
-try:
-    from xhtml2pdf import pisa
-except ImportError:
-    pisa = None
-from django.core.mail import EmailMessage
 from datetime import datetime
 import io
+import os
 from .models import (
     Client, Project, Ensayo, Ingredient, 
     ProjectIngredientPrice, Visit, EnsayoDetail, EnsayoImage,
@@ -148,6 +141,14 @@ def import_complaints_excel(request):
 
 @api_view(['POST'])
 def generate_technical_report_view(request):
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+    from django.template.loader import render_to_string
+    try:
+        from xhtml2pdf import pisa
+    except ImportError:
+        pisa = None
+    from django.core.mail import EmailMessage
     """
     Genera un reporte técnico profesional. Soporta formatos Excel (default) y PDF.
     """
