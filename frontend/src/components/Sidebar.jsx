@@ -17,8 +17,13 @@ export default function Sidebar() {
 
     return (
         <div className="h-screen w-20 bg-slate-900 flex flex-col items-center py-6 fixed left-0 top-0 border-r border-slate-800 z-50 print:hidden shadow-2xl">
-            <div className="mb-10 text-orange-500 hover:scale-110 transition-transform cursor-pointer group">
-                <Wheat size={32} strokeWidth={2} className="group-hover:rotate-12 transition-transform" />
+            <div className="mb-10 flex flex-col items-center gap-2 group cursor-pointer transition-transform hover:scale-105">
+                <div className="text-orange-500">
+                    <Wheat size={32} strokeWidth={2} className="group-hover:rotate-12 transition-transform" />
+                </div>
+                <div className="text-[7px] text-slate-400 font-bold text-center leading-tight uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">
+                    Gestión Técnica<br />& Desarrollo
+                </div>
             </div>
 
             <nav className="flex-1 w-full space-y-2">

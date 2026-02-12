@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>Reporte de Ensayo - {{ ensayo.code }}</title>
@@ -7,18 +8,21 @@
         @page {
             size: A4;
             margin: 2cm;
+
             @bottom-right {
                 content: "Página " counter(page) " de " counter(pages);
                 font-size: 9pt;
                 color: #666;
             }
         }
+
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             color: #333;
             line-height: 1.5;
             font-size: 10pt;
         }
+
         .header {
             border-bottom: 2px solid #2563eb;
             padding-bottom: 10px;
@@ -27,6 +31,7 @@
             justify-content: space-between;
             align-items: center;
         }
+
         .logo-placeholder {
             width: 150px;
             height: 50px;
@@ -38,15 +43,18 @@
             color: #94a3b8;
             font-size: 8pt;
         }
+
         .report-title {
             text-align: right;
         }
+
         .report-title h1 {
             margin: 0;
             color: #2563eb;
             font-size: 18pt;
             text-transform: uppercase;
         }
+
         .metadata-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -56,11 +64,13 @@
             padding: 15px;
             border-radius: 8px;
         }
+
         .metadata-item b {
             color: #475569;
             width: 120px;
             display: inline-block;
         }
+
         .section-title {
             background-color: #e2e8f0;
             padding: 5px 10px;
@@ -69,11 +79,13 @@
             margin-bottom: 15px;
             border-left: 4px solid #2563eb;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 30px;
         }
+
         th {
             background-color: #f1f5f9;
             text-align: left;
@@ -83,14 +95,17 @@
             color: #64748b;
             text-transform: uppercase;
         }
+
         td {
             padding: 10px;
             border-bottom: 1px solid #f1f5f9;
         }
+
         .numeric {
             text-align: right;
             font-family: 'Courier New', Courier, monospace;
         }
+
         .ppm-badge {
             background-color: #dcfce7;
             color: #166534;
@@ -99,16 +114,19 @@
             font-size: 8pt;
             font-weight: bold;
         }
+
         .footer {
             margin-top: 50px;
             padding-top: 20px;
             border-top: 1px solid #e2e8f0;
         }
+
         .signature-box {
             margin-top: 60px;
             display: flex;
             justify-content: flex-end;
         }
+
         .signature-line {
             width: 200px;
             border-top: 1px solid #333;
@@ -118,11 +136,14 @@
         }
     </style>
 </head>
+
 <body>
     <div class="header">
-        <div class="logo-placeholder">BAKERY LAB LOGO</div>
+        <div class="logo-placeholder">
+            <img src="/static/images/logo_institucional.png" alt="Logo" style="max-height: 40px;">
+        </div>
         <div class="report-title">
-            <h1>Reporte de Ensayo</h1>
+            <h1>GESTIÓN TÉCNICA Y DESARROLLO</h1>
             <div>Código: <b>{{ ensayo.code }}</b></div>
         </div>
     </div>
@@ -167,14 +188,16 @@
 
     <div class="footer">
         <div class="section-title">Conclusión Técnica</div>
-        <p>El ensayo cumple con los parámetros de dosificación requeridos para la optimización de la red de gluten. Los niveles de PPM se encuentran dentro del rango operativo estándar.</p>
-        
+        <p>El ensayo cumple con los parámetros de dosificación requeridos para la optimización de la red de gluten. Los
+            niveles de PPM se encuentran dentro del rango operativo estándar.</p>
+
         <div class="signature-box">
             <div class="signature-line">
                 Firma Responsable Lab<br>
-                Bakery Lab ERP
+                GESTIÓN TÉCNICA Y DESARROLLO - Harinas y Panificados
             </div>
         </div>
     </div>
 </body>
+
 </html>

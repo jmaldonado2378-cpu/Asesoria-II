@@ -157,68 +157,113 @@ def import_complaints_excel(request):
 @api_view(['GET'])
 def download_complaint_template(request):
     """
-    Generates a styled Excel template for technical complaints.
+    Generates a high-fidelity Excel template for technical complaints
+    following the institution architectural style of GESTIÓN TÉCNICA Y DESARROLLO reports.
     """
     import openpyxl
     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
     from django.http import HttpResponse
     
+    project_id = request.query_params.get('project')
+    project = None
+    if project_id:
+        project = Project.objects.filter(id=project_id).first()
+
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Reclamo Técnico"
+    ws.title = "RECLAMO TÉCNICO"
     
-    # Define styles
-    header_fill = PatternFill(start_color="333333", end_color="333333", fill_type="solid")
-    header_font = Font(color="FFFFFF", bold=True, size=12)
-    sub_header_fill = PatternFill(start_color="555555", end_color="555555", fill_type="solid")
-    center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    # 1. PAGE SETUP (A4 Portrait)
+    ws.page_setup.paperSize = 9 # A4
+    ws.page_setup.orientation = 'portrait'
+    ws.page_margins.left = 0.3
+    ws.page_margins.right = 0.3
+    ws.page_margins.top = 0.5
+    ws.page_margins.bottom = 0.5
+
+    # 2. DEFINICIÓN DE ESTILOS (Sincronizados con Informe Técnico)
+    title_font = Font(name='Arial', bold=True, size=18, color="1E293B")
+    label_font = Font(name='Arial', bold=True, size=8, color="64748B")
+    value_font = Font(name='Arial', bold=True, size=10, color="0F172A")
+    header_fill = PatternFill(start_color="475569", end_color="475569", fill_type="solid")
+    header_text_font = Font(name='Arial', bold=True, size=9, color="FFFFFF")
+    info_box_fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+    
     thin_border = Border(
-        left=Side(style='thin'), 
-        right=Side(style='thin'), 
-        top=Side(style='thin'), 
-        bottom=Side(style='thin')
+        left=Side(style='thin', color="E2E8F0"), 
+        right=Side(style='thin', color="E2E8F0"), 
+        top=Side(style='thin', color="E2E8F0"), 
+        bottom=Side(style='thin', color="E2E8F0")
     )
-    
-    # 1. ENCABEZADO SUPERIOR (COMBINADO)
-    # Título principal
-    ws.merge_cells('A1:G2')
-    title_cell = ws['A1']
-    title_cell.value = "RECLAMO TÉCNICO DE CLIENTES"
-    title_cell.fill = header_fill
-    title_cell.font = Font(color="FFFFFF", bold=True, size=16)
-    title_cell.alignment = center_align
-    title_cell.border = thin_border
-    
-    # Recuadro SGC
+    thick_accent_border = Border(left=Side(style='thick', color="475569"))
+
+    # 3. ENCABEZADO INSTITUCIONAL
+    # Bloque Logo
+    ws.merge_cells('A1:B2')
+    ws['A1'] = "[ LOGO ]"
+    ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+    ws['A1'].fill = PatternFill(start_color="F8FAF6", end_color="F8FAF6", fill_type="solid")
+    ws['A1'].font = Font(italic=True, color="94A3B8")
+    ws['A1'].border = thin_border
+
+    # Título Principal
+    ws.merge_cells('C1:G2')
+    ws['C1'] = "GESTIÓN TÉCNICA Y DESARROLLO - Harinas y Panificados"
+    ws['C1'].font = title_font
+    ws['C1'].alignment = Alignment(horizontal='center', vertical='center')
+    ws['C1'].border = thin_border
+
+    # Bloque Referencia / Fecha
     ws.merge_cells('H1:I2')
-    sgc_cell = ws['H1']
-    sgc_cell.value = "SISTEMA DE GESTIÓN DE CALIDAD"
-    sgc_cell.fill = header_fill
-    sgc_cell.font = Font(color="FFFFFF", bold=True, size=10)
-    sgc_cell.alignment = center_align
-    sgc_cell.border = thin_border
+    ws['H1'] = f"REFERENCIA / FECHA\nMOD-RECL-{timezone.now().strftime('%Y%m')}"
+    ws['H1'].font = Font(name='Arial', bold=True, size=8, color="475569")
+    ws['H1'].alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    ws['H1'].fill = info_box_fill
+    ws['H1'].border = thin_border
+
+    # 4. BLOQUE DE IDENTIFICACIÓN
+    # CLIENTE
+    ws.merge_cells('A4:D4')
+    ws.cell(row=4, column=1, value="CLIENTE").font = label_font
+    ws.cell(row=4, column=1).fill = info_box_fill
+    ws.cell(row=4, column=1).border = thick_accent_border
     
-    # 2. DEFINICIÓN DE COLUMNAS
+    ws.merge_cells('A5:D5')
+    ws.cell(row=5, column=1, value=project.client.name if project and project.client else "").font = value_font
+    ws.cell(row=5, column=1).fill = info_box_fill
+    ws.cell(row=5, column=1).border = thick_accent_border
+
+    # PROYECTO
+    ws.merge_cells('E4:I4')
+    ws.cell(row=4, column=5, value="PROYECTO").font = label_font
+    ws.cell(row=4, column=5).fill = info_box_fill
+    ws.cell(row=4, column=5).border = thick_accent_border
+    
+    ws.merge_cells('E5:I5')
+    ws.cell(row=5, column=5, value=project.name if project else "").font = value_font
+    ws.cell(row=5, column=5).fill = info_box_fill
+    ws.cell(row=5, column=5).border = thick_accent_border
+
+    # 5. TABLA DE DATOS
     headers = [
-        "Cliente Nombre", "Contacto", "Fecha Entrega", "Lote Partida", 
+        "Cliente Nombre", "Contacto (Nombre/Tel)", "Fecha Entrega", "Lote Partida", 
         "Fecha Carga", "Tipo Harina", "Producto Elaborado", "Tipo Proceso", "Descripcion Reclamo"
     ]
     
-    # Escribir encabezados en fila 4 (dejamos la 3 libre para aire visual o metadatos)
+    header_row = 7
     for col_num, header_title in enumerate(headers, 1):
-        cell = ws.cell(row=4, column=col_num)
+        cell = ws.cell(row=header_row, column=col_num)
         cell.value = header_title
-        cell.fill = sub_header_fill
-        cell.font = Font(color="FFFFFF", bold=True)
-        cell.alignment = center_align
+        cell.fill = header_fill
+        cell.font = header_text_font
+        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
         cell.border = thin_border
         
-        # Ajustar anchos
-        ws.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = 22
-    
-    ws.column_dimensions['I'].width = 50 # Descripción más ancha
-    
-    # 3. FILA DE EJEMPLO (Fila 5)
+        # Ajustar anchos (replicando Burzaco)
+        widths = [20, 25, 15, 15, 15, 20, 20, 20, 45]
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = widths[col_num-1]
+
+    # 6. FILA DE EJEMPLO
     example_row = [
         "Panadería Los Abuelos", 
         "Juan Pérez - 11 5432-6789", 
@@ -227,21 +272,38 @@ def download_complaint_template(request):
         (timezone.now() - timezone.timedelta(days=2)).strftime('%d/%m/%Y'),
         "Harina 0000", 
         "Pan de Molde", 
-        "Industrial con Sobado", 
-        "La masa presenta falta de extensibilidad y se corta al estirar."
+        "Artesanal con Sobado", 
+        "Masa con falta de fuerza, no tolera fermentación larga."
     ]
     
     for col_num, value in enumerate(example_row, 1):
-        cell = ws.cell(row=5, column=col_num)
+        cell = ws.cell(row=8, column=col_num)
         cell.value = value
+        cell.font = Font(name='Arial', size=9)
         cell.border = thin_border
         cell.alignment = Alignment(vertical="center", wrap_text=True)
 
-    # Aplicar bordes al "recuadro" del título para que se vea continuo
-    for r in range(1, 3):
-        for c in range(1, 10):
-            ws.cell(row=r, column=c).border = thin_border
+    # 7. PIE DE PÁGINA INSTITUCIONAL
+    # Espacio para firmas al final (asumimos fila 25 para dar aire si imprimen)
+    footer_start = 25
+    ws.merge_cells(start_row=footer_start, start_column=2, end_row=footer_start, end_column=3)
+    ws.cell(row=footer_start, column=2).border = Border(top=Side(style='thin', color="1E293B"))
+    ws.cell(row=footer_start+1, column=2, value="Firma del Profesional").font = label_font
+    ws.cell(row=footer_start+1, column=2).alignment = Alignment(horizontal='center')
 
+    ws.merge_cells(start_row=footer_start, start_column=6, end_row=footer_start, end_column=8)
+    ws.cell(row=footer_start, column=6).border = Border(top=Side(style='thin', color="1E293B"))
+    ws.cell(row=footer_start+1, column=6, value="Recepción Cliente").font = label_font
+    ws.cell(row=footer_start+1, column=6).alignment = Alignment(horizontal='center')
+
+    # Leyenda de Confidencialidad
+    ws.merge_cells(f'A{footer_start+4}:I{footer_start+4}')
+    legend_cell = ws.cell(row=footer_start+4, column=1)
+    legend_cell.value = "DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO • 2026"
+    legend_cell.font = Font(name='Arial', size=7, color="94A3B8")
+    legend_cell.alignment = Alignment(horizontal='center')
+
+    # Guardar y Retornar
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
@@ -385,7 +447,7 @@ def generate_technical_report_view(request):
         ws['A1'].font = Font(italic=True, color="94A3B8")
 
         ws.merge_cells('C1:G2')
-        ws['C1'] = "INFORME TÉCNICO DE GESTIÓN"
+        ws['C1'] = "GESTIÓN TÉCNICA Y DESARROLLO - Harinas y Panificados"
         ws['C1'].font = title_font
         ws['C1'].alignment = Alignment(horizontal='right', vertical='center')
 
@@ -518,7 +580,7 @@ def generate_technical_report_view(request):
 
         current_row += 3
         ws.merge_cells(f'A{current_row}:G{current_row}')
-        ws.cell(row=current_row, column=1, value="DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL BAKERY LAB ERP").font = Font(size=7, color="94A3B8")
+        ws.cell(row=current_row, column=1, value="DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO").font = Font(size=7, color="94A3B8")
         ws.cell(row=current_row, column=1).alignment = Alignment(horizontal='center')
 
         buffer = io.BytesIO()

@@ -202,7 +202,7 @@ export default function ProjectDetail() {
 
     const handleDownloadTemplate = async () => {
         try {
-            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/complaints-template/`);
+            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/complaints-template/?project=${id}`);
             if (resp.ok) {
                 const blob = await resp.blob();
                 const url = window.URL.createObjectURL(blob);
