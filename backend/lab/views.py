@@ -199,17 +199,17 @@ def download_complaint_template(request):
 
 @api_view(['POST'])
 def generate_technical_report_view(request):
+    import io
     import openpyxl
     from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+    from openpyxl.utils import get_column_letter
     from django.template.loader import render_to_string
     try:
         from xhtml2pdf import pisa
     except ImportError:
         pisa = None
     from django.core.mail import EmailMessage
-    """
-    Genera un reporte técnico profesional. Soporta formatos Excel (default) y PDF.
-    """
+
     project_id = request.data.get('project')
     start_date = request.data.get('start_date')
     end_date = request.data.get('end_date')
@@ -299,11 +299,6 @@ def generate_technical_report_view(request):
         ws.page_margins.top = 0.5
         ws.page_margins.bottom = 0.5
 
-        # Estilos de Alto Nivel
-        title_font = Font(name='Arial', bold=True, size=18, color="0F172A")
-        sec_title_font = Font(name='Arial', bold=True, size=10, color="FFFFFF")
-        label_font = Font(name='Arial', bold=True, size=8, color="64748B")
-        value_font = Font(name='Arial', bold=True, size=10, color="1E293B")
         # Estilos de Alto Nivel
         title_font = Font(name='Arial', bold=True, size=18, color="0F172A")
         sec_title_font = Font(name='Arial', bold=True, size=10, color="FFFFFF")
@@ -437,11 +432,11 @@ def generate_technical_report_view(request):
 
         current_row += 1
         for c in complaints:
-            ws.cell(row=current_row, column=1, value=str(c.loading_date)).border = thin_border
-            ws.cell(row=current_row, column=2, value=str(c.batch)).border = thin_border
-            ws.cell(row=current_row, column=3, value=str(c.flour_type)).border = thin_border
-            ws.cell(row=current_row, column=4, value=str(c.description)).border = thin_border
-            ws.cell(row=current_row, column=5, value=str(c.status)).border = thin_border
+            ws.cell(row=current_row, column=1, value=str(c.loading_date or '')).border = thin_border
+            ws.cell(row=current_row, column=2, value=str(c.batch or '')).border = thin_border
+            ws.cell(row=current_row, column=3, value=str(c.flour_type or '')).border = thin_border
+            ws.cell(row=current_row, column=4, value=str(c.description or '')).border = thin_border
+            ws.cell(row=current_row, column=5, value=str(c.status or 'Abierto')).border = thin_border
             ws.cell(row=current_row, column=6, value=str(c.technical_conclusion or '---')).border = thin_border
             current_row += 1
 
@@ -490,6 +485,7 @@ def generate_technical_report_view(request):
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
-        # Mantenemos el traceback solo en logs del servidor, no enviamos al front para producción
+        print("--- CRITICAL ERROR IN REPORT GENERATION ---")
         print(error_details)
+        print("-------------------------------------------")
         return Response({"error": f"Error en generación final: {str(e)}"}, status=500)
