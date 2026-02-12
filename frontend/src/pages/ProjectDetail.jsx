@@ -4,7 +4,7 @@ import {
     Pipette, Calculator, Save, FileSpreadsheet, FileText, ChevronRight,
     MessageSquare, Upload, Image as ImageIcon, Calendar, DollarSign,
     Activity, Building, ArrowLeft, Clock, GitCompare, TrendingUp,
-    ShoppingBag, PieChart, Plus, Trash2, AlertCircle
+    ShoppingBag, PieChart, Plus, Trash2, AlertCircle, CheckSquare, Square, Eye
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -27,6 +27,22 @@ export default function ProjectDetail() {
         conclusions: ""
     });
     const [savingObs, setSavingObs] = useState(false);
+
+    // Phase 2: Complaints enhancements
+    const [showComplaintForm, setShowComplaintForm] = useState(false);
+    const [editingComplaint, setEditingComplaint] = useState(null);
+    const [complaintForm, setComplaintForm] = useState({
+        loading_date: new Date().toISOString().split('T')[0],
+        delivery_date: '',
+        batch: '',
+        flour_type: '',
+        product_made: '',
+        process_type: '',
+        description: '',
+        status: 'Abierto',
+        technical_conclusion: '',
+        corrective_action: ''
+    });
 
     // Estado para Gastos de Materiales (Simulado en localStorage por simplicidad)
     const [materialExpenses, setMaterialExpenses] = useState([]);
@@ -181,6 +197,83 @@ export default function ProjectDetail() {
         } catch (err) {
             console.error(err);
         }
+    };
+
+    const handleDownloadTemplate = async () => {
+        try {
+            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/complaints-template/`);
+            if (resp.ok) {
+                const blob = await resp.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "Plantilla_Reclamos_Tecnicos.xlsx";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
+        } catch (err) { console.error(err); }
+    };
+
+    const handleSaveComplaint = async (e) => {
+        e.preventDefault();
+        const method = editingComplaint ? 'PATCH' : 'POST';
+        const url = editingComplaint
+            ? `${import.meta.env.VITE_API_URL}/api/complaints/${editingComplaint.id}/`
+            : `${import.meta.env.VITE_API_URL}/api/complaints/`;
+
+        const payload = { ...complaintForm, project: id };
+
+        try {
+            const resp = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (resp.ok) {
+                setShowComplaintForm(false);
+                setEditingComplaint(null);
+                // Refresh
+                const fresh = await fetch(`${import.meta.env.VITE_API_URL}/api/complaints/?project=${id}`).then(r => r.json());
+                setComplaints(fresh);
+            } else {
+                alert('Error al guardar el reclamo.');
+            }
+        } catch (err) { console.error(err); }
+    };
+
+    const openEditComplaint = (c) => {
+        setEditingComplaint(c);
+        setComplaintForm({
+            loading_date: c.loading_date,
+            delivery_date: c.delivery_date || '',
+            batch: c.batch || '',
+            flour_type: c.flour_type || '',
+            product_made: c.product_made || '',
+            process_type: c.process_type || '',
+            description: c.description || '',
+            status: c.status || 'Abierto',
+            technical_conclusion: c.technical_conclusion || '',
+            corrective_action: c.corrective_action || ''
+        });
+        setShowComplaintForm(true);
+    };
+
+    const openNewComplaint = () => {
+        setEditingComplaint(null);
+        setComplaintForm({
+            loading_date: new Date().toISOString().split('T')[0],
+            delivery_date: '',
+            batch: '',
+            flour_type: '',
+            product_made: '',
+            process_type: '',
+            description: '',
+            status: 'Abierto',
+            technical_conclusion: '',
+            corrective_action: ''
+        });
+        setShowComplaintForm(true);
     };
 
     const handleSaveObservations = async () => {
@@ -550,11 +643,18 @@ export default function ProjectDetail() {
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
                             <div className="flex justify-between items-center bg-white p-6 shadow-xl border border-slate-300 rounded-sm">
                                 <div>
-                                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Gestión de Reclamos Técnicos</h3>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Cargue archivos Excel con el formato estándar para actualización masiva.</p>
+                                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest italic">Gestión de Reclamos Técnicos</h3>
+                                    <div className="flex gap-4 mt-2">
+                                        <button onClick={openNewComplaint} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-sm text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 transition shadow-inner">
+                                            <Plus size={14} /> Nuevo Reclamo Manual
+                                        </button>
+                                        <button onClick={handleDownloadTemplate} className="flex items-center gap-2 bg-white text-slate-900 px-4 py-2 rounded-sm text-[9px] font-black uppercase tracking-widest border border-slate-300 hover:bg-slate-50 transition shadow-sm">
+                                            <FileSpreadsheet size={14} /> Descargar Plantilla
+                                        </button>
+                                    </div>
                                 </div>
-                                <label className="flex items-center gap-2 bg-slate-900 text-white px-6 py-4 rounded-sm shadow-xl hover:bg-orange-600 transition font-black text-[10px] uppercase tracking-widest cursor-pointer border border-slate-700">
-                                    <Upload size={16} /> Subir Excel de Reclamos
+                                <label className="flex items-center gap-2 bg-slate-900/5 text-slate-400 px-6 py-4 rounded-sm hover:bg-orange-600 hover:text-white transition font-black text-[10px] uppercase tracking-widest cursor-pointer border-2 border-dashed border-slate-200">
+                                    <Upload size={16} /> Update Masivo (Excel)
                                     <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleImportComplaints} />
                                 </label>
                             </div>
@@ -563,11 +663,11 @@ export default function ProjectDetail() {
                                 <table className="w-full text-left font-mono">
                                     <thead className="bg-slate-900 text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] border-b border-slate-800">
                                         <tr>
-                                            <th className="p-5">F. CARGA / ENTREGA</th>
-                                            <th className="p-5">LOTE / HARINA</th>
-                                            <th className="p-5">PRODUCTO / PROCESO</th>
+                                            <th className="p-5">DATOS / FECHA</th>
+                                            <th className="p-5">ESTADO / LOTE</th>
+                                            <th className="p-5">HARINA / PRODUCTO</th>
                                             <th className="p-5">DESCRIPCIÓN</th>
-                                            <th className="p-5 text-right">FOTOS</th>
+                                            <th className="p-5 text-right">ACCIONES</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
@@ -577,34 +677,37 @@ export default function ProjectDetail() {
                                             complaints.map(c => (
                                                 <tr key={c.id} className="hover:bg-red-50/30 transition-colors group">
                                                     <td className="p-5">
-                                                        <div className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{c.loading_date}</div>
+                                                        <div className="text-[10px] font-black text-slate-900 uppercase tracking-tight italic">{c.loading_date}</div>
                                                         <div className="text-[8px] text-slate-400 font-bold uppercase">Ent: {c.delivery_date || '-'}</div>
                                                     </td>
                                                     <td className="p-5">
-                                                        <div className="text-[10px] font-bold text-slate-900 uppercase">{c.batch || 'S/N'}</div>
-                                                        <div className="text-[9px] text-orange-600 font-black uppercase tracking-tighter">{c.flour_type || '-'}</div>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${c.status === 'Cerrado' ? 'bg-green-100 text-green-700' :
+                                                                c.status === 'En Proceso' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                                                                }`}>
+                                                                {c.status}
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-[9px] font-bold text-slate-900 uppercase tracking-tighter">Lote: {c.batch || 'S/N'}</div>
                                                     </td>
                                                     <td className="p-5">
-                                                        <div className="text-[10px] font-bold text-slate-700 uppercase">{c.product_made || '-'}</div>
-                                                        <div className="text-[8px] text-slate-400 font-bold uppercase">{c.process_type || '-'}</div>
+                                                        <div className="text-[10px] font-bold text-orange-600 uppercase mb-0.5">{c.flour_type || '-'}</div>
+                                                        <div className="text-[8px] text-slate-400 font-bold uppercase">{c.product_made || '-'}</div>
                                                     </td>
-                                                    <td className="p-5 text-[9px] font-bold text-slate-500 uppercase max-w-xs truncate">{c.description}</td>
+                                                    <td className="p-5">
+                                                        <div className="text-[9px] font-bold text-slate-500 uppercase max-w-xs">{c.description?.substring(0, 40)}...</div>
+                                                        {c.technical_conclusion && (
+                                                            <div className="mt-1 text-[8px] px-2 py-1 bg-slate-100 text-slate-600 rounded-sm italic border-l-2 border-indigo-500">
+                                                                {c.technical_conclusion.substring(0, 30)}...
+                                                            </div>
+                                                        )}
+                                                    </td>
                                                     <td className="p-5 text-right">
-                                                        <div className="flex justify-end items-center gap-3">
-                                                            {c.images && c.images.length > 0 ? (
-                                                                <div className="flex -space-x-2">
-                                                                    {c.images.slice(0, 3).map((img, idx) => (
-                                                                        <img key={img.id} src={img.image} className="w-8 h-8 rounded-full border-2 border-white object-cover shadow-sm bg-slate-100" alt="Reclamo" />
-                                                                    ))}
-                                                                    {c.images.length > 3 && (
-                                                                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[8px] font-black text-white border-2 border-white">
-                                                                            +{c.images.length - 3}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            ) : null}
-
-                                                            <label className="bg-slate-100 p-2 rounded-sm text-slate-400 hover:bg-orange-600 hover:text-white transition cursor-pointer">
+                                                        <div className="flex justify-end items-center gap-2">
+                                                            <button onClick={() => openEditComplaint(c)} className="p-2 bg-slate-900 text-white rounded-sm hover:bg-indigo-600 transition shadow-md">
+                                                                <FileText size={14} />
+                                                            </button>
+                                                            <label className="bg-slate-100 p-2 rounded-sm text-slate-400 hover:bg-orange-600 hover:text-white transition cursor-pointer shadow-sm">
                                                                 <ImageIcon size={14} />
                                                                 <input
                                                                     type="file"
@@ -741,6 +844,79 @@ export default function ProjectDetail() {
                         </div>
                     )}
                 </div>
+
+                {/* MODAL RECLAMO (NUEVO/EDITAR) */}
+                {showComplaintForm && (
+                    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+                        <div className="bg-white w-full max-w-4xl rounded-sm shadow-2xl p-10 space-y-8 animate-in slide-in-from-bottom-5 duration-300 overflow-y-auto max-h-[90vh]">
+                            <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                                <h2 className="text-xl font-serif font-black text-slate-900 uppercase tracking-tighter italic">
+                                    {editingComplaint ? `Editar Reclamo #${editingComplaint.id}` : 'Registrar Nuevo Reclamo'}
+                                </h2>
+                                <button onClick={() => setShowComplaintForm(false)} className="text-slate-400 hover:text-slate-900 transition"><ArrowLeft size={24} /></button>
+                            </div>
+
+                            <form onSubmit={handleSaveComplaint} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Fecha Carga</label>
+                                            <input type="date" value={complaintForm.loading_date} onChange={e => setComplaintForm({ ...complaintForm, loading_date: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm font-mono text-xs outline-none focus:border-indigo-600" required />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Fecha Entrega</label>
+                                            <input type="date" value={complaintForm.delivery_date} onChange={e => setComplaintForm({ ...complaintForm, delivery_date: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm font-mono text-xs outline-none focus:border-indigo-600" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Lote / Partida</label>
+                                            <input value={complaintForm.batch} onChange={e => setComplaintForm({ ...complaintForm, batch: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-xs font-bold uppercase outline-none focus:border-indigo-600" placeholder="Ej: L-450" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Status del Caso</label>
+                                            <select value={complaintForm.status} onChange={e => setComplaintForm({ ...complaintForm, status: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-xs font-black uppercase outline-none focus:border-orange-600">
+                                                <option value="Abierto">🔴 Abierto</option>
+                                                <option value="En Proceso">🟡 En Proceso</option>
+                                                <option value="Cerrado">🟢 Cerrado</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tipo de Harina</label>
+                                        <input value={complaintForm.flour_type} onChange={e => setComplaintForm({ ...complaintForm, flour_type: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-xs font-bold uppercase outline-none focus:border-indigo-600" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Descripción del Problema</label>
+                                        <textarea value={complaintForm.description} onChange={e => setComplaintForm({ ...complaintForm, description: e.target.value })} className="w-full h-32 p-3 bg-slate-50 border border-slate-200 rounded-sm text-xs outline-none focus:border-indigo-600" required />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Producto Elaborado</label>
+                                        <input value={complaintForm.product_made} onChange={e => setComplaintForm({ ...complaintForm, product_made: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-xs font-bold uppercase outline-none focus:border-indigo-600" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Conclusión Técnica</label>
+                                        <textarea value={complaintForm.technical_conclusion} onChange={e => setComplaintForm({ ...complaintForm, technical_conclusion: e.target.value })} className="w-full h-32 p-3 bg-slate-50 border border-slate-200 rounded-sm text-xs outline-none border-l-4 border-indigo-600" placeholder="Redacte el dictamen técnico..." />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Acción Correctiva Sugerida</label>
+                                        <textarea value={complaintForm.corrective_action} onChange={e => setComplaintForm({ ...complaintForm, corrective_action: e.target.value })} className="w-full h-32 p-3 bg-slate-50 border border-slate-200 rounded-sm text-xs outline-none focus:border-green-600" />
+                                    </div>
+                                </div>
+
+                                <div className="md:col-span-2 flex justify-end gap-4 border-t border-slate-100 pt-6">
+                                    <button type="button" onClick={() => setShowComplaintForm(false)} className="px-8 py-3 bg-slate-100 text-slate-400 rounded-sm text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition">Cancelar</button>
+                                    <button type="submit" className="px-12 py-3 bg-slate-900 text-white rounded-sm text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition shadow-xl">
+                                        {editingComplaint ? 'Actualizar Registro' : 'Crear Registro Técnico'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

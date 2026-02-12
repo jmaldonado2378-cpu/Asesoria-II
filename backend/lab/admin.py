@@ -169,9 +169,20 @@ class TechnicalReportAdmin(admin.ModelAdmin):
 
 @admin.register(Complaint)
 class ComplaintAdmin(admin.ModelAdmin):
-    list_display = ('loading_date', 'project', 'batch', 'flour_type')
-    list_filter = ('loading_date', 'project')
-    search_fields = ('batch', 'description', 'flour_type')
+    list_display = ('loading_date', 'project', 'batch', 'flour_type', 'status')
+    list_filter = ('loading_date', 'project', 'status')
+    search_fields = ('batch', 'description', 'flour_type', 'technical_conclusion')
+    fieldsets = (
+        ('Información General', {
+            'fields': (('project', 'loading_date'), ('delivery_date', 'batch'), ('flour_type', 'product_made', 'process_type'))
+        }),
+        ('Detalle del Reclamo', {
+            'fields': ('description',)
+        }),
+        ('Seguimiento y Cierre', {
+            'fields': ('status', 'technical_conclusion', 'corrective_action')
+        }),
+    )
 
 @admin.register(ComplaintImage)
 class ComplaintImageAdmin(admin.ModelAdmin):

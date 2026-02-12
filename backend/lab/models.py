@@ -319,6 +319,17 @@ class Complaint(models.Model):
     product_made = models.CharField("Producto Elaborado", max_length=255, blank=True, null=True)
     process_type = models.CharField("Tipo de Proceso", max_length=255, blank=True, null=True)
     description = models.TextField("Descripción del Reclamo", blank=True, null=True)
+    
+    # --- Phase 2: Traceability ---
+    STATUS_CHOICES = [
+        ('Abierto', 'Abierto'),
+        ('En Proceso', 'En Proceso'),
+        ('Cerrado', 'Cerrado'),
+    ]
+    status = models.CharField("Estado", max_length=20, choices=STATUS_CHOICES, default='Abierto')
+    technical_conclusion = models.TextField("Conclusión Técnica", blank=True, null=True)
+    corrective_action = models.TextField("Acción Correctiva", blank=True, null=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

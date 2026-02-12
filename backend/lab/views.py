@@ -139,6 +139,64 @@ def import_complaints_excel(request):
     except Exception as e:
         return Response({"error": f"Error importando Excel: {str(e)}"}, status=500)
 
+@api_view(['GET'])
+def download_complaint_template(request):
+    """
+    Generates a styled Excel template for technical complaints.
+    """
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from django.http import HttpResponse
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Plantilla Reclamos"
+    
+    # Define styles
+    header_fill = PatternFill(start_color="444444", end_color="444444", fill_type="solid")
+    header_font = Font(color="FFFFFF", bold=True)
+    center_align = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style='thin'), 
+        right=Side(style='thin'), 
+        top=Side(style='thin'), 
+        bottom=Side(style='thin')
+    )
+    
+    headers = [
+        "Cliente_Nombre", "Fecha_Entrega", "Fecha_Carga", "Lote_Partida", 
+        "Tipo_Harina", "Producto_Elaborado", "Tipo_Proceso", "Descripcion_Reclamo"
+    ]
+    
+    # Write headers
+    for col_num, header_title in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.value = header_title
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = center_align
+        cell.border = thin_border
+        
+        # Adjust column width
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col_num)].width = 25
+        
+    # Add an example row (optional, but helpful)
+    example_row = [
+        "Cliente Ejemplo", "12/02/2026", "10/02/2026", "LOTE-123", 
+        "0000", "Pan Francés", "Artesanal", "Falta de fuerza en la masa"
+    ]
+    for col_num, value in enumerate(example_row, 1):
+        cell = ws.cell(row=2, column=col_num)
+        cell.value = value
+        cell.border = thin_border
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = "attachment; filename=Plantilla_Reclamos_Tecnicos.xlsx"
+    wb.save(response)
+    return response
+
 @api_view(['POST'])
 def generate_technical_report_view(request):
     import openpyxl
@@ -371,7 +429,7 @@ def generate_technical_report_view(request):
         current_row += 1
         draw_section_header(current_row, "RECLAMOS TÉCNICOS EN EL PERÍODO")
         current_row += 1
-        h_labels_c = ["FECHA", "LOTE", "HARINA", "PRODUCTO", "DESCRIPCIÓN"]
+        h_labels_c = ["FECHA", "LOTE", "HARINA", "DESCRIPCIÓN", "ESTADO", "CONCLUSIÓN"]
         for i, label in enumerate(h_labels_c, 1):
             cell = ws.cell(row=current_row, column=i, value=label)
             cell.font = table_header_font
@@ -382,8 +440,9 @@ def generate_technical_report_view(request):
             ws.cell(row=current_row, column=1, value=str(c.loading_date)).border = thin_border
             ws.cell(row=current_row, column=2, value=str(c.batch)).border = thin_border
             ws.cell(row=current_row, column=3, value=str(c.flour_type)).border = thin_border
-            ws.cell(row=current_row, column=4, value=str(c.product_made)).border = thin_border
-            ws.cell(row=current_row, column=5, value=str(c.description)).border = thin_border
+            ws.cell(row=current_row, column=4, value=str(c.description)).border = thin_border
+            ws.cell(row=current_row, column=5, value=str(c.status)).border = thin_border
+            ws.cell(row=current_row, column=6, value=str(c.technical_conclusion or '---')).border = thin_border
             current_row += 1
 
         # 4. PIE DE PÁGINA (Firma y Confidencialidad)

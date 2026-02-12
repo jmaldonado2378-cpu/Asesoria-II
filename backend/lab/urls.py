@@ -26,4 +26,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('generate-technical-report/', generate_technical_report_view, name='generate-technical-report'),
     path('import-complaints/', import_complaints_excel, name='import-complaints'),
+    path('complaints-template/', views.download_complaint_template, name='complaints-template'),
 ]
