@@ -13,5 +13,5 @@ urlpatterns = [
     path('api/', include('lab.urls')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Servir archivos media siempre (necesario para la visualización de fotos en informes en Render)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

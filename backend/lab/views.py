@@ -314,11 +314,10 @@ def generate_technical_report_view(request):
             if pisa_status.err:
                 return Response({"error": "Error al generar PDF vía xhtml2pdf"}, status=400)
                 
-            buffer.seek(0)
             filename = f"IT_{client_name}_{proj_name}_{report_date_str}.pdf"
             return FileResponse(buffer, as_attachment=True, filename=filename)
 
-        # --- LÓGICA EXCEL BURZACO RÍGIDA (MÉTODO ESTRICTO) ---
+        # --- LÓGICA EXCEL BURZACO RÍGIDA CON ANEXO FOTOGRÁFICO ---
         import xlsxwriter
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output)
@@ -399,8 +398,47 @@ def generate_technical_report_view(request):
             ws.write(curr, 5, str(ed.get('conclusion', '')), fmt_value)
             curr += 1
 
-        # Pie legal
-        ws.merge_range(40, 0, 40, 8, 'DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO', fmt_legal)
+        # 4. ANEXO FOTOGRÁFICO (Hoja Nueva)
+        ws_photos = workbook.add_worksheet("ANEXO FOTOS")
+        ws_photos.set_column('A:A', 80) # Ancho para la foto
+        row_ph = 1
+        
+        # Estilo para etiquetas de foto
+        fmt_ph_label = workbook.add_format({'bold': True, 'bg_color': '#333333', 'font_color': 'white', 'border': 1})
+
+        def insert_safely(worksheet, row, col, img_obj, title):
+            nonlocal row_ph
+            worksheet.write(row, col, title, fmt_ph_label)
+            row_ph += 1
+            if img_obj and img_obj.image and os.path.exists(img_obj.image.path):
+                try:
+                    # Insertar con escalado proporcional (aprox 15cm = 567 px)
+                    # Usamos info de la imagen si es posible, o escalado fijo
+                    worksheet.insert_image(row_ph, col, img_obj.image.path, {
+                        'x_scale': 0.5, 
+                        'y_scale': 0.5,
+                        'object_position': 1
+                    })
+                    row_ph += 25 # Espacio para la siguiente
+                except:
+                    worksheet.write(row_ph, col, "ERROR: No se pudo procesar la imagen (Formato no soportado)", workbook.add_format({'font_color': 'red'}))
+                    row_ph += 2
+            else:
+                worksheet.write(row_ph, col, "IMAGEN NO DISPONIBLE (Archivo faltante)", workbook.add_format({'bg_color': '#CCCCCC', 'italic': True}))
+                row_ph += 2
+
+        # Inyectar fotos de Ensayos
+        for essay in essays:
+            for img in essay.images.all():
+                insert_safely(ws_photos, row_ph, 0, img, f"ENSAYO {essay.code}: {img.caption or ''}")
+
+        # Inyectar fotos de Reclamos
+        for complaint in complaints:
+            for img in complaint.images.all():
+                insert_safely(ws_photos, row_ph, 0, img, f"RECLAMO {complaint.loading_date}: {img.caption or ''}")
+
+        if row_ph == 1:
+            ws_photos.write('A1', "No se encontraron imágenes para este período de auditoría.")
 
         workbook.close()
         buffer = io.BytesIO()

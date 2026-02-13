@@ -221,9 +221,34 @@
             {% endfor %}
         </tbody>
     </table>
+    <div class="section-title">Anexo Fotográfico de Auditoría</div>
+    <div style="width: 100%;">
+        {% for e in essays %}
+        {% for img in e.images.all %}
+        <div style="margin-bottom: 20px; page-break-inside: avoid;">
+            <div class="label" style="margin-bottom: 5px;">Ensayo: {{ e.code }} - {{ img.caption|default:"Sin nota" }}
+            </div>
+            <img src="{{ img.image.path }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
+        </div>
+        {% endfor %}
+        {% endfor %}
 
-    <div class="footer">
-        DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO - Harinas y Panificados
+        {% for c in complaints %}
+        {% for img in c.images.all %}
+        <div style="margin-bottom: 20px; page-break-inside: avoid;">
+            <div class="label" style="margin-bottom: 5px;">Reclamo: {{ c.loading_date|date:"d/m/Y" }} - {{
+                img.caption|default:"Sin nota" }}</div>
+            <img src="{{ img.image.path }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
+        </div>
+        {% endfor %}
+        {% endfor %}
+
+        {% if not essays and not complaints %}
+        <div style="text-align: center; color: #94a3b8; padding: 20px;">No se encontraron imágenes adjuntas en los
+            registros analizados.</div>
+        {% endif %}
+    </div>
+    DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO - Harinas y Panificados
     </div>
 </body>
 
