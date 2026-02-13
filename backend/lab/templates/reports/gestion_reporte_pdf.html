@@ -108,7 +108,7 @@
         <tr>
             <td>
                 <div class="logo-box">
-                    <img src="/static/images/logo_institucional.png" alt="Logo"
+                    <img src="{{ STATIC_URL }}images/logo_institucional.png" alt="Logo"
                         style="max-height: 50px; display: block; margin: 0 auto;">
                 </div>
             </td>
@@ -228,7 +228,7 @@
         <div style="margin-bottom: 20px; page-break-inside: avoid;">
             <div class="label" style="margin-bottom: 5px;">Ensayo: {{ e.code }} - {{ img.caption|default:"Sin nota" }}
             </div>
-            <img src="{{ img.image.path }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
+            <img src="{{ img.image.url }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
         </div>
         {% endfor %}
         {% endfor %}
@@ -238,7 +238,7 @@
         <div style="margin-bottom: 20px; page-break-inside: avoid;">
             <div class="label" style="margin-bottom: 5px;">Reclamo: {{ c.loading_date|date:"d/m/Y" }} - {{
                 img.caption|default:"Sin nota" }}</div>
-            <img src="{{ img.image.path }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
+            <img src="{{ img.image.url }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
         </div>
         {% endfor %}
         {% endfor %}

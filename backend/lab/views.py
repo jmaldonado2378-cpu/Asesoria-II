@@ -232,6 +232,31 @@ def generate_technical_report_view(request):
     except ImportError:
         pisa = None
     from django.core.mail import EmailMessage
+    from django.conf import settings
+    from django.contrib.staticfiles import finders
+
+    def link_callback(uri, rel):
+        """
+        Convert HTML paths to absolute system paths for xhtml2pdf.
+        """
+        # Convert URLs to absolute system paths
+        if uri.startswith(settings.MEDIA_URL):
+            path = os.path.join(settings.MEDIA_ROOT, uri.replace(settings.MEDIA_URL, ""))
+        elif uri.startswith(settings.STATIC_URL):
+            path = os.path.join(settings.STATIC_ROOT, uri.replace(settings.STATIC_URL, ""))
+        else:
+            return uri
+
+        # Make sure that file exists
+        if not os.path.isfile(path):
+            # Fallback to searching in staticfiles_dirs if not in static_root
+            for static_dir in settings.STATICFILES_DIRS:
+                potential_path = os.path.join(static_dir, uri.replace(settings.STATIC_URL, ""))
+                if os.path.isfile(potential_path):
+                    return potential_path
+            print(f"DEBUG: Resource not found for PDF: {path}")
+            return uri
+        return path
 
     project_id = request.data.get('project')
     start_date = request.data.get('start_date')
@@ -309,7 +334,12 @@ def generate_technical_report_view(request):
             }
             html = render_to_string('reports/gestion_reporte_pdf.html', context)
             buffer = io.BytesIO()
-            pisa_status = pisa.CreatePDF(io.BytesIO(html.encode("utf-8")), dest=buffer)
+            # Inyección binaria robusta vía link_callback
+            pisa_status = pisa.CreatePDF(
+                io.BytesIO(html.encode("utf-8")), 
+                dest=buffer,
+                link_callback=link_callback
+            )
             
             if pisa_status.err:
                 return Response({"error": "Error al generar PDF vía xhtml2pdf"}, status=400)
