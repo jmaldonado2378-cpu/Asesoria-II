@@ -108,8 +108,11 @@
         <tr>
             <td>
                 <div class="logo-box">
-                    <img src="{{ STATIC_URL }}images/logo_institucional.png" alt="Logo"
-                        style="max-height: 50px; display: block; margin: 0 auto;">
+                    {% if logo_b64 %}
+                    <img src="{{ logo_b64 }}" alt="Logo" style="max-height: 50px; display: block; margin: 0 auto;">
+                    {% else %}
+                    <div style="color: #cbd5e1; font-size: 8pt;">Logo No Disponible</div>
+                    {% endif %}
                 </div>
             </td>
             <td class="report-title">
@@ -223,27 +226,27 @@
     </table>
     <div class="section-title">Anexo Fotográfico de Auditoría</div>
     <div style="width: 100%;">
-        {% for e in essays %}
-        {% for img in e.images.all %}
+        {% for item in essays_with_images %}
+        {% for img_data in item.imgs %}
         <div style="margin-bottom: 20px; page-break-inside: avoid;">
-            <div class="label" style="margin-bottom: 5px;">Ensayo: {{ e.code }} - {{ img.caption|default:"Sin nota" }}
-            </div>
-            <img src="{{ img.image.url }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
+            <div class="label" style="margin-bottom: 5px;">Ensayo: {{ item.obj.code }} - {{
+                img_data.caption|default:"Sin nota" }}</div>
+            <img src="{{ img_data.b64 }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
         </div>
         {% endfor %}
         {% endfor %}
 
-        {% for c in complaints %}
-        {% for img in c.images.all %}
+        {% for item in complaints_with_images %}
+        {% for img_data in item.imgs %}
         <div style="margin-bottom: 20px; page-break-inside: avoid;">
-            <div class="label" style="margin-bottom: 5px;">Reclamo: {{ c.loading_date|date:"d/m/Y" }} - {{
-                img.caption|default:"Sin nota" }}</div>
-            <img src="{{ img.image.url }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
+            <div class="label" style="margin-bottom: 5px;">Reclamo: {{ item.obj.loading_date|date:"d/m/Y" }} - {{
+                img_data.caption|default:"Sin nota" }}</div>
+            <img src="{{ img_data.b64 }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
         </div>
         {% endfor %}
         {% endfor %}
 
-        {% if not essays and not complaints %}
+        {% if not essays_with_images and not complaints_with_images %}
         <div style="text-align: center; color: #94a3b8; padding: 20px;">No se encontraron imágenes adjuntas en los
             registros analizados.</div>
         {% endif %}

@@ -14,6 +14,7 @@ from .models import (
     ProjectIngredientPrice, Visit, EnsayoDetail, EnsayoImage,
     TechnicalReport, Complaint, ComplaintImage
 )
+import base64
 from .serializers import (
     ClientSerializer, 
     ProjectSerializer, 
@@ -236,27 +237,22 @@ def generate_technical_report_view(request):
     from django.contrib.staticfiles import finders
 
     def link_callback(uri, rel):
-        """
-        Convert HTML paths to absolute system paths for xhtml2pdf.
-        """
-        # Convert URLs to absolute system paths
-        if uri.startswith(settings.MEDIA_URL):
-            path = os.path.join(settings.MEDIA_ROOT, uri.replace(settings.MEDIA_URL, ""))
-        elif uri.startswith(settings.STATIC_URL):
-            path = os.path.join(settings.STATIC_ROOT, uri.replace(settings.STATIC_URL, ""))
-        else:
-            return uri
+        # ... (mantener link_callback para recursos estáticos si Base64 no se usa para logos)
+        return uri
 
-        # Make sure that file exists
-        if not os.path.isfile(path):
-            # Fallback to searching in staticfiles_dirs if not in static_root
-            for static_dir in settings.STATICFILES_DIRS:
-                potential_path = os.path.join(static_dir, uri.replace(settings.STATIC_URL, ""))
-                if os.path.isfile(potential_path):
-                    return potential_path
-            print(f"DEBUG: Resource not found for PDF: {path}")
-            return uri
-        return path
+    def get_image_base64(path):
+        """
+        Lee un archivo de imagen y lo devuelve como string Base64.
+        """
+        if not path or not os.path.exists(path):
+            return None
+        try:
+            with open(path, "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                return f"data:image/jpeg;base64,{encoded_string}"
+        except Exception as e:
+            print(f"DEBUG ERROR: Base64 conversion failed: {str(e)}")
+            return None
 
     project_id = request.data.get('project')
     start_date = request.data.get('start_date')
@@ -317,7 +313,31 @@ def generate_technical_report_view(request):
     except Exception as e:
         return Response({"error": f"Error preparando datos: {str(e)}"}, status=500)
 
-    try:
+        # Preparar datos base64 para PDF
+        essays_with_images = []
+        for e in essays:
+            e_imgs = []
+            for img in e.images.all():
+                if img.image:
+                    b64 = get_image_base64(img.image.path)
+                    if b64:
+                        e_imgs.append({'b64': b64, 'caption': img.caption})
+            essays_with_images.append({'obj': e, 'imgs': e_imgs})
+
+        complaints_with_images = []
+        for c in complaints:
+            c_imgs = []
+            for img in c.images.all():
+                if img.image:
+                    b64 = get_image_base64(img.image.path)
+                    if b64:
+                        c_imgs.append({'b64': b64, 'caption': img.caption})
+            complaints_with_images.append({'obj': c, 'imgs': c_imgs})
+
+        # Logo Institucional en Base64
+        logo_path = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo_institucional.png')
+        logo_b64 = get_image_base64(logo_path)
+
         if requested_format == 'pdf':
             if pisa is None:
                 return Response({"error": "Librería xhtml2pdf no está instalada en el servidor."}, status=500)
@@ -328,17 +348,19 @@ def generate_technical_report_view(request):
                 'end_date': end_date,
                 'date': timezone.now(),
                 'conclusions': str(conclusions) if conclusions else "",
-                'essays': essays,  # Usamos queryset para que los filtros de template funcionen
+                'essays': essays,
+                'essays_with_images': essays_with_images,
+                'complaints_with_images': complaints_with_images,
                 'visits': visits,
                 'complaints': complaints,
+                'logo_b64': logo_b64,
             }
             html = render_to_string('reports/gestion_reporte_pdf.html', context)
             buffer = io.BytesIO()
-            # Inyección binaria robusta vía link_callback
+            # En modo emergencia Base64, no necesitamos link_callback para estas imágenes
             pisa_status = pisa.CreatePDF(
                 io.BytesIO(html.encode("utf-8")), 
-                dest=buffer,
-                link_callback=link_callback
+                dest=buffer
             )
             
             if pisa_status.err:
