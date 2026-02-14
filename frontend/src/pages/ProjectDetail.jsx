@@ -676,7 +676,7 @@ export default function ProjectDetail() {
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
                             <div className="flex justify-between items-center bg-white p-6 shadow-xl border border-slate-300 rounded-sm">
                                 <div>
-                                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest italic">Gestión de Reclamos Técnicos</h3>
+                                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest italic">Gestión de Reclamos Técnicos <span className="text-[7px] text-slate-300 ml-2">v1.6-debug (API: {import.meta.env.VITE_API_URL})</span></h3>
                                     <div className="flex gap-4 mt-2">
                                         <button onClick={openNewComplaint} className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-sm text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 transition shadow-inner">
                                             <Plus size={14} /> Nuevo Reclamo Manual
@@ -687,7 +687,7 @@ export default function ProjectDetail() {
                                     </div>
                                 </div>
                                 {/* Botón de Update Masivo oculto temporalmente por priorización de carga manual */}
-                                <div className="hidden">
+                                <div style={{ display: 'none' }}>
                                     <label className="flex items-center gap-2 bg-slate-900/5 text-slate-400 px-6 py-4 rounded-sm hover:bg-orange-600 hover:text-white transition font-black text-[10px] uppercase tracking-widest cursor-pointer border-2 border-dashed border-slate-200">
                                         <Upload size={16} /> Update Masivo (Excel)
                                         <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleImportComplaints} />
