@@ -686,13 +686,6 @@ export default function ProjectDetail() {
                                         </button>
                                     </div>
                                 </div>
-                                {/* Botón de Update Masivo oculto temporalmente por priorización de carga manual */}
-                                <div style={{ display: 'none' }}>
-                                    <label className="flex items-center gap-2 bg-slate-900/5 text-slate-400 px-6 py-4 rounded-sm hover:bg-orange-600 hover:text-white transition font-black text-[10px] uppercase tracking-widest cursor-pointer border-2 border-dashed border-slate-200">
-                                        <Upload size={16} /> Update Masivo (Excel)
-                                        <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleImportComplaints} />
-                                    </label>
-                                </div>
                             </div>
 
                             <div className="bg-white shadow-2xl border border-slate-300 rounded-sm overflow-hidden">
@@ -767,21 +760,22 @@ export default function ProjectDetail() {
                                                             </div>
                                                         </td>
                                                     </tr>
-                                                    {/* GALERÍA DE MINIATURAS PARA RECLAMO */}
+                                                    {/* GALERÍA DE MINIATURAS PARA RECLAMO (ESPEJO ENSAYOS) */}
                                                     {c.images && c.images.length > 0 && (
-                                                        <tr className="bg-white/50">
+                                                        <tr className="bg-white/30">
                                                             <td colSpan="5" className="p-4 pt-1">
-                                                                <div className="flex flex-wrap gap-4 border-t border-slate-50 pt-3">
+                                                                <div className="flex flex-wrap gap-4 border-t border-slate-50 pt-3 pl-5">
                                                                     {c.images.map(img => (
-                                                                        <div key={img.id} className="relative group w-24 h-24 bg-slate-100 rounded-sm overflow-hidden border border-slate-200 shadow-sm">
+                                                                        <div key={img.id} className="relative group w-20 h-20 bg-slate-100 rounded-sm overflow-hidden border border-slate-200 shadow-sm transition hover:shadow-md">
                                                                             <img
                                                                                 src={img.image?.startsWith('http') ? img.image : `${import.meta.env.VITE_API_URL}${img.image}`}
-                                                                                alt="Previsualización"
-                                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                                                alt="Reclamo"
+                                                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                                                             />
                                                                             <button
                                                                                 onClick={() => handleDeleteComplaintImage(img.id)}
-                                                                                className="absolute top-1 right-1 bg-red-600/90 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition shadow-lg hover:bg-red-700"
+                                                                                className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition shadow-lg hover:bg-red-700 active:scale-90"
+                                                                                title="Eliminar Foto"
                                                                             >
                                                                                 <Trash2 size={10} />
                                                                             </button>

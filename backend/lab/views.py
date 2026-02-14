@@ -154,23 +154,27 @@ def download_complaint_template(request):
                 from openpyxl.drawing.image import Image as OpenpyxlImage
                 try:
                     # Título de la foto
-                    ws_photos.cell(row=curr_row, column=1, value=f"FOTO: {img.caption or 'Sin nota'}")
-                    ws_photos.cell(row=curr_row, column=1).font = openpyxl.styles.Font(bold=True)
+                    title = f"FOTO: {img.caption or 'Sin nota'}"
+                    ws_photos.cell(row=curr_row, column=1, value=title)
+                    ws_photos.cell(row=curr_row, column=1).font = openpyxl.styles.Font(bold=True, size=12)
                     curr_row += 1
+
+                    # Insertar Imagen
+                    img_data = OpenpyxlImage(img.image.path)
                     
-                    # Cargar e insertar imagen
-                    img_xlsx = OpenpyxlImage(img.image.path)
-                    # Redimensionar para que quepa (aprox 500px de ancho)
-                    original_width = img_xlsx.width
-                    ratio = 500 / original_width
-                    img_xlsx.width = 500
-                    img_xlsx.height = img_xlsx.height * ratio
+                    # Redimensión proporcional para el Excel
+                    orig_w, orig_h = img_data.width, img_data.height
+                    aspect = orig_w / orig_h
+                    img_data.width = 500
+                    img_data.height = 500 / aspect
                     
-                    ws_photos.add_image(img_xlsx, f'A{curr_row}')
-                    curr_row += 25  # Espacio para la siguiente foto
-                except Exception as ex:
-                    ws_photos.cell(row=curr_row, column=1, value=f"Error cargando imagen: {str(ex)}")
-                    curr_row += 2
+                    ws_photos.add_image(img_data, f'A{curr_row}')
+                    
+                    # Espaciado (aproximadamente la altura de la imagen en filas)
+                    rows_to_skip = int(img_data.height / 15) + 2
+                    curr_row += rows_to_skip
+                except Exception as e:
+                    print(f"Error inyectando imagen {img.id}: {e}")
 
     output = io.BytesIO()
     wb.save(output)

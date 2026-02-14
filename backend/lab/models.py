@@ -345,5 +345,5 @@ class Complaint(models.Model):
 
 class ComplaintImage(models.Model):
     complaint = models.ForeignKey(Complaint, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField("Imagen Reclamo", upload_to='complaint_photos/')
+    image = models.ImageField("Imagen Reclamo", upload_to='complaints/')
     caption = models.CharField("Nota", max_length=255, blank=True, null=True)
