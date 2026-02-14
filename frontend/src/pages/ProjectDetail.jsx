@@ -177,8 +177,11 @@ export default function ProjectDetail() {
         }
     };
 
+    const [uploadingComplaintId, setUploadingComplaintId] = useState(null);
+
     const handleUploadComplaintImage = async (complaintId, file) => {
         if (!file) return;
+        setUploadingComplaintId(complaintId);
         const formData = new FormData();
         formData.append('complaint', complaintId);
         formData.append('image', file);
@@ -197,7 +200,22 @@ export default function ProjectDetail() {
             }
         } catch (err) {
             console.error(err);
+        } finally {
+            setUploadingComplaintId(null);
         }
+    };
+
+    const handleDeleteComplaintImage = async (imageId) => {
+        if (!confirm('¿Eliminar esta fotografía?')) return;
+        try {
+            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/complaint-images/${imageId}/`, {
+                method: 'DELETE'
+            });
+            if (resp.ok) {
+                const freshReclamos = await fetch(`${import.meta.env.VITE_API_URL}/api/complaints/?project=${id}`).then(r => r.json());
+                setComplaints(freshReclamos);
+            }
+        } catch (err) { console.error(err); }
     };
 
     const handleDownloadTemplate = async () => {
@@ -668,10 +686,13 @@ export default function ProjectDetail() {
                                         </button>
                                     </div>
                                 </div>
-                                <label className="flex items-center gap-2 bg-slate-900/5 text-slate-400 px-6 py-4 rounded-sm hover:bg-orange-600 hover:text-white transition font-black text-[10px] uppercase tracking-widest cursor-pointer border-2 border-dashed border-slate-200">
-                                    <Upload size={16} /> Update Masivo (Excel)
-                                    <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleImportComplaints} />
-                                </label>
+                                {/* Botón de Update Masivo oculto temporalmente por priorización de carga manual */}
+                                <div className="hidden">
+                                    <label className="flex items-center gap-2 bg-slate-900/5 text-slate-400 px-6 py-4 rounded-sm hover:bg-orange-600 hover:text-white transition font-black text-[10px] uppercase tracking-widest cursor-pointer border-2 border-dashed border-slate-200">
+                                        <Upload size={16} /> Update Masivo (Excel)
+                                        <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleImportComplaints} />
+                                    </label>
+                                </div>
                             </div>
 
                             <div className="bg-white shadow-2xl border border-slate-300 rounded-sm overflow-hidden">
@@ -719,21 +740,51 @@ export default function ProjectDetail() {
                                                     </td>
                                                     <td className="p-5 text-right">
                                                         <div className="flex justify-end items-center gap-2">
-                                                            <button onClick={() => openEditComplaint(c)} className="p-2 bg-slate-900 text-white rounded-sm hover:bg-indigo-600 transition shadow-md">
-                                                                <FileText size={14} />
-                                                            </button>
-                                                            <label className="bg-slate-100 p-2 rounded-sm text-slate-400 hover:bg-orange-600 hover:text-white transition cursor-pointer shadow-sm">
-                                                                <ImageIcon size={14} />
-                                                                <input
-                                                                    type="file"
-                                                                    className="hidden"
-                                                                    accept="image/*"
-                                                                    onChange={(e) => handleUploadComplaintImage(c.id, e.target.files[0])}
-                                                                />
-                                                            </label>
+                                                            {uploadingComplaintId === c.id ? (
+                                                                <div className="text-[8px] font-black text-orange-600 animate-pulse uppercase tracking-widest px-2">Subiendo...</div>
+                                                            ) : (
+                                                                <>
+                                                                    <button onClick={() => openEditComplaint(c)} className="p-2 bg-slate-900 text-white rounded-sm hover:bg-indigo-600 transition shadow-md">
+                                                                        <FileText size={14} />
+                                                                    </button>
+                                                                    <label className="bg-slate-100 p-2 rounded-sm text-slate-400 hover:bg-orange-600 hover:text-white transition cursor-pointer shadow-sm">
+                                                                        <ImageIcon size={14} />
+                                                                        <input
+                                                                            type="file"
+                                                                            className="hidden"
+                                                                            accept="image/*"
+                                                                            onChange={(e) => handleUploadComplaintImage(c.id, e.target.files[0])}
+                                                                        />
+                                                                    </label>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
+                                                {/* GALERÍA DE MINIATURAS PARA RECLAMO */}
+                                                {c.images && c.images.length > 0 && (
+                                                    <tr className="bg-white/50">
+                                                        <td colSpan="5" className="p-4 pt-1">
+                                                            <div className="flex flex-wrap gap-4 border-t border-slate-50 pt-3">
+                                                                {c.images.map(img => (
+                                                                    <div key={img.id} className="relative group w-24 h-24 bg-slate-100 rounded-sm overflow-hidden border border-slate-200 shadow-sm">
+                                                                        <img 
+                                                                            src={img.image} 
+                                                                            alt="Previsualización" 
+                                                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                                        />
+                                                                        <button 
+                                                                            onClick={() => handleDeleteComplaintImage(img.id)}
+                                                                            className="absolute top-1 right-1 bg-red-600/90 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition shadow-lg hover:bg-red-700"
+                                                                        >
+                                                                            <Trash2 size={10} />
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
                                             ))
                                         )}
                                     </tbody>
