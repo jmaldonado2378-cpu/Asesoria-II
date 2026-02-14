@@ -373,6 +373,7 @@ def generate_technical_report_view(request):
             if pisa_status.err:
                 return Response({"error": "Error al generar PDF vía xhtml2pdf"}, status=400)
                 
+            buffer.seek(0)
             filename = f"IT_{client_name}_{proj_name}_{report_date_str}.pdf"
             return FileResponse(buffer, as_attachment=True, filename=filename)
 
