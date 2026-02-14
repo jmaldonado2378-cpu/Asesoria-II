@@ -5,7 +5,7 @@ from .views import (
     EnsayoViewSet, EnsayoDetailViewSet, EnsayoImageViewSet,
     ProjectIngredientPriceViewSet, VisitViewSet,
     TechnicalReportViewSet, generate_technical_report_view,
-    ComplaintViewSet, ComplaintImageViewSet, import_complaints_excel
+    ComplaintViewSet, ComplaintImageViewSet
 )
 from . import views
 
@@ -25,6 +25,6 @@ router.register(r'complaint-images', ComplaintImageViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('generate-technical-report/', generate_technical_report_view, name='generate-technical-report'),
-    path('import-complaints/', import_complaints_excel, name='import-complaints'),
+#    path('import-complaints/', import_complaints_excel, name='import-complaints'),
     path('complaints-template/', views.download_complaint_template, name='complaints-template'),
 ]
