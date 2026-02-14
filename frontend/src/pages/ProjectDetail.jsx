@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
     Pipette, Calculator, Save, FileSpreadsheet, FileText, ChevronRight,
@@ -724,6 +724,11 @@ export default function ProjectDetail() {
                                                                     }`}>
                                                                     {c.status}
                                                                 </span>
+                                                                {c.images && c.images.length > 0 && (
+                                                                    <span className="text-[8px] font-black text-orange-600 bg-orange-50 px-1 rounded-sm">
+                                                                        {c.images.length} FOTOS
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <div className="text-[9px] font-bold text-slate-900 uppercase tracking-tighter">Lote: {c.batch || 'S/N'}</div>
                                                         </td>
