@@ -87,91 +87,32 @@ class ComplaintImageViewSet(viewsets.ModelViewSet):
     queryset = ComplaintImage.objects.all()
     serializer_class = ComplaintImageSerializer
 
-@api_view(['POST'])
-@parser_classes([MultiPartParser])
-def import_complaints_excel(request):
-    """
-    Importa reclamos desde un archivo Excel con formato robusto.
-    Busca la fila donde comienza 'Cliente_Nombre' para soportar encabezados decorativos.
-    """
-    file_obj = request.FILES.get('file')
-    project_id = request.data.get('project')
-    if not file_obj or not project_id:
-        return Response({"error": "Se requiere archivo y ID de proyecto."}, status=400)
-    
-    project = get_object_or_404(Project, id=project_id)
-    
-    try:
-        import openpyxl
-        wb = openpyxl.load_workbook(file_obj, data_only=True)
-        ws = wb.active
-        
-        def parse_date(val):
-            if isinstance(val, datetime):
-                return val.date()
-            if isinstance(val, str):
-                for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"):
-                    try:
-                        return datetime.strptime(val, fmt).date()
-                    except ValueError:
-                        continue
-            return None
-
-        # 1. BUSCAR LA FILA DE ENCABEZADO
-        header_row_index = 0
-        for i, row in enumerate(ws.iter_rows(values_only=True), 1):
-            # Normalizamos los nombres para buscar: minúsculas, sin espacios extras ni guiones bajos
-            row_normalized = [str(cell).strip().lower().replace("_", " ") for cell in row if cell]
-            if "cliente nombre" in row_normalized:
-                header_row_index = i
-                break
-        
-        if not header_row_index:
-            return Response({"error": "No se encontró la cabecera 'Cliente_Nombre' en el archivo."}, status=400)
-
-        complaints_created = 0
-        # Empezamos a leer desde la fila SIGUIENTE al encabezado
-        for row in ws.iter_rows(min_row=header_row_index + 1, values_only=True):
-            if not row or not row[0]: continue # Saltar filas vacías o sin cliente
-            
-            # El ejemplo en el Excel debe saltarse si detectamos que es el ejemplo
-            if "Panadería Los Abuelos" in str(row[0]): continue
-
-            Complaint.objects.create(
-                project=project,
-                contact=str(row[1]) if row[1] else "",
-                delivery_date=parse_date(row[2]),
-                batch=str(row[3]) if row[3] else "",
-                loading_date=parse_date(row[4]) or timezone.now().date(),
-                flour_type=str(row[5]) if row[5] else "",
-                product_made=str(row[6]) if row[6] else "",
-                process_type=str(row[7]) if row[7] else "",
-                description=str(row[8]) if row[8] else ""
-            )
-            complaints_created += 1
-            
-        return Response({"message": f"Se importaron {complaints_created} reclamos con éxito."}, status=201)
-    except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        return Response({"error": f"Error importando Excel: {str(e)}"}, status=500)
+# @api_view(['POST'])
+# @parser_classes([MultiPartParser])
+# def import_complaints_excel(request):
+#     """
+#     DESACTIVADO: PRIORIZANDO CARGA MANUAL PERFECTA
+#     """
+#     return Response({"error": "La importación masiva ha sido desactivada temporalmente."}, status=403)
 
 @api_view(['GET'])
 def download_complaint_template(request):
     """
-    PROTOCOL: FINAL CLONE OF USER TEMPLATE
-    Reference: Google Sheets (la definitiva.xlsx)
-    Motor: openpyxl
-    Rules: 
-    1. NO Ingredients/Bakery data.
-    2. ONLY fill B6 (Client) and F6 (Project).
-    3. Preserve EXACT user design.
+    GENERADOR DE REPORTE DE RECLAMO (ESTRATEGIA BURZACO MANUAL)
+    Mapeo de Inyección:
+    - Cliente Directo -> B6
+    - Proyecto -> F6
+    - Lote -> E12
+    - Tipo Harina -> B14
+    - Producto Final -> B16 
+    - Proceso -> F16
+    - Descripción -> B18
     """
     import openpyxl
-    project_id = request.query_params.get('project')
-    project = None
-    if project_id:
-        project = Project.objects.filter(id=project_id).first()
+    complaint_id = request.query_params.get('complaint')
+    complaint = None
+    if complaint_id:
+        complaint = get_object_or_404(Complaint, id=complaint_id)
 
     template_path = os.path.join(os.path.dirname(__file__), 'static', 'templates', 'reclamo.xlsx')
     
@@ -179,41 +120,39 @@ def download_complaint_template(request):
         return Response({"error": "Template file not found."}, status=404)
 
     wb = openpyxl.load_workbook(template_path)
-    # Seleccionamos la hoja del usuario (PLANTILLA_RECLAMOS o activa)
     if "PLANTILLA_RECLAMOS" in wb.sheetnames:
         ws = wb["PLANTILLA_RECLAMOS"]
     else:
         ws = wb.active
 
-    # --- INYECCIÓN DINÁMICA MÍNIMA ---
-    if project:
-        ws['B6'] = project.client.name if project.client else "---"
-        ws['F6'] = project.name
+    # --- INYECCIÓN DINÁMICA DE CARGA MANUAL ---
+    if complaint:
+        ws['B6'] = complaint.direct_client or (complaint.project.client.name if complaint.project.client else "---")
+        ws['F6'] = complaint.project.name
+        ws['E12'] = complaint.batch or "---"
+        ws['B14'] = complaint.flour_type or "---"
+        ws['B16'] = complaint.product_made or "---"
+        ws['F16'] = complaint.process_type or "---"
+        ws['B18'] = complaint.description or "---"
     else:
-        ws['B6'] = "---"
-        ws['F6'] = "---"
+        # Fallback a proyecto si no hay ID de reclamo (descarga de plantilla limpia con datos de cliente)
+        project_id = request.query_params.get('project')
+        if project_id:
+            project = Project.objects.filter(id=project_id).first()
+            if project:
+                ws['B6'] = project.client.name if project.client else "---"
+                ws['F6'] = project.name
 
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
     
+    filename = f"RECLAMO_{complaint.batch or 'S_LOTE'}.xlsx" if complaint else "reclamo_oficial.xlsx"
     response = HttpResponse(
         output.read(), 
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-    response["Content-Disposition"] = "attachment; filename=reclamo_oficial.xlsx"
-    return response
-    ws.merge_range('A40:I40', 'DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO', fmt_legal)
-
-    workbook.close()
-    output.seek(0)
-    
-    response = HttpResponse(
-        output.read(), 
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    # Nombre de archivo solicitado para cerrar el módulo
-    response["Content-Disposition"] = "attachment; filename=la_definitiva.xlsx"
+    response["Content-Disposition"] = f"attachment; filename={filename}"
     return response
 
 @api_view(['POST'])
