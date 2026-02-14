@@ -184,6 +184,21 @@ def download_complaint_template(request):
     response["Content-Disposition"] = f"attachment; filename={filename}"
     return response
 
+@api_view(['GET'])
+def serve_media_view(request, path):
+    """
+    VISTA DE EMERGENCIA: Sirve archivos de MEDIA_ROOT incluso en producción.
+    """
+    from django.http import FileResponse
+    from django.conf import settings
+    import os
+    
+    path = path.replace('..', '')
+    file_path = os.path.join(settings.MEDIA_ROOT, path)
+    if os.path.exists(file_path):
+        return FileResponse(open(file_path, 'rb'))
+    return Response({"error": "File not found"}, status=404)
+
 @api_view(['POST'])
 def generate_technical_report_view(request):
     import io

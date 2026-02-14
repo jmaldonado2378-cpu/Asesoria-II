@@ -13,5 +13,8 @@ urlpatterns = [
     path('api/', include('lab.urls')),
 ]
 
-# Servir archivos media siempre (necesario para la visualización de fotos en informes en Render)
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Servir archivos media mediante vista personalizada (para compatibilidad con DEBUG=False en Render)
+from lab.views import serve_media_view
+urlpatterns += [
+    path('media/<path:path>', serve_media_view, name='serve_media'),
+]
