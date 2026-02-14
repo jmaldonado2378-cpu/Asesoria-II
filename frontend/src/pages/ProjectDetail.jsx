@@ -770,7 +770,7 @@ export default function ProjectDetail() {
                                                                     {c.images.map(img => (
                                                                         <div key={img.id} className="relative group w-24 h-24 bg-slate-100 rounded-sm overflow-hidden border border-slate-200 shadow-sm">
                                                                             <img
-                                                                                src={img.image}
+                                                                                src={img.image?.startsWith('http') ? img.image : `${import.meta.env.VITE_API_URL}${img.image}`}
                                                                                 alt="Previsualización"
                                                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                                                             />

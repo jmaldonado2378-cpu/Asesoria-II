@@ -119,4 +119,9 @@ class ComplaintSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Complaint
-        fields = '__all__'
+        fields = [
+            'id', 'project', 'loading_date', 'delivery_date', 'batch', 
+            'flour_type', 'product_made', 'process_type', 'description', 
+            'status', 'technical_conclusion', 'corrective_action', 
+            'direct_client', 'contact', 'images', 'client_name', 'project_name'
+        ]
