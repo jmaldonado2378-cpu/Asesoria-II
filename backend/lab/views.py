@@ -397,7 +397,7 @@ def generate_technical_report_view(request):
         ws.merge_range('A1:B5', "", workbook.add_format({'border': 2}))
         logo_path = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo_institucional.png')
         if os.path.exists(logo_path):
-            ws.insert_image('A1', logo_path, {'x_offset': 20, 'y_offset': 10, 'x_scale': 0.75, 'y_scale': 0.75})
+            ws.insert_image('A1', logo_path, {'x_offset': 10, 'y_offset': 10, 'x_scale': 0.12, 'y_scale': 0.12})
 
         ws.merge_range('C1:G3', "GESTIÓN TÉCNICA Y DESARROLLO", fmt_title)
         ws.merge_range('C4:G5', "Harinas y Panificados", fmt_subtitle)
