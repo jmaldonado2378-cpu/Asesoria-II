@@ -143,6 +143,35 @@ def download_complaint_template(request):
                 ws['B6'] = project.client.name if project.client else "---"
                 ws['F6'] = project.name
 
+    # --- INYECCIÓN DE IMÁGENES (ANEXO) ---
+    if complaint and complaint.images.exists():
+        ws_photos = wb.create_sheet("ANEXO FOTOS")
+        ws_photos.column_dimensions['A'].width = 80
+        curr_row = 1
+        
+        for img in complaint.images.all():
+            if img.image and os.path.exists(img.image.path):
+                from openpyxl.drawing.image import Image as OpenpyxlImage
+                try:
+                    # Título de la foto
+                    ws_photos.cell(row=curr_row, column=1, value=f"FOTO: {img.caption or 'Sin nota'}")
+                    ws_photos.cell(row=curr_row, column=1).font = openpyxl.styles.Font(bold=True)
+                    curr_row += 1
+                    
+                    # Cargar e insertar imagen
+                    img_xlsx = OpenpyxlImage(img.image.path)
+                    # Redimensionar para que quepa (aprox 500px de ancho)
+                    original_width = img_xlsx.width
+                    ratio = 500 / original_width
+                    img_xlsx.width = 500
+                    img_xlsx.height = img_xlsx.height * ratio
+                    
+                    ws_photos.add_image(img_xlsx, f'A{curr_row}')
+                    curr_row += 25  # Espacio para la siguiente foto
+                except Exception as ex:
+                    ws_photos.cell(row=curr_row, column=1, value=f"Error cargando imagen: {str(ex)}")
+                    curr_row += 2
+
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)

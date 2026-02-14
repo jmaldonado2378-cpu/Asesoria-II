@@ -118,8 +118,11 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ConfiguraciÃ³n de archivos Media
+if os.name == 'nt':
+    MEDIA_ROOT = 'C:\\GESTION_MALDONADO\\media'
+else:
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Configuración de django-import-export
 IMPORT_EXPORT_USE_TRANSACTIONS = True
