@@ -203,11 +203,6 @@ def download_complaint_template(request):
     )
     response["Content-Disposition"] = "attachment; filename=reclamo_oficial.xlsx"
     return response
-    for col_num, (header, width) in enumerate(zip(headers, col_widths)):
-        ws.set_column(col_num, col_num, width)
-        ws.write(9, col_num, header, fmt_header)
-
-    # 4. PIE DE PÁGINA (Fila 40)
     ws.merge_range('A40:I40', 'DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO', fmt_legal)
 
     workbook.close()
@@ -240,18 +235,31 @@ def generate_technical_report_view(request):
         # ... (mantener link_callback para recursos estáticos si Base64 no se usa para logos)
         return uri
 
+    def parse_smart_date(val):
+        """Parsea fechas en múltiples formatos (ISO, DD/MM/YYYY, etc)"""
+        if not val: return None
+        if isinstance(val, (datetime, timezone.datetime)):
+            return val.date()
+        val_str = str(val).split('T')[0] # Limpiar ISO strings con tiempo
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d"):
+            try:
+                return datetime.strptime(val_str, fmt).date()
+            except ValueError:
+                continue
+        return None
+
     def get_image_base64(path):
         """
         Lee un archivo de imagen y lo devuelve como string Base64.
         """
-        if not path or not os.path.exists(path):
-            return None
         try:
+            if not path or not os.path.exists(path):
+                return None
             with open(path, "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
                 return f"data:image/jpeg;base64,{encoded_string}"
         except Exception as e:
-            print(f"DEBUG ERROR: Base64 conversion failed: {str(e)}")
+            print(f"DEBUG ERROR: Base64 conversion failed for {path}: {str(e)}")
             return None
 
     project_id = request.data.get('project')
@@ -267,9 +275,9 @@ def generate_technical_report_view(request):
     try:
         project = get_object_or_404(Project, id=project_id)
         
-        # Valores por defecto para evitar NotImplemented en filtros
-        s_date = start_date if start_date else "2000-01-01"
-        e_date = end_date if end_date else "2100-12-31"
+        # Parseo robusto de fechas
+        s_date = parse_smart_date(start_date) or datetime(2000, 1, 1).date()
+        e_date = parse_smart_date(end_date) or datetime(2100, 12, 31).date()
 
         # Datos técnicos
         essays = Ensayo.objects.filter(project=project, date__range=[s_date, e_date]).order_by('date')
@@ -310,9 +318,8 @@ def generate_technical_report_view(request):
             except Exception as he:
                 print(f"DEBUG ERROR: No se pudo guardar historial: {str(he)}")
 
-    except Exception as e:
-        return Response({"error": f"Error preparando datos: {str(e)}"}, status=500)
-
+        # --- GENERACIÓN DE CONTENIDO ---
+        
         # Preparar datos base64 para PDF
         essays_with_images = []
         for e in essays:
@@ -376,37 +383,14 @@ def generate_technical_report_view(request):
         ws = workbook.add_worksheet("INFORME TÉCNICO")
 
         # Formatos
-        fmt_title = workbook.add_format()
-        fmt_title.set_bold()
-        fmt_title.set_font_size(18)
-        fmt_title.set_font_color('white')
-        fmt_title.set_bg_color('#1A1A1A') # PRUEBA DE CONTROL
-        fmt_title.set_align('center')
-        fmt_title.set_valign('vcenter')
-        fmt_title.set_border(1)
-
-        fmt_subtitle = workbook.add_format()
-        fmt_subtitle.set_font_size(12)
-        fmt_subtitle.set_font_color('white')
-        fmt_subtitle.set_bg_color('#404040') # PRUEBA DE CONTROL
-        fmt_subtitle.set_align('center')
-        fmt_subtitle.set_valign('vcenter')
-        fmt_subtitle.set_border(1)
-
+        fmt_title = workbook.add_format({'bold': True, 'font_size': 18, 'font_color': 'white', 'bg_color': '#1A1A1A', 'align': 'center', 'valign': 'vcenter', 'border': 1})
+        fmt_subtitle = workbook.add_format({'font_size': 12, 'font_color': 'white', 'bg_color': '#404040', 'align': 'center', 'valign': 'vcenter', 'border': 1})
         fmt_label = workbook.add_format({'bold': True, 'bg_color': '#F1F5F9', 'border': 2})
         fmt_value = workbook.add_format({'border': 2, 'bg_color': 'white'})
-        
-        fmt_header = workbook.add_format()
-        fmt_header.set_bold()
-        fmt_header.set_font_color('white')
-        fmt_header.set_bg_color('#333333')
-        fmt_header.set_align('center')
-        fmt_header.set_valign('vcenter')
-        fmt_header.set_border(1)
-        fmt_header.set_text_wrap()
-
+        fmt_header = workbook.add_format({'bold': True, 'font_color': 'white', 'bg_color': '#333333', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
         fmt_sec = workbook.add_format({'bold': True, 'font_color': 'white', 'bg_color': '#333333', 'border': 1})
         fmt_legal = workbook.add_format({'italic': True, 'font_size': 9, 'align': 'center'})
+        fmt_ph_label = workbook.add_format({'bold': True, 'bg_color': '#333333', 'font_color': 'white', 'border': 1})
 
         # 1. ENCABEZADO
         ws.merge_range('A1:B5', "", workbook.add_format({'border': 2}))
@@ -426,7 +410,6 @@ def generate_technical_report_view(request):
 
         # 3. CONTENIDO
         curr = 9
-        ws.write(curr, 0, "CONCLUSIONES Y OBSERVACIONES TÉCNICAS", fmt_sec)
         ws.merge_range(curr, 0, curr, 8, "CONCLUSIONES Y OBSERVACIONES TÉCNICAS", fmt_sec)
         curr += 1
         ws.merge_range(curr, 0, curr+4, 8, str(conclusions or ''), workbook.add_format({'border': 1, 'valign': 'top', 'text_wrap': True}))
@@ -455,9 +438,6 @@ def generate_technical_report_view(request):
         ws_photos.set_column('A:A', 80) # Ancho para la foto
         row_ph = 1
         
-        # Estilo para etiquetas de foto
-        fmt_ph_label = workbook.add_format({'bold': True, 'bg_color': '#333333', 'font_color': 'white', 'border': 1})
-
         def insert_safely(worksheet, row, col, img_obj, title):
             nonlocal row_ph
             worksheet.write(row, col, title, fmt_ph_label)
@@ -473,21 +453,21 @@ def generate_technical_report_view(request):
                     })
                     row_ph += 25 # Espacio para la siguiente
                 except:
-                    worksheet.write(row_ph, col, "ERROR: No se pudo procesar la imagen (Formato no soportado)", workbook.add_format({'font_color': 'red'}))
+                    worksheet.write(row_ph, col, "ERROR: Foto", workbook.add_format({'font_color': 'red'}))
                     row_ph += 2
             else:
-                worksheet.write(row_ph, col, "IMAGEN NO DISPONIBLE (Archivo faltante)", workbook.add_format({'bg_color': '#CCCCCC', 'italic': True}))
+                worksheet.write(row_ph, col, "SIN IMAGEN", workbook.add_format({'bg_color': '#CCCCCC'}))
                 row_ph += 2
 
         # Inyectar fotos de Ensayos
         for essay in essays:
             for img in essay.images.all():
-                insert_safely(ws_photos, row_ph, 0, img, f"ENSAYO {essay.code}: {img.caption or ''}")
+                insert_safely(ws_photos, row_ph, 0, img, f"ENSAYO {essay.code}")
 
         # Inyectar fotos de Reclamos
         for complaint in complaints:
             for img in complaint.images.all():
-                insert_safely(ws_photos, row_ph, 0, img, f"RECLAMO {complaint.loading_date}: {img.caption or ''}")
+                insert_safely(ws_photos, row_ph, 0, img, f"RECLAMO {complaint.loading_date}")
 
         if row_ph == 1:
             ws_photos.write('A1', "No se encontraron imágenes para este período de auditoría.")
@@ -498,7 +478,6 @@ def generate_technical_report_view(request):
         buffer.seek(0)
         filename = f"IT_{client_name}_{proj_name}_{report_date_str}.xlsx"
         return FileResponse(buffer, as_attachment=True, filename=filename)
-
 
 
     except Exception as e:
