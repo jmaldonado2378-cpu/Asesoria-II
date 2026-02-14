@@ -77,7 +77,7 @@ class ComplaintViewSet(viewsets.ModelViewSet):
     serializer_class = ComplaintSerializer
     
     def get_queryset(self):
-        queryset = super().get_queryset().prefetch_related('images')
+        queryset = super().get_queryset()
         project_id = self.request.query_params.get('project')
         if project_id:
             queryset = queryset.filter(project_id=project_id)
