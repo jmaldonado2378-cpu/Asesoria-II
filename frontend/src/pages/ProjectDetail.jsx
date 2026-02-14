@@ -711,80 +711,82 @@ export default function ProjectDetail() {
                                             <tr><td colSpan="5" className="p-20 text-center text-slate-300 uppercase text-[10px] font-bold tracking-widest italic">No se han registrado reclamos técnicos.</td></tr>
                                         ) : (
                                             complaints.map(c => (
-                                                <tr key={c.id} className="hover:bg-red-50/30 transition-colors group">
-                                                    <td className="p-5">
-                                                        <div className="text-[10px] font-black text-slate-900 uppercase tracking-tight italic">{c.loading_date}</div>
-                                                        <div className="text-[8px] text-slate-400 font-bold uppercase">Ent: {c.delivery_date || '-'}</div>
-                                                    </td>
-                                                    <td className="p-5">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${c.status === 'Cerrado' ? 'bg-green-100 text-green-700' :
-                                                                c.status === 'En Proceso' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                                                                }`}>
-                                                                {c.status}
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-[9px] font-bold text-slate-900 uppercase tracking-tighter">Lote: {c.batch || 'S/N'}</div>
-                                                    </td>
-                                                    <td className="p-5">
-                                                        <div className="text-[10px] font-bold text-orange-600 uppercase mb-0.5">{c.flour_type || '-'}</div>
-                                                        <div className="text-[8px] text-slate-400 font-bold uppercase">{c.product_made || '-'}</div>
-                                                    </td>
-                                                    <td className="p-5">
-                                                        <div className="text-[9px] font-bold text-slate-500 uppercase max-w-xs">{c.description?.substring(0, 40)}...</div>
-                                                        {c.technical_conclusion && (
-                                                            <div className="mt-1 text-[8px] px-2 py-1 bg-slate-100 text-slate-600 rounded-sm italic border-l-2 border-indigo-500">
-                                                                {c.technical_conclusion.substring(0, 30)}...
+                                                <React.Fragment key={c.id}>
+                                                    <tr className="hover:bg-red-50/30 transition-colors group">
+                                                        <td className="p-5">
+                                                            <div className="text-[10px] font-black text-slate-900 uppercase tracking-tight italic">{c.loading_date}</div>
+                                                            <div className="text-[8px] text-slate-400 font-bold uppercase">Ent: {c.delivery_date || '-'}</div>
+                                                        </td>
+                                                        <td className="p-5">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${c.status === 'Cerrado' ? 'bg-green-100 text-green-700' :
+                                                                    c.status === 'En Proceso' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                                                                    }`}>
+                                                                    {c.status}
+                                                                </span>
                                                             </div>
-                                                        )}
-                                                    </td>
-                                                    <td className="p-5 text-right">
-                                                        <div className="flex justify-end items-center gap-2">
-                                                            {uploadingComplaintId === c.id ? (
-                                                                <div className="text-[8px] font-black text-orange-600 animate-pulse uppercase tracking-widest px-2">Subiendo...</div>
-                                                            ) : (
-                                                                <>
-                                                                    <button onClick={() => openEditComplaint(c)} className="p-2 bg-slate-900 text-white rounded-sm hover:bg-indigo-600 transition shadow-md">
-                                                                        <FileText size={14} />
-                                                                    </button>
-                                                                    <label className="bg-slate-100 p-2 rounded-sm text-slate-400 hover:bg-orange-600 hover:text-white transition cursor-pointer shadow-sm">
-                                                                        <ImageIcon size={14} />
-                                                                        <input
-                                                                            type="file"
-                                                                            className="hidden"
-                                                                            accept="image/*"
-                                                                            onChange={(e) => handleUploadComplaintImage(c.id, e.target.files[0])}
-                                                                        />
-                                                                    </label>
-                                                                </>
+                                                            <div className="text-[9px] font-bold text-slate-900 uppercase tracking-tighter">Lote: {c.batch || 'S/N'}</div>
+                                                        </td>
+                                                        <td className="p-5">
+                                                            <div className="text-[10px] font-bold text-orange-600 uppercase mb-0.5">{c.flour_type || '-'}</div>
+                                                            <div className="text-[8px] text-slate-400 font-bold uppercase">{c.product_made || '-'}</div>
+                                                        </td>
+                                                        <td className="p-5">
+                                                            <div className="text-[9px] font-bold text-slate-500 uppercase max-w-xs">{c.description?.substring(0, 40)}...</div>
+                                                            {c.technical_conclusion && (
+                                                                <div className="mt-1 text-[8px] px-2 py-1 bg-slate-100 text-slate-600 rounded-sm italic border-l-2 border-indigo-500">
+                                                                    {c.technical_conclusion.substring(0, 30)}...
+                                                                </div>
                                                             )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                {/* GALERÍA DE MINIATURAS PARA RECLAMO */}
-                                                {c.images && c.images.length > 0 && (
-                                                    <tr className="bg-white/50">
-                                                        <td colSpan="5" className="p-4 pt-1">
-                                                            <div className="flex flex-wrap gap-4 border-t border-slate-50 pt-3">
-                                                                {c.images.map(img => (
-                                                                    <div key={img.id} className="relative group w-24 h-24 bg-slate-100 rounded-sm overflow-hidden border border-slate-200 shadow-sm">
-                                                                        <img 
-                                                                            src={img.image} 
-                                                                            alt="Previsualización" 
-                                                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                                        />
-                                                                        <button 
-                                                                            onClick={() => handleDeleteComplaintImage(img.id)}
-                                                                            className="absolute top-1 right-1 bg-red-600/90 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition shadow-lg hover:bg-red-700"
-                                                                        >
-                                                                            <Trash2 size={10} />
+                                                        </td>
+                                                        <td className="p-5 text-right">
+                                                            <div className="flex justify-end items-center gap-2">
+                                                                {uploadingComplaintId === c.id ? (
+                                                                    <div className="text-[8px] font-black text-orange-600 animate-pulse uppercase tracking-widest px-2">Subiendo...</div>
+                                                                ) : (
+                                                                    <>
+                                                                        <button onClick={() => openEditComplaint(c)} className="p-2 bg-slate-900 text-white rounded-sm hover:bg-indigo-600 transition shadow-md">
+                                                                            <FileText size={14} />
                                                                         </button>
-                                                                    </div>
-                                                                ))}
+                                                                        <label className="bg-slate-100 p-2 rounded-sm text-slate-400 hover:bg-orange-600 hover:text-white transition cursor-pointer shadow-sm">
+                                                                            <ImageIcon size={14} />
+                                                                            <input
+                                                                                type="file"
+                                                                                className="hidden"
+                                                                                accept="image/*"
+                                                                                onChange={(e) => handleUploadComplaintImage(c.id, e.target.files[0])}
+                                                                            />
+                                                                        </label>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         </td>
                                                     </tr>
-                                                )}
+                                                    {/* GALERÍA DE MINIATURAS PARA RECLAMO */}
+                                                    {c.images && c.images.length > 0 && (
+                                                        <tr className="bg-white/50">
+                                                            <td colSpan="5" className="p-4 pt-1">
+                                                                <div className="flex flex-wrap gap-4 border-t border-slate-50 pt-3">
+                                                                    {c.images.map(img => (
+                                                                        <div key={img.id} className="relative group w-24 h-24 bg-slate-100 rounded-sm overflow-hidden border border-slate-200 shadow-sm">
+                                                                            <img
+                                                                                src={img.image}
+                                                                                alt="Previsualización"
+                                                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                                            />
+                                                                            <button
+                                                                                onClick={() => handleDeleteComplaintImage(img.id)}
+                                                                                className="absolute top-1 right-1 bg-red-600/90 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition shadow-lg hover:bg-red-700"
+                                                                            >
+                                                                                <Trash2 size={10} />
+                                                                            </button>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </React.Fragment>
                                             ))
                                         )}
                                     </tbody>
