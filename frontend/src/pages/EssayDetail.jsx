@@ -6,6 +6,7 @@ import {
     Trash2, Upload, Settings, CheckSquare, Square,
     ClipboardCheck, Plus, Printer, Wheat, Award
 } from 'lucide-react';
+import { API_URL } from '../config';
 
 // --- COMPONENTES EXTERNOS (SOLUCIÓN AL PROBLEMA DE FOCO) ---
 const WebProcessRow = ({ label, name, unit, value, onChange, isEditing, formData }) => {
@@ -103,7 +104,7 @@ export default function EssayDetail() {
 
     useEffect(() => {
         fetchData();
-        fetch(`${import.meta.env.VITE_API_URL}/api/ingredients/`).then(res => res.json()).then(data => setAllIngredients(data)).catch(console.error);
+        fetch(`${API_URL}/api/ingredients/`).then(res => res.json()).then(data => setAllIngredients(data)).catch(console.error);
         const handleClickOutside = (event) => { if (selectorRef.current && !selectorRef.current.contains(event.target)) setShowFieldSelector(false); };
         document.addEventListener("mousedown", handleClickOutside); return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [id]);
@@ -121,7 +122,7 @@ export default function EssayDetail() {
     }, [detailsData]);
 
     const fetchData = () => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/ensayos/${id}/`).then(res => res.json()).then(data => {
+        fetch(`${API_URL}/api/ensayos/${id}/`).then(res => res.json()).then(data => {
             if (!data || data.detail) {
                 console.error("Essay not found or API error", data);
                 setEnsayo(null);
@@ -202,8 +203,8 @@ export default function EssayDetail() {
 
     const handleSave = async () => {
         try {
-            await fetch(`${import.meta.env.VITE_API_URL}/api/ensayos/${id}/`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...formData, evaluation_data: evalData, final_score: finalScore }) });
-            const updatePromises = detailsData.map(detail => fetch(`${import.meta.env.VITE_API_URL}/api/ensayo-details/${detail.id}/`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantity: detail.quantity, price_per_kg: detail.price_per_kg || detail.cost_per_kg }) }));
+            await fetch(`${API_URL}/api/ensayos/${id}/`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...formData, evaluation_data: evalData, final_score: finalScore }) });
+            const updatePromises = detailsData.map(detail => fetch(`${API_URL}/api/ensayo-details/${detail.id}/`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantity: detail.quantity, price_per_kg: detail.price_per_kg || detail.cost_per_kg }) }));
             await Promise.all(updatePromises); fetchData(); setIsEditing(false); alert('Guardado correctamente');
         } catch (error) { alert('Error al guardar.'); }
     };
@@ -211,7 +212,7 @@ export default function EssayDetail() {
     const handleAddIngredient = async () => {
         if (!newIngredientId || !newIngredientGrams) return alert('Datos incompletos');
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ensayo-details/`, {
+            const res = await fetch(`${API_URL}/api/ensayo-details/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -225,11 +226,11 @@ export default function EssayDetail() {
         } catch (e) { console.error(e); }
     };
 
-    const handleDeleteIngredient = async (id) => { if (confirm('¿Borrar?')) { await fetch(`${import.meta.env.VITE_API_URL}/api/ensayo-details/${id}/`, { method: 'DELETE' }); fetchData(); } };
-    const handleFileUpload = async (e) => { const f = e.target.files[0]; if (!f) return; setUploading(true); const d = new FormData(); d.append('image', f); d.append('ensayo', id); d.append('caption', 'Sin título'); await fetch(`${import.meta.env.VITE_API_URL}/api/ensayo-images/`, { method: 'POST', body: d }); fetchData(); setUploading(false); };
+    const handleDeleteIngredient = async (id) => { if (confirm('¿Borrar?')) { await fetch(`${API_URL}/api/ensayo-details/${id}/`, { method: 'DELETE' }); fetchData(); } };
+    const handleFileUpload = async (e) => { const f = e.target.files[0]; if (!f) return; setUploading(true); const d = new FormData(); d.append('image', f); d.append('ensayo', id); d.append('caption', 'Sin título'); await fetch(`${API_URL}/api/ensayo-images/`, { method: 'POST', body: d }); fetchData(); setUploading(false); };
     const handleCaptionChange = (id, txt) => setImages(images.map(i => i.id === id ? { ...i, caption: txt } : i));
-    const saveCaption = async (id, txt) => fetch(`${import.meta.env.VITE_API_URL}/api/ensayo-images/${id}/`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ caption: txt }) });
-    const handleDeleteImage = async (id) => { if (confirm('¿Borrar?')) { await fetch(`${import.meta.env.VITE_API_URL}/api/ensayo-images/${id}/`, { method: 'DELETE' }); setImages(images.filter(i => i.id !== id)); } };
+    const saveCaption = async (id, txt) => fetch(`${API_URL}/api/ensayo-images/${id}/`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ caption: txt }) });
+    const handleDeleteImage = async (id) => { if (confirm('¿Borrar?')) { await fetch(`${API_URL}/api/ensayo-images/${id}/`, { method: 'DELETE' }); setImages(images.filter(i => i.id !== id)); } };
     const handleEvalChange = (c, i, f, v) => { const n = { ...evalData }; n[c][i][f] = v; setEvalData(n); };
     const toggleField = (k) => setVisibleFields(prev => prev.includes(k) ? prev.filter(f => f !== k) : [...prev, k]);
 
@@ -476,7 +477,7 @@ export default function EssayDetail() {
                             </div>
                         </section>
 
-                        <section><div className="flex justify-between border-b border-slate-200 pb-2 mb-4"><h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2"><ImageIcon size={16} /> Galería Fotográfica</h3>{isEditing && <label className="cursor-pointer bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded flex gap-2 hover:bg-blue-700 transition active:scale-95 shadow-sm"><Upload size={14} /> Subir <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} /></label>}</div>{!images.length ? <div className="p-8 border border-dashed text-center text-slate-400 text-sm italic">No se han registrado fotografías para este ensayo todavía.</div> : <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{images.map(img => (<div key={img.id} className="bg-white rounded overflow-hidden shadow-sm border border-slate-200 group relative"><div className="h-48 overflow-hidden bg-slate-100 relative"><img src={img.image?.startsWith('http') ? img.image : `${import.meta.env.VITE_API_URL}${img.image}`} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" />{isEditing && <button onClick={() => handleDeleteImage(img.id)} className="absolute top-2 right-2 bg-red-600/90 text-white p-1.5 rounded shadow hover:bg-red-700 transition"><Trash2 size={14} /></button>}</div><div className="p-3">{isEditing ? <input type="text" value={img.caption || ''} onChange={(e) => handleCaptionChange(img.id, e.target.value)} onBlur={(e) => saveCaption(img.id, e.target.value)} className="w-full text-xs font-bold border-b outline-none focus:border-blue-400 py-1" /> : <p className="text-xs font-bold text-slate-700 truncate">{img.caption || 'Sin título'}</p>}</div></div>))}</div>}</section>
+                        <section><div className="flex justify-between border-b border-slate-200 pb-2 mb-4"><h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2"><ImageIcon size={16} /> Galería Fotográfica</h3>{isEditing && <label className="cursor-pointer bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded flex gap-2 hover:bg-blue-700 transition active:scale-95 shadow-sm"><Upload size={14} /> Subir <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} /></label>}</div>{!images.length ? <div className="p-8 border border-dashed text-center text-slate-400 text-sm italic">No se han registrado fotografías para este ensayo todavía.</div> : <div className="grid grid-cols-1 md:grid-cols-3 gap-6">{images.map(img => (<div key={img.id} className="bg-white rounded overflow-hidden shadow-sm border border-slate-200 group relative"><div className="h-48 overflow-hidden bg-slate-100 relative"><img src={img.image?.startsWith('http') ? img.image : `${API_URL}${img.image}`} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" />{isEditing && <button onClick={() => handleDeleteImage(img.id)} className="absolute top-2 right-2 bg-red-600/90 text-white p-1.5 rounded shadow hover:bg-red-700 transition"><Trash2 size={14} /></button>}</div><div className="p-3">{isEditing ? <input type="text" value={img.caption || ''} onChange={(e) => handleCaptionChange(img.id, e.target.value)} onBlur={(e) => saveCaption(img.id, e.target.value)} className="w-full text-xs font-bold border-b outline-none focus:border-blue-400 py-1" /> : <p className="text-xs font-bold text-slate-700 truncate">{img.caption || 'Sin título'}</p>}</div></div>))}</div>}</section>
 
                         <section><h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-2 mb-4">Conclusiones Técnicas</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div><label className="block text-xs font-bold text-slate-700 uppercase mb-2">Objetivo / Problema Detectado</label>{isEditing ? <textarea className="w-full p-3 border rounded h-32 text-sm outline-none focus:border-blue-300 focus:bg-slate-50/30 transition shadow-inner" value={formData.description || ''} name="description" onChange={handleInputChange} /> : <div className="p-4 bg-slate-50 border rounded text-sm text-slate-700 min-h-[100px] leading-relaxed italic">{ensayo.description || 'Sin descripción técnica disponible.'}</div>}</div><div><label className="block text-xs font-bold text-slate-700 uppercase mb-2">Conclusión Final del Asesor</label>{isEditing ? <textarea className="w-full p-3 border-green-300 border rounded h-32 text-sm outline-none focus:border-green-400 focus:bg-green-50/10 transition shadow-inner" name="conclusion" value={formData.conclusion || ''} onChange={handleInputChange} /> : <div className="p-4 bg-green-50 border-green-100 border rounded text-sm text-slate-900 min-h-[100px] font-bold leading-relaxed">{ensayo.conclusion || 'Pendiente de validación final.'}</div>}</div></div></section>
                     </div>

@@ -11,7 +11,7 @@ export default function ClientDetail() {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/clients/${id}/`)
+        fetch(`${API_URL}/api/clients/${id}/`)
             .then(r => r.json())
             .then(d => {
                 setClient(d);
@@ -43,7 +43,7 @@ export default function ClientDetail() {
         };
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/clients/${id}/`, {
+            const res = await fetch(`${API_URL}/api/clients/${id}/`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -64,7 +64,7 @@ export default function ClientDetail() {
     const handleDelete = async () => {
         if (window.confirm('¿Confirmar eliminación absoluta de esta cuenta?')) {
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/clients/${id}/`, { method: 'DELETE' });
+                const res = await fetch(`${API_URL}/api/clients/${id}/`, { method: 'DELETE' });
                 if (res.ok) navigate('/clients');
             } catch (e) { console.error(e); }
         }

@@ -22,8 +22,8 @@ export default function NewEssay() {
     useEffect(() => {
         // Cargar Clientes y Proyectos en paralelo
         Promise.all([
-            fetch(`${import.meta.env.VITE_API_URL}/api/clients/`).then(res => res.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/api/projects/`).then(res => res.json())
+            fetch(`${API_URL}/api/clients/`).then(res => res.json()),
+            fetch(`${API_URL}/api/projects/`).then(res => res.json())
         ]).then(([clientsData, projectsData]) => {
             setClients(clientsData);
             setProjects(projectsData);
@@ -41,7 +41,7 @@ export default function NewEssay() {
         if (!formData.project) return alert('Debes seleccionar un Proyecto');
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ensayos/`, {
+            const res = await fetch(`${API_URL}/api/ensayos/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

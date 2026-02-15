@@ -20,8 +20,8 @@ export default function NewVisit() {
 
     useEffect(() => {
         Promise.all([
-            fetch(`${import.meta.env.VITE_API_URL}/api/clients/`).then(r => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/api/projects/`).then(r => r.json())
+            fetch(`${API_URL}/api/clients/`).then(r => r.json()),
+            fetch(`${API_URL}/api/projects/`).then(r => r.json())
         ]).then(([cData, pData]) => {
             setClients(cData);
             setProjects(pData);
@@ -37,7 +37,7 @@ export default function NewVisit() {
         if (!formData.client && !formData.project) return alert('Debe seleccionar un cliente o un proyecto');
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/visits/`, {
+            const res = await fetch(`${API_URL}/api/visits/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

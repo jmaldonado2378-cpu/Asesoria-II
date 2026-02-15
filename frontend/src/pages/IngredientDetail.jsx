@@ -10,7 +10,7 @@ export default function IngredientDetail() {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/ingredients/${id}/`)
+        fetch(`${API_URL}/api/ingredients/${id}/`)
             .then(r => r.json())
             .then(d => {
                 setFormData(d);
@@ -27,7 +27,7 @@ export default function IngredientDetail() {
         setSaving(true);
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ingredients/${id}/`, {
+            const res = await fetch(`${API_URL}/api/ingredients/${id}/`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -52,7 +52,7 @@ export default function IngredientDetail() {
     const handleDelete = async () => {
         if (window.confirm('¿Confirmar baja definitiva de este insumo del sistema?')) {
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ingredients/${id}/`, { method: 'DELETE' });
+                const res = await fetch(`${API_URL}/api/ingredients/${id}/`, { method: 'DELETE' });
                 if (res.ok) navigate('/ingredients');
             } catch (e) { console.error(e); }
         }

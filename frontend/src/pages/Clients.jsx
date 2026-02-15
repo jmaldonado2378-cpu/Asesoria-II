@@ -8,7 +8,7 @@ export default function Clients() {
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/clients/`)
+        fetch(`${API_URL}/api/clients/`)
             .then(res => res.json())
             .then(data => { setClients(data); setLoading(false); })
             .catch(err => { console.error(err); setLoading(false); });

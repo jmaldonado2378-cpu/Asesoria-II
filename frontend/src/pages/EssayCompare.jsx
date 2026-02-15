@@ -45,7 +45,7 @@ export default function EssayCompare() {
         if (ids.length === 0) { setLoading(false); return; }
 
         Promise.all(ids.map(id =>
-            fetch(`${import.meta.env.VITE_API_URL}/api/ensayos/${id}/`).then(r => {
+            fetch(`${API_URL}/api/ensayos/${id}/`).then(r => {
                 if (!r.ok) throw new Error('Error al cargar ensayo');
                 return r.json();
             })

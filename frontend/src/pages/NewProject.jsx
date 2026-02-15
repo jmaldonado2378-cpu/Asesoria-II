@@ -17,7 +17,7 @@ export default function NewProject() {
     });
 
     useEffect(() => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/clients/`)
+        fetch(`${API_URL}/api/clients/`)
             .then(r => r.json())
             .then(d => {
                 setClients(d);
@@ -34,7 +34,7 @@ export default function NewProject() {
         if (!formData.client || !formData.name) return alert('Cliente y Nombre requeridos');
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/projects/`, {
+            const res = await fetch(`${API_URL}/api/projects/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

@@ -19,7 +19,7 @@ export default function NewIngredient() {
         if (!formData.name) return alert('El nombre del ingrediente es obligatorio');
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ingredients/`, {
+            const res = await fetch(`${API_URL}/api/ingredients/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

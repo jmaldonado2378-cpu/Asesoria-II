@@ -8,7 +8,7 @@ export default function IngredientList() {
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/ingredients/`)
+        fetch(`${API_URL}/api/ingredients/`)
             .then(r => r.json())
             .then(d => {
                 // Ordenar por nombre por defecto

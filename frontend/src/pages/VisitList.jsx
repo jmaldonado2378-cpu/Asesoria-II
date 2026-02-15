@@ -8,7 +8,7 @@ export default function VisitList() {
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/visits/`)
+        fetch(`${API_URL}/api/visits/`)
             .then(r => r.json())
             .then(d => {
                 // Ordenar por fecha (más nuevas primero)

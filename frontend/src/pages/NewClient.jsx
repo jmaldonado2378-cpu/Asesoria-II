@@ -29,7 +29,7 @@ export default function NewClient() {
         };
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/clients/`, {
+            const res = await fetch(`${API_URL}/api/clients/`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
             });
             if (res.ok) navigate('/clients'); else alert('Error al guardar cliente');

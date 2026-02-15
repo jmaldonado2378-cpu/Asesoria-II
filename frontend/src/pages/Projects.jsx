@@ -8,7 +8,7 @@ export default function Projects() {
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/projects/`)
+        fetch(`${API_URL}/api/projects/`)
             .then(res => res.json())
             .then(data => {
                 setProjects(data);

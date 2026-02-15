@@ -13,7 +13,7 @@ export default function VisitDetail() {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/visits/${id}/`)
+        fetch(`${API_URL}/api/visits/${id}/`)
             .then(r => r.json())
             .then(d => {
                 setFormData(d);
@@ -30,7 +30,7 @@ export default function VisitDetail() {
         setSaving(true);
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/visits/${id}/`, {
+            const res = await fetch(`${API_URL}/api/visits/${id}/`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -54,7 +54,7 @@ export default function VisitDetail() {
 
         setSaving(true);
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/visits/${id}/`, {
+            const res = await fetch(`${API_URL}/api/visits/${id}/`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: 'Realizada', description: formData.description })
@@ -70,7 +70,7 @@ export default function VisitDetail() {
     const handleDelete = async () => {
         if (window.confirm('¿Confirmar eliminación definitiva de este registro de agenda?')) {
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/visits/${id}/`, { method: 'DELETE' });
+                const res = await fetch(`${API_URL}/api/visits/${id}/`, { method: 'DELETE' });
                 if (res.ok) navigate('/visits');
             } catch (e) { console.error(e); }
         }

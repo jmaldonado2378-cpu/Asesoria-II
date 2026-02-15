@@ -160,7 +160,7 @@ export default function ProjectDetail() {
         formData.append('project', id);
 
         try {
-            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/import-complaints/`, {
+            const resp = await fetch(`${API_URL}/api/import-complaints/`, {
                 method: 'POST',
                 body: formData
             });
@@ -168,7 +168,7 @@ export default function ProjectDetail() {
                 const result = await resp.json();
                 alert(result.message);
                 // Recargar reclamos
-                const freshReclamos = await fetch(`${import.meta.env.VITE_API_URL}/api/complaints/?project=${id}`).then(r => r.json());
+                const freshReclamos = await fetch(`${API_URL}/api/complaints/?project=${id}`).then(r => r.json());
                 setComplaints(freshReclamos);
             } else {
                 alert('Error al importar Excel.');
@@ -189,14 +189,17 @@ export default function ProjectDetail() {
         formData.append('image', file);
 
         try {
-            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/complaint-images/`, {
+            const resp = await fetch(`${API_URL}/api/complaint-images/`, {
                 method: 'POST',
                 body: formData
             });
             if (resp.ok) {
                 // Recargar reclamos para ver la imagen
-                const freshReclamos = await fetch(`${import.meta.env.VITE_API_URL}/api/complaints/?project=${id}`).then(r => r.json());
+                const freshReclamos = await fetch(`${API_URL}/api/complaints/?project=${id}`).then(r => r.json());
                 setComplaints(freshReclamos);
+                // Actualizar el reclamo que se está editando para que el modal se refresque
+                const updated = freshReclamos.find(c => c.id === complaintId);
+                if (updated) setEditingComplaint(updated);
             } else {
                 alert('Error al subir imagen.');
             }
@@ -210,19 +213,23 @@ export default function ProjectDetail() {
     const handleDeleteComplaintImage = async (imageId) => {
         if (!confirm('¿Eliminar esta fotografía?')) return;
         try {
-            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/complaint-images/${imageId}/`, {
+            const resp = await fetch(`${API_URL}/api/complaint-images/${imageId}/`, {
                 method: 'DELETE'
             });
             if (resp.ok) {
-                const freshReclamos = await fetch(`${import.meta.env.VITE_API_URL}/api/complaints/?project=${id}`).then(r => r.json());
+                const freshReclamos = await fetch(`${API_URL}/api/complaints/?project=${id}`).then(r => r.json());
                 setComplaints(freshReclamos);
+                if (editingComplaint && editingComplaint.id) {
+                    const updated = freshReclamos.find(c => c.id === editingComplaint.id);
+                    if (updated) setEditingComplaint(updated);
+                }
             }
         } catch (err) { console.error(err); }
     };
 
     const handleDownloadTemplate = async () => {
         try {
-            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/complaints-template/?project=${id}`);
+            const resp = await fetch(`${API_URL}/api/complaints-template/?project=${id}`);
             if (resp.ok) {
                 const blob = await resp.blob();
                 const url = window.URL.createObjectURL(blob);
@@ -240,8 +247,8 @@ export default function ProjectDetail() {
         e.preventDefault();
         const method = editingComplaint ? 'PATCH' : 'POST';
         const url = editingComplaint
-            ? `${import.meta.env.VITE_API_URL}/api/complaints/${editingComplaint.id}/`
-            : `${import.meta.env.VITE_API_URL}/api/complaints/`;
+            ? `${API_URL}/api/complaints/${editingComplaint.id}/`
+            : `${API_URL}/api/complaints/`;
 
         const payload = { ...complaintForm, project: id };
 
@@ -255,7 +262,7 @@ export default function ProjectDetail() {
                 setShowComplaintForm(false);
                 setEditingComplaint(null);
                 // Refresh
-                const fresh = await fetch(`${import.meta.env.VITE_API_URL}/api/complaints/?project=${id}`).then(r => r.json());
+                const fresh = await fetch(`${API_URL}/api/complaints/?project=${id}`).then(r => r.json());
                 setComplaints(fresh);
             } else {
                 alert('Error al guardar el reclamo.');
@@ -300,7 +307,7 @@ export default function ProjectDetail() {
     const handleSaveObservations = async () => {
         setSavingObs(true);
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/projects/${id}/`, {
+            const response = await fetch(`${API_URL}/api/projects/${id}/`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ technical_observations: observations })
@@ -344,7 +351,7 @@ export default function ProjectDetail() {
 
     const downloadBackendReport = async (reportData, targetFormat = 'excel') => {
         try {
-            const resp = await fetch(`${import.meta.env.VITE_API_URL}/api/generate-technical-report/`, {
+            const resp = await fetch(`${API_URL}/api/generate-technical-report/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...reportData, format: targetFormat })
@@ -770,7 +777,7 @@ export default function ProjectDetail() {
                                                                     {c.images.map(img => (
                                                                         <div key={img.id} className="relative group w-20 h-20 bg-slate-100 rounded-sm overflow-hidden border border-slate-200 shadow-sm transition hover:shadow-md">
                                                                             <img
-                                                                                src={img.image?.startsWith('http') ? img.image : `${import.meta.env.VITE_API_URL}${img.image}`}
+                                                                                src={img.image?.startsWith('http') ? img.image : `${API_URL}${img.image}`}
                                                                                 alt="Reclamo"
                                                                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                                                             />
@@ -985,6 +992,59 @@ export default function ProjectDetail() {
                                         <textarea value={complaintForm.corrective_action} onChange={e => setComplaintForm({ ...complaintForm, corrective_action: e.target.value })} className="w-full h-32 p-3 bg-slate-50 border border-slate-200 rounded-sm text-xs outline-none focus:border-green-600" />
                                     </div>
                                 </div>
+
+                                {/* SECCIÓN DE FOTOS (DENTRO DEL MODAL) */}
+                                {editingComplaint && (
+                                    <div className="md:col-span-2 space-y-4 border-t border-slate-100 pt-6">
+                                        <div className="flex justify-between items-center">
+                                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                                                <ImageIcon size={16} /> Evidencia Fotográfica (Gestión Manual)
+                                            </h3>
+                                            <div className="flex items-center gap-4">
+                                                {uploadingComplaintId === editingComplaint.id && (
+                                                    <span className="text-[8px] font-black text-orange-600 animate-pulse uppercase tracking-widest">Sincronizando Archivo...</span>
+                                                )}
+                                                <label className="cursor-pointer bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest px-4 py-2 rounded-sm flex items-center gap-2 hover:bg-orange-600 transition shadow-lg border border-slate-700">
+                                                    <Upload size={14} /> Cargar Foto Individual
+                                                    <input
+                                                        type="file"
+                                                        className="hidden"
+                                                        accept="image/*"
+                                                        onChange={(e) => handleUploadComplaintImage(editingComplaint.id, e.target.files[0])}
+                                                    />
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {editingComplaint.images && editingComplaint.images.length > 0 ? (
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                                {editingComplaint.images.map(img => (
+                                                    <div key={img.id} className="relative group aspect-square bg-slate-100 rounded-sm overflow-hidden border border-slate-200 shadow-xl transition hover:border-orange-600">
+                                                        <img
+                                                            src={img.image?.startsWith('http') ? img.image : `${API_URL}${img.image}`}
+                                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                            alt="Evidencia"
+                                                        />
+                                                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteComplaintImage(img.id)}
+                                                                className="bg-red-600 text-white p-2 rounded-full shadow-2xl hover:bg-red-700 active:scale-90 transition-all font-bold"
+                                                                title="Eliminar Permanente"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="p-12 border-2 border-dashed border-slate-100 text-center text-slate-300 text-[10px] font-black uppercase tracking-widest italic">
+                                                No se han vinculado evidencias fotográficas a este reporte todavía.
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div className="md:col-span-2 flex justify-end gap-4 border-t border-slate-100 pt-6">
                                     <button type="button" onClick={() => setShowComplaintForm(false)} className="px-8 py-3 bg-slate-100 text-slate-400 rounded-sm text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition">Cancelar</button>

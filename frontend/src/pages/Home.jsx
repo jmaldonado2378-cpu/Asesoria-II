@@ -22,9 +22,9 @@ export default function Home() {
 
     useEffect(() => {
         Promise.all([
-            fetch(`${import.meta.env.VITE_API_URL}/api/projects/`).then(r => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/api/visits/`).then(r => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/api/ensayos/`).then(r => r.json())
+            fetch(`${API_URL}/api/projects/`).then(r => r.json()),
+            fetch(`${API_URL}/api/visits/`).then(r => r.json()),
+            fetch(`${API_URL}/api/ensayos/`).then(r => r.json())
         ]).then(([proj, visits, essays]) => {
             // Stats
             const activeProjs = proj.filter(p => p.status === 'En Curso').length;
