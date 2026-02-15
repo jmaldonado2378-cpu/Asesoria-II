@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import { Link } from 'react-router-dom';
 import { Plus, Search, Building, MapPin, User, Mail, Eye, Activity, Loader2 } from 'lucide-react';
 

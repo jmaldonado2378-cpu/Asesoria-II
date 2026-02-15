@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Calendar, Clock, Briefcase, Users, Activity, FileText, Tag, Loader2 } from 'lucide-react';
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_URL } from '../config';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Package, Truck, DollarSign, FileText, Activity, Tag, Info } from 'lucide-react';
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import { useSearchParams, Link } from 'react-router-dom';
 import { ArrowLeft, GitCompare, Trophy, Printer, AlertTriangle, Award, Square } from 'lucide-react';
 

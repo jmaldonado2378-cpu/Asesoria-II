@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Building, User, Mail, MapPin, Phone, Briefcase, Map, ExternalLink, Activity, Loader2, Trash2, Plus } from 'lucide-react';
 

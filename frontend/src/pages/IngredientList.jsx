@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import { Link } from 'react-router-dom';
 import { Plus, Search, Package, DollarSign, Truck, FileText, Activity, Loader2, Tag, ChevronRight } from 'lucide-react';
 

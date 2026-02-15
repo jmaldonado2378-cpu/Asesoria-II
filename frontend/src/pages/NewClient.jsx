@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_URL } from '../config';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Building, User, Mail, MapPin, Phone, Briefcase, Plus, Trash2, Activity } from 'lucide-react';
 
