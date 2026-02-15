@@ -100,6 +100,7 @@ export default function ProjectDetail() {
             setLoading(false);
         }).catch(err => {
             console.error("Fetch error:", err);
+            alert("⚠️ Error de conexión: " + err.message);
             setLoading(false);
         });
     }, [id]);

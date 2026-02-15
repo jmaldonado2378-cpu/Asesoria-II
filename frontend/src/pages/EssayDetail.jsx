@@ -140,6 +140,10 @@ export default function EssayDetail() {
         }).catch(err => {
             console.error("Fetch error:", err);
             setLoading(false);
+        }).catch(err => {
+            console.error("Fetch error:", err);
+            alert("⚠️ Error de conexión: " + err.message);
+            setLoading(false);
         });
     };
 
