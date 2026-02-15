@@ -15,6 +15,7 @@ import {
     BarChart3,
     Pipette
 } from 'lucide-react';
+import { API_URL } from '../config';
 
 export default function Dashboard() {
     const [stats, setStats] = useState({
@@ -33,7 +34,6 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const API_URL = import.meta.env.VITE_API_URL || 'https://app-asesoria.onrender.com';
         Promise.all([
             fetch(`${API_URL}/api/clients/`).then(r => r.json()),
             fetch(`${API_URL}/api/projects/`).then(r => r.json()),

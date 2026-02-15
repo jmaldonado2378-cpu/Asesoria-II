@@ -7,6 +7,7 @@ import {
     ShoppingBag, PieChart, Plus, Trash2, AlertCircle, CheckSquare, Square, Eye
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { API_URL } from '../config';
 
 export default function ProjectDetail() {
     const { id } = useParams();
@@ -59,7 +60,6 @@ export default function ProjectDetail() {
     });
 
     useEffect(() => {
-        const API_URL = import.meta.env.VITE_API_URL || 'https://app-asesoria.onrender.com';
         Promise.all([
             fetch(`${API_URL}/api/projects/${id}/`).then(r => r.json()),
             fetch(`${API_URL}/api/ensayos/`).then(r => r.json()),
