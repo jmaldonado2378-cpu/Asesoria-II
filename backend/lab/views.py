@@ -87,13 +87,8 @@ class ComplaintImageViewSet(viewsets.ModelViewSet):
     queryset = ComplaintImage.objects.all()
     serializer_class = ComplaintImageSerializer
 
-# @api_view(['POST'])
-# @parser_classes([MultiPartParser])
-# def import_complaints_excel(request):
-#     """
-#     DESACTIVADO: PRIORIZANDO CARGA MANUAL PERFECTA
-#     """
-#     return Response({"error": "La importación masiva ha sido desactivada temporalmente."}, status=403)
+# --- RECLAMOS TÉCNICOS (CARGA MANUAL EXCLUSIVA) ---
+# Se ha eliminado la lógica de importación masiva para garantizar la integridad de los datos manuales.
 
 @api_view(['GET'])
 def download_complaint_template(request):
@@ -238,15 +233,37 @@ def generate_technical_report_view(request):
     def get_image_base64(path):
         """
         Lee un archivo de imagen y lo devuelve como string Base64.
+        Intenta resolver la ruta de forma robusta para el entorno local.
         """
+        if not path:
+            return None
+        
+        # 1. Intentar ruta absoluta directa
+        final_path = path
+        if not os.path.exists(final_path):
+            # 2. Si falla, intentar buscar solo el nombre del archivo dentro de la carpeta media actual
+            # Esto corrige errores si la base de datos tiene rutas de otro entorno
+            try:
+                # Extraer parte relativa (ej: ensayos/1/foto.jpg)
+                if 'media' in path:
+                    relative_path = path.split('media')[-1].lstrip('\\').lstrip('/')
+                    final_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+            except:
+                pass
+
         try:
-            if not path or not os.path.exists(path):
+            if os.path.exists(final_path):
+                with open(final_path, "rb") as image_file:
+                    encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                    # Detectar extensión para el mime type
+                    ext = os.path.splitext(final_path)[1].lower().replace('.', '')
+                    if ext not in ['jpg', 'jpeg', 'png', 'gif']: ext = 'jpeg'
+                    return f"data:image/{ext};base64,{encoded_string}"
+            else:
+                print(f"CRITICAL: Image not found at {final_path}")
                 return None
-            with open(path, "rb") as image_file:
-                encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-                return f"data:image/jpeg;base64,{encoded_string}"
         except Exception as e:
-            print(f"DEBUG ERROR: Base64 conversion failed for {path}: {str(e)}")
+            print(f"DEBUG ERROR: Base64 conversion failed for {final_path}: {str(e)}")
             return None
 
     project_id = request.data.get('project')

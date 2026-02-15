@@ -282,7 +282,9 @@ export default function ProjectDetail() {
             description: c.description || '',
             status: c.status || 'Abierto',
             technical_conclusion: c.technical_conclusion || '',
-            corrective_action: c.corrective_action || ''
+            corrective_action: c.corrective_action || '',
+            direct_client: c.direct_client || '',
+            contact: c.contact || ''
         });
         setShowComplaintForm(true);
     };
@@ -299,7 +301,9 @@ export default function ProjectDetail() {
             description: '',
             status: 'Abierto',
             technical_conclusion: '',
-            corrective_action: ''
+            corrective_action: '',
+            direct_client: '',
+            contact: ''
         });
         setShowComplaintForm(true);
     };
@@ -943,6 +947,10 @@ export default function ProjectDetail() {
                                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Fecha Entrega</label>
                                             <input type="date" value={complaintForm.delivery_date} onChange={e => setComplaintForm({ ...complaintForm, delivery_date: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm font-mono text-xs outline-none focus:border-indigo-600" />
                                         </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cliente Directo (Opcional)</label>
+                                        <input value={complaintForm.direct_client} onChange={e => setComplaintForm({ ...complaintForm, direct_client: e.target.value })} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-sm text-xs font-bold uppercase outline-none focus:border-indigo-600" placeholder="Ej: Panadería Santa Margarita" />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
