@@ -59,12 +59,13 @@ export default function ProjectDetail() {
     });
 
     useEffect(() => {
+        const API_URL = import.meta.env.VITE_API_URL || 'https://app-asesoria.onrender.com';
         Promise.all([
-            fetch(`${import.meta.env.VITE_API_URL}/api/projects/${id}/`).then(r => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/api/ensayos/`).then(r => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/api/visits/`).then(r => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/api/technical-reports/?project=${id}`).then(r => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/api/complaints/?project=${id}`).then(r => r.json())
+            fetch(`${API_URL}/api/projects/${id}/`).then(r => r.json()),
+            fetch(`${API_URL}/api/ensayos/`).then(r => r.json()),
+            fetch(`${API_URL}/api/visits/`).then(r => r.json()),
+            fetch(`${API_URL}/api/technical-reports/?project=${id}`).then(r => r.json()),
+            fetch(`${API_URL}/api/complaints/?project=${id}`).then(r => r.json())
         ]).then(([projData, essaysData, visitsData, reportsData, complaintsData]) => {
             if (!projData || projData.detail) {
                 console.error("Project not found or API error", projData);

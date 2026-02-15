@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FlaskConical, Calendar, FileText, User, Loader2, Beaker, Plus } from 'lucide-react';
+import { API_URL } from '../config';
 
 export default function Essays() {
     const [ensayos, setEnsayos] = useState([]);
@@ -8,8 +9,7 @@ export default function Essays() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        // IMPORTANTE: Usamos la ruta en español 'ensayos'
-        fetch(`${import.meta.env.VITE_API_URL}/api/ensayos/`)
+        fetch(`${API_URL}/api/ensayos/`)
             .then((res) => {
                 if (!res.ok) throw new Error('Error al conectar con el servidor');
                 return res.json();

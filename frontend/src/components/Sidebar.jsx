@@ -19,7 +19,7 @@ export default function Sidebar() {
         <div className="h-screen w-20 bg-slate-900 flex flex-col items-center py-6 fixed left-0 top-0 border-r border-slate-800 z-50 print:hidden shadow-2xl">
             <div className="mb-10 flex flex-col items-center gap-2 group cursor-pointer transition-transform hover:scale-110">
                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-slate-700 p-1 bg-white shadow-lg">
-                    <img src={`${import.meta.env.VITE_API_URL}/static/images/logo_institucional.png`} alt="Logo" className="w-full h-full object-contain" />
+                    <img src={`${import.meta.env.VITE_API_URL || 'https://app-asesoria.onrender.com'}/static/images/logo_institucional.png`} alt="Logo" className="w-full h-full object-contain" />
                 </div>
                 <div className="text-[6px] text-slate-400 font-bold text-center leading-tight uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">
                     Gestión Técnica<br />& Desarrollo

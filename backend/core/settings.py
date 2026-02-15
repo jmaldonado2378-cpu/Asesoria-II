@@ -87,8 +87,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://app-asesor.vercel.app", # Futuro dominio Vercel
 ]
 
-# Si el dominio es dinÃ¡mico o necesitas permitir todo en desarrollo
-CORS_ALLOW_ALL_ORIGINS = DEBUG 
+# Si el dominio es dinÃ¡mico o necesitas permitir todo en desarrollo (Temporalmente en todo para diagnóstico)
+CORS_ALLOW_ALL_ORIGINS = True 
 
 CSRF_TRUSTED_ORIGINS = [
     "https://app-asesor.vercel.app",

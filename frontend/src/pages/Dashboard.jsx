@@ -33,11 +33,12 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const API_URL = import.meta.env.VITE_API_URL || 'https://app-asesoria.onrender.com';
         Promise.all([
-            fetch(`${import.meta.env.VITE_API_URL}/api/clients/`).then(r => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/api/projects/`).then(r => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/api/ensayos/`).then(r => r.json()),
-            fetch(`${import.meta.env.VITE_API_URL}/api/visits/`).then(r => r.json())
+            fetch(`${API_URL}/api/clients/`).then(r => r.json()),
+            fetch(`${API_URL}/api/projects/`).then(r => r.json()),
+            fetch(`${API_URL}/api/ensayos/`).then(r => r.json()),
+            fetch(`${API_URL}/api/visits/`).then(r => r.json())
         ]).then(([clientsData, projectsData, essaysData, visitsData]) => {
             // Safety checks
             const clients = Array.isArray(clientsData) ? clientsData : [];
