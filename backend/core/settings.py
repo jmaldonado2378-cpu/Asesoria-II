@@ -117,7 +117,7 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ConfiguraciÃ³n de archivos Media
+# Configuracion de archivos Media
 if os.name == 'nt':
     MEDIA_ROOT = 'C:\\GESTION_MALDONADO\\04_SOFTWARE_APP\\BACKEND\\media'
 else:
