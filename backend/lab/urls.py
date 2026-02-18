@@ -4,7 +4,7 @@ from .views import (
     ClientViewSet, ProjectViewSet, IngredientViewSet,
     EnsayoViewSet, EnsayoDetailViewSet, EnsayoImageViewSet,
     ProjectIngredientPriceViewSet, VisitViewSet,
-    TechnicalReportViewSet, generate_technical_report_view,
+    TechnicalReportViewSet,
     ComplaintViewSet, ComplaintImageViewSet
 )
 from . import views
