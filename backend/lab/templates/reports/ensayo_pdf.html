@@ -7,196 +7,353 @@
     <style>
         @page {
             size: A4;
-            margin: 2cm;
-
-            @bottom-right {
-                content: "Página " counter(page) " de " counter(pages);
-                font-size: 9pt;
-                color: #666;
-            }
+            margin: 1cm;
         }
 
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
-            color: #333;
-            line-height: 1.5;
-            font-size: 10pt;
+            color: #1e293b;
+            line-height: 1.4;
+            font-size: 9pt;
         }
 
         .header {
-            border-bottom: 2px solid #2563eb;
+            border-bottom: 4px solid #0f172a;
             padding-bottom: 10px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-bottom: 20px;
         }
 
-        .logo-placeholder {
-            width: 150px;
-            height: 50px;
+        .title {
+            font-size: 22pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 10pt;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .meta-container {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+
+        .meta-table {
+            width: 100%;
+        }
+
+        .label {
+            color: #64748b;
+            font-weight: bold;
+            width: 100px;
+        }
+
+        .value {
+            color: #0f172a;
+            font-weight: bold;
+        }
+
+        .section-header {
+            background-color: #334155;
+            color: white;
+            padding: 4px 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 10pt;
+        }
+
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        table.data-table th {
             background-color: #f1f5f9;
-            border: 1px dashed #cbd5e1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #94a3b8;
+            text-align: left;
+            padding: 6px;
+            border-bottom: 2px solid #cbd5e1;
             font-size: 8pt;
         }
 
-        .report-title {
-            text-align: right;
-        }
-
-        .report-title h1 {
-            margin: 0;
-            color: #2563eb;
-            font-size: 18pt;
-            text-transform: uppercase;
-        }
-
-        .metadata-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-            background-color: #f8fafc;
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-        .metadata-item b {
-            color: #475569;
-            width: 120px;
-            display: inline-block;
-        }
-
-        .section-title {
-            background-color: #e2e8f0;
-            padding: 5px 10px;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 15px;
-            border-left: 4px solid #2563eb;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
-
-        th {
-            background-color: #f1f5f9;
-            text-align: left;
-            padding: 10px;
-            border-bottom: 2px solid #e2e8f0;
-            font-size: 9pt;
-            color: #64748b;
-            text-transform: uppercase;
-        }
-
-        td {
-            padding: 10px;
-            border-bottom: 1px solid #f1f5f9;
+        table.data-table td {
+            padding: 6px;
+            border-bottom: 1px solid #e2e8f0;
         }
 
         .numeric {
             text-align: right;
-            font-family: 'Courier New', Courier, monospace;
-        }
-
-        .ppm-badge {
-            background-color: #dcfce7;
-            color: #166534;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 8pt;
+            font-family: monospace;
             font-weight: bold;
         }
 
-        .footer {
-            margin-top: 50px;
-            padding-top: 20px;
-            border-top: 1px solid #e2e8f0;
+        .grid-2 {
+            width: 100%;
         }
 
-        .signature-box {
-            margin-top: 60px;
-            display: flex;
-            justify-content: flex-end;
+        .column {
+            width: 48%;
+            vertical-align: top;
         }
 
-        .signature-line {
-            width: 200px;
-            border-top: 1px solid #333;
+        .score-box {
+            background-color: #0f172a;
+            color: white;
+            padding: 15px;
             text-align: center;
-            padding-top: 5px;
-            font-size: 9pt;
+            border-radius: 4px;
+        }
+
+        .score-val {
+            font-size: 28pt;
+            font-weight: bold;
+        }
+
+        .photo-grid {
+            width: 100%;
+        }
+
+        .photo-item {
+            width: 31%;
+            display: inline-block;
+            margin: 1%;
+            border: 1px solid #e2e8f0;
+            padding: 4px;
+            background: white;
+            page-break-inside: avoid;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+
+        .photo-caption {
+            font-size: 7pt;
+            text-align: center;
+            margin-top: 4px;
+            font-weight: bold;
+            color: #475569;
+        }
+
+        .conclusion-box {
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+            min-height: 60px;
         }
     </style>
 </head>
 
 <body>
     <div class="header">
-        <div class="logo-placeholder">
-            <img src="/static/images/logo_institucional.png" alt="Logo" style="max-height: 40px;">
-        </div>
-        <div class="report-title">
-            <h1>GESTIÓN TÉCNICA Y DESARROLLO</h1>
-            <div>Código: <b>{{ ensayo.code }}</b></div>
-        </div>
+        <table style="width: 100%;">
+            <tr>
+                <td style="width: 60px;">
+                    {% if logo %}
+                    <img src="{{ logo }}" style="height: 45px;">
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="subtitle">Laboratorio I+D • Copia Controlada</div>
+                    <div class="title">Reporte de Ensayo</div>
+                </td>
+                <td style="text-align: right;">
+                    <div class="score-box">
+                        <div style="font-size: 7pt; opacity: 0.7; text-transform: uppercase;">Puntaje Global</div>
+                        <div class="score-val">{{ ensayo.final_score|default:"0.00" }}</div>
+                        <div style="font-size: 7pt; opacity: 0.7;">/ 10 PTS</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
 
-    <div class="metadata-grid">
-        <div class="metadata-item"><b>Proyecto:</b> {{ ensayo.project.name }}</div>
-        <div class="metadata-item"><b>Fecha:</b> {{ ensayo.date|date:"d/m/Y H:i" }}</div>
-        <div class="metadata-item"><b>Cliente:</b> {{ ensayo.project.client.name }}</div>
-        <div class="metadata-item"><b>Estado:</b> Finalizado</div>
+    <div class="meta-container">
+        <table class="meta-table">
+            <tr>
+                <td class="label">CÓDIGO:</td>
+                <td class="value">{{ ensayo.code }}</td>
+                <td class="label">FECHA:</td>
+                <td class="value">{{ ensayo.date|date:"d/m/Y" }}</td>
+            </tr>
+            <tr>
+                <td class="label">CLIENTE:</td>
+                <td class="value">{{ ensayo.project.client.name }}</td>
+                <td class="label">PROYECTO:</td>
+                <td class="value">{{ ensayo.project.name }}</td>
+            </tr>
+        </table>
     </div>
 
-    {% if ensayo.description %}
-    <div class="section-title">Objetivo y Observaciones</div>
-    <p style="margin-bottom: 30px;">{{ ensayo.description }}</p>
-    {% endif %}
-
-    <div class="section-title">Formulación y Dosificación</div>
-    <table>
+    <div class="section-header">Formulación del Batch</div>
+    <table class="data-table">
         <thead>
             <tr>
                 <th>Ingrediente</th>
-                <th>Tipo</th>
-                <th class="numeric">Cantidad (KG)</th>
-                <th class="numeric">Dosificación (PPM)</th>
+                <th class="numeric">Peso (g)</th>
+                <th class="numeric">% Panadero</th>
+                <th class="numeric">PPM</th>
+                <th class="numeric">Dosis 25kg</th>
             </tr>
         </thead>
         <tbody>
-            {% for detail in ensayo.details.all %}
+            {% for d in details %}
             <tr>
-                <td>{{ detail.ingredient.name }}</td>
-                <td>{% if detail.ingredient.is_base_flour %}Harina Base{% else %}Aditivo{% endif %}</td>
-                <td class="numeric">{{ detail.quantity|floatformat:4 }}</td>
-                <td class="numeric">
-                    {% if detail.dosage_ppm %}
-                    <span class="ppm-badge">{{ detail.dosage_ppm|floatformat:2 }} PPM</span>
-                    {% else %}-{% endif %}
-                </td>
+                <td>{{ d.ingredient.name }} {% if d.ingredient.is_base_flour %}(BASE){% endif %}</td>
+                <td class="numeric">{{ d.quantity|floatformat:4|slice:":-5" }}000 g</td>
+                <td class="numeric">{{ d.panadero_pct|floatformat:4 }}%</td>
+                <td class="numeric">{{ d.ppm_calc|floatformat:0 }}</td>
+                <td class="numeric">{{ d.dosis_25kg|floatformat:2 }} g</td>
             </tr>
             {% endfor %}
+            <tr style="background-color: #f8fafc; font-weight: bold;">
+                <td colspan="4" style="text-align: right;">COSTO TOTAL FORMULACIÓN:</td>
+                <td class="numeric" style="color: #166534;">${{ total_cost|floatformat:2 }}</td>
+            </tr>
         </tbody>
     </table>
 
-    <div class="footer">
-        <div class="section-title">Conclusión Técnica</div>
-        <p>El ensayo cumple con los parámetros de dosificación requeridos para la optimización de la red de gluten. Los
-            niveles de PPM se encuentran dentro del rango operativo estándar.</p>
+    <table class="grid-2">
+        <tr>
+            <td class="column">
+                <div class="section-header">Análisis Reológico</div>
+                <table class="data-table">
+                    {% if ensayo.humidity_pct %}<tr>
+                        <td>Humedad</td>
+                        <td class="numeric">{{ ensayo.humidity_pct }}%</td>
+                    </tr>{% endif %}
+                    {% if ensayo.gluten_wet_pct %}<tr>
+                        <td>Gluten Húmedo</td>
+                        <td class="numeric">{{ ensayo.gluten_wet_pct }}%</td>
+                    </tr>{% endif %}
+                    {% if ensayo.w_value %}<tr>
+                        <td>W (Fuerza)</td>
+                        <td class="numeric">{{ ensayo.w_value }}</td>
+                    </tr>{% endif %}
+                    {% if ensayo.pl_ratio %}<tr>
+                        <td>Relación P/L</td>
+                        <td class="numeric">{{ ensayo.pl_ratio }}</td>
+                    </tr>{% endif %}
+                    {% if ensayo.falling_number_sec %}<tr>
+                        <td>Falling Number</td>
+                        <td class="numeric">{{ ensayo.falling_number_sec }}s</td>
+                    </tr>{% endif %}
+                    {% if ensayo.water_absorption_pct %}<tr>
+                        <td>Absorción Agua</td>
+                        <td class="numeric">{{ ensayo.water_absorption_pct }}%</td>
+                    </tr>{% endif %}
+                </table>
+            </td>
+            <td class="column" style="padding-left: 20px;">
+                <div class="section-header">Parámetros de Proceso</div>
+                <table class="data-table">
+                    {% if ensayo.baking_type == 'Fermentado' %}
+                    {% if ensayo.kneading_time_v1_min %}<tr>
+                        <td>Amasado V1</td>
+                        <td class="numeric">{{ ensayo.kneading_time_v1_min }} min</td>
+                    </tr>{% endif %}
+                    {% if ensayo.kneading_time_v2_min %}<tr>
+                        <td>Amasado V2</td>
+                        <td class="numeric">{{ ensayo.kneading_time_v2_min }} min</td>
+                    </tr>{% endif %}
+                    {% if ensayo.kneading_temp_c %}<tr>
+                        <td>Temp. Masa</td>
+                        <td class="numeric">{{ ensayo.kneading_temp_c }} °C</td>
+                    </tr>{% endif %}
+                    {% if ensayo.fermentation_time_min %}<tr>
+                        <td>Tiempo Ferm.</td>
+                        <td class="numeric">{{ ensayo.fermentation_time_min }} min</td>
+                    </tr>{% endif %}
+                    {% if ensayo.oven_temp_c %}<tr>
+                        <td>Temp. Horno</td>
+                        <td class="numeric">{{ ensayo.oven_temp_c }} °C</td>
+                    </tr>{% endif %}
+                    {% else %}
+                    {% if ensayo.batter_speed %}<tr>
+                        <td>Vel. Batido</td>
+                        <td class="numeric">{{ ensayo.batter_speed }}</td>
+                    </tr>{% endif %}
+                    {% if ensayo.batter_time_min %}<tr>
+                        <td>Tiempo Batido</td>
+                        <td class="numeric">{{ ensayo.batter_time_min }} min</td>
+                    </tr>{% endif %}
+                    {% if ensayo.raw_weight_g %}<tr>
+                        <td>Peso Crudo</td>
+                        <td class="numeric">{{ ensayo.raw_weight_g }} g</td>
+                    </tr>{% endif %}
+                    {% endif %}
+                </table>
+            </td>
+        </tr>
+    </table>
 
-        <div class="signature-box">
-            <div class="signature-line">
-                Firma Responsable Lab<br>
-                GESTIÓN TÉCNICA Y DESARROLLO - Harinas y Panificados
+    {% if eval_data %}
+    <div class="section-header">Evaluación de Calidad Detallada</div>
+    <div style="font-size: 8pt;">
+        {% for cat, items in eval_data.items %}
+        <div style="margin-bottom: 8px; page-break-inside: avoid;">
+            <div style="font-weight: bold; border-bottom: 1px solid #e2e8f0; margin-bottom: 3px; color: #475569;">{{ cat
+                }}</div>
+            {% for item in items %}
+            {% if item.active %}
+            <div style="display: inline-block; width: 48%; border-bottom: 1px solid #f1f5f9; padding: 2px 0;">
+                <span>{{ item.name }}</span>
+                <span style="float: right; font-weight: bold;">{{ item.score }} pts</span>
             </div>
+            {% endif %}
+            {% endfor %}
         </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if images %}
+    <div class="section-header">Registro Fotográfico</div>
+    <div class="photo-grid">
+        {% for img in images %}
+        <div class="photo-item">
+            <img src="{{ img.url }}">
+            <div class="photo-caption">{{ img.caption|default:"Imagen de Ensayo" }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="section-header">Conclusiones Técnicas</div>
+    <div class="grid-2">
+        <table>
+            <tr>
+                <td class="column">
+                    <div style="font-size: 8pt; font-weight: bold; color: #64748b; margin-bottom: 4px;">DESCRIPCIÓN /
+                        OBJETIVO:</div>
+                    <div class="conclusion-box italic">{{ ensayo.description|default:"Sin descripción."|linebreaks }}
+                    </div>
+                </td>
+                <td class="column" style="padding-left: 10px;">
+                    <div style="font-size: 8pt; font-weight: bold; color: #1e3a8a; margin-bottom: 4px;">CONCLUSIÓN DEL
+                        ASESOR:</div>
+                    <div class="conclusion-box" style="border-color: #bfdbfe; background-color: #eff6ff;"><b>{{
+                            ensayo.conclusion|default:"Pendiente."|linebreaks }}</b></div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div
+        style="margin-top: 40px; text-align: right; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 8pt; color: #94a3b8;">
+        Documento generado automáticamente por Sistema de Gestión Técnica de Harinas. <br>
+        Confidencial • {{ date|date:"d/m/Y H:i" }}
     </div>
 </body>
 

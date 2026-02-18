@@ -91,9 +91,9 @@ class ComplaintImageViewSet(viewsets.ModelViewSet):
 # Se ha eliminado la lógica de importación masiva para garantizar la integridad de los datos manuales.
 
 @api_view(['GET'])
-def download_complaint_template(request):
+def generar_reporte_reclamo_estandar(request):
     """
-    GENERADOR DE REPORTE DE RECLAMO (ESTRATEGIA BURZACO MANUAL)
+    GENERADOR DE REPORTE DE RECLAMO ESTÁNDAR
     Mapeo de Inyección:
     - Cliente Directo -> B6
     - Proyecto -> F6
@@ -175,7 +175,7 @@ def download_complaint_template(request):
     wb.save(output)
     output.seek(0)
     
-    filename = f"RECLAMO_{complaint.batch or 'S_LOTE'}.xlsx" if complaint else "reclamo_oficial.xlsx"
+    filename = f"RECLAMO_{complaint.batch or 'S_LOTE'}.xlsx" if complaint else "reporte_reclamo_estandar.xlsx"
     response = HttpResponse(
         output.read(), 
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -199,7 +199,7 @@ def serve_media_view(request, path):
     return Response({"error": "File not found"}, status=404)
 
 @api_view(['POST'])
-def generate_technical_report_view(request):
+def generar_informe_tecnico_estandar(request):
     import io
     import openpyxl
     from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
@@ -211,11 +211,23 @@ def generate_technical_report_view(request):
         pisa = None
     from django.core.mail import EmailMessage
     from django.conf import settings
-    from django.contrib.staticfiles import finders
-
+    
     def link_callback(uri, rel):
-        # ... (mantener link_callback para recursos estáticos si Base64 no se usa para logos)
-        return uri
+        """
+        Convierte URIs de MEDIA a rutas absolutas en disco para xhtml2pdf.
+        Esto evita el uso de Base64 y reduce drásticamente el consumo de recursos.
+        """
+        if uri.startswith(settings.MEDIA_URL):
+            path = os.path.join(settings.MEDIA_ROOT, uri.replace(settings.MEDIA_URL, ""))
+        elif os.path.isabs(uri):
+            path = uri
+        else:
+            path = os.path.join(settings.MEDIA_ROOT, uri)
+            
+        if not os.path.isfile(path):
+            print(f"WARNING: File not found for PDF: {path}")
+            return uri
+        return path
 
     def parse_smart_date(val):
         """Parsea fechas en múltiples formatos (ISO, DD/MM/YYYY, etc)"""
@@ -324,31 +336,6 @@ def generate_technical_report_view(request):
 
         # --- GENERACIÓN DE CONTENIDO ---
         
-        # Preparar datos base64 para PDF
-        essays_with_images = []
-        for e in essays:
-            e_imgs = []
-            for img in e.images.all():
-                if img.image:
-                    b64 = get_image_base64(img.image.path)
-                    if b64:
-                        e_imgs.append({'b64': b64, 'caption': img.caption})
-            essays_with_images.append({'obj': e, 'imgs': e_imgs})
-
-        complaints_with_images = []
-        for c in complaints:
-            c_imgs = []
-            for img in c.images.all():
-                if img.image:
-                    b64 = get_image_base64(img.image.path)
-                    if b64:
-                        c_imgs.append({'b64': b64, 'caption': img.caption})
-            complaints_with_images.append({'obj': c, 'imgs': c_imgs})
-
-        # Logo Institucional en Base64
-        logo_path = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo_institucional.png')
-        logo_b64 = get_image_base64(logo_path)
-
         if requested_format == 'pdf':
             if pisa is None:
                 return Response({"error": "Librería xhtml2pdf no está instalada en el servidor."}, status=500)
@@ -360,18 +347,16 @@ def generate_technical_report_view(request):
                 'date': timezone.now(),
                 'conclusions': str(conclusions) if conclusions else "",
                 'essays': essays,
-                'essays_with_images': essays_with_images,
-                'complaints_with_images': complaints_with_images,
                 'visits': visits,
                 'complaints': complaints,
-                'logo_b64': logo_b64,
+                'media_root': settings.MEDIA_ROOT,
             }
             html = render_to_string('reports/gestion_reporte_pdf.html', context)
             buffer = io.BytesIO()
-            # En modo emergencia Base64, no necesitamos link_callback para estas imágenes
             pisa_status = pisa.CreatePDF(
                 io.BytesIO(html.encode("utf-8")), 
-                dest=buffer
+                dest=buffer,
+                link_callback=link_callback
             )
             
             if pisa_status.err:
@@ -381,7 +366,7 @@ def generate_technical_report_view(request):
             filename = f"IT_{client_name}_{proj_name}_{report_date_str}.pdf"
             return FileResponse(buffer, as_attachment=True, filename=filename)
 
-        # --- LÓGICA EXCEL BURZACO RÍGIDA CON ANEXO FOTOGRÁFICO ---
+        # --- LÓGICA EXCEL ESTÁNDAR ---
         import xlsxwriter
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output)
@@ -484,7 +469,6 @@ def generate_technical_report_view(request):
         filename = f"IT_{client_name}_{proj_name}_{report_date_str}.xlsx"
         return FileResponse(buffer, as_attachment=True, filename=filename)
 
-
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
@@ -496,3 +480,80 @@ def generate_technical_report_view(request):
             "error": f"Error en generación final: {str(e)}",
             "traceback": error_details 
         }, status=500)
+
+@api_view(['GET'])
+def generar_reporte_ensayo_individual(request, pk):
+    """
+    Genera un PDF profesional para un ensayo individual.
+    """
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    try:
+        from xhtml2pdf import pisa
+    except ImportError:
+        return Response({"error": "xhtml2pdf no instalado"}, status=500)
+
+    ensayo = get_object_or_404(Ensayo, pk=pk)
+    
+    # Pre-procesar imágenes a Base64 para máxima compatibilidad
+    def get_image_base64_robust(path):
+        if not path: return None
+        try:
+            # Si ya es una URL absoluta de sistema
+            if os.path.exists(path):
+                final_path = path
+            else:
+                # Buscar en MEDIA_ROOT
+                filename = os.path.basename(path)
+                final_path = os.path.join(settings.MEDIA_ROOT, filename)
+                # O intentar reconstruir desde la ruta relativa guardada si existe
+                if not os.path.exists(final_path):
+                    # Intentar subcarpetas comunes
+                    for root, dirs, files in os.walk(settings.MEDIA_ROOT):
+                        if filename in files:
+                            final_path = os.path.join(root, filename)
+                            break
+            
+            if os.path.exists(final_path):
+                with open(final_path, "rb") as f:
+                    encoded = base64.b64encode(f.read()).decode('utf-8')
+                    ext = os.path.splitext(final_path)[1].lower().replace('.', '')
+                    return f"data:image/{ext};base64,{encoded}"
+        except:
+            return None
+        return None
+
+    # Galería procesada
+    images_b64 = []
+    for img in ensayo.images.all():
+        b64 = get_image_base64_robust(img.image.path)
+        if b64:
+            images_b64.append({'url': b64, 'caption': img.caption})
+
+    # Datos de evaluación organizados
+    eval_data = ensayo.evaluation_data
+    
+    # Logo base64
+    logo_path = os.path.join(settings.BASE_DIR, 'lab', 'static', 'images', 'logo_institucional.png')
+    logo_b64 = get_image_base64_robust(logo_path)
+
+    context = {
+        'ensayo': ensayo,
+        'details': ensayo.details.all(),
+        'images': images_b64,
+        'logo': logo_b64,
+        'eval_data': eval_data,
+        'date': timezone.now(),
+        'total_cost': sum(d.quantity * d.price_per_kg for d in ensayo.details.all() if d.quantity and d.price_per_kg)
+    }
+
+    html = render_to_string('reports/ensayo_pdf.html', context)
+    buffer = io.BytesIO()
+    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode("utf-8")), dest=buffer)
+    
+    if pisa_status.err:
+        return Response({"error": "Error al generar PDF"}, status=400)
+
+    buffer.seek(0)
+    filename = f"Ensayo_{ensayo.code}.pdf"
+    return FileResponse(buffer, as_attachment=True, filename=filename)

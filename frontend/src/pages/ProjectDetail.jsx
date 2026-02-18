@@ -229,7 +229,7 @@ export default function ProjectDetail() {
 
     const handleDownloadTemplate = async () => {
         try {
-            const resp = await fetch(`${API_URL}/api/complaints-template/?project=${id}`);
+            const resp = await fetch(`${API_URL}/api/generar-reporte-reclamo-estandar/?project=${id}`);
             if (resp.ok) {
                 const blob = await resp.blob();
                 const url = window.URL.createObjectURL(blob);
@@ -355,7 +355,7 @@ export default function ProjectDetail() {
 
     const downloadBackendReport = async (reportData, targetFormat = 'excel') => {
         try {
-            const resp = await fetch(`${API_URL}/api/generate-technical-report/`, {
+            const resp = await fetch(`${API_URL}/api/generar-informe-tecnico-estandar/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...reportData, format: targetFormat })

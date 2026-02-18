@@ -1,0 +1,17 @@
+# Project Rules
+
+## [no_hardcoding]
+- **Description**: Nunca dejes credenciales (API Keys, Secretos) en el código.
+- **Action**: REJECT any code containing sensitive strings. Use `.env` variables and `process.env`.
+
+## [ui_consistency]
+- **Description**: Mantén la consistencia visual usando componentes de Shadcn/UI y la paleta de colores definida en `design.md`.
+- **Constraint**: No inventes estilos CSS inline. Usa clases de Tailwind o variables CSS definidas.
+
+## [database_first]
+- **Description**: No construyas la interfaz de usuario hasta que la tabla correspondiente en Supabase exista.
+- **Verification**: Siempre verifica la conexión y esquema mediante MCP antes de proceder con el frontend.
+
+## [error_handling]
+- **Description**: Toda operación de base de datos o API debe estar envuelta en try/catch.
+- **Action**: Mostrar siempre una notificación visual (Toast) al usuario en caso de error.

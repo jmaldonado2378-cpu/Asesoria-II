@@ -249,7 +249,7 @@ class Ensayo(models.Model):
 
 class EnsayoImage(models.Model):
     ensayo = models.ForeignKey(Ensayo, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField("Imagen", upload_to='ensayo_photos/')
+    image = models.ImageField("Imagen", upload_to='')
     caption = models.CharField("Nota", max_length=255, blank=True, null=True)
 
 # --- RECETA ---
@@ -345,5 +345,5 @@ class Complaint(models.Model):
 
 class ComplaintImage(models.Model):
     complaint = models.ForeignKey(Complaint, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField("Imagen Reclamo", upload_to='complaints/')
+    image = models.ImageField("Imagen Reclamo", upload_to='')
     caption = models.CharField("Nota", max_length=255, blank=True, null=True)

@@ -226,30 +226,27 @@
     </table>
     <div class="section-title">Anexo Fotográfico de Auditoría</div>
     <div style="width: 100%;">
-        {% for item in essays_with_images %}
-        {% for img_data in item.imgs %}
-        <div style="margin-bottom: 20px; page-break-inside: avoid;">
-            <div class="label" style="margin-bottom: 5px;">Ensayo: {{ item.obj.code }} - {{
-                img_data.caption|default:"Sin nota" }}</div>
-            <img src="{{ img_data.b64 }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
-        </div>
-        {% endfor %}
-        {% endfor %}
-
-        {% for item in complaints_with_images %}
-        {% for img_data in item.imgs %}
-        <div style="margin-bottom: 20px; page-break-inside: avoid;">
-            <div class="label" style="margin-bottom: 5px;">Reclamo: {{ item.obj.loading_date|date:"d/m/Y" }} - {{
-                img_data.caption|default:"Sin nota" }}</div>
-            <img src="{{ img_data.b64 }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
-        </div>
-        {% endfor %}
+        {% for essay in essays %}
+            {% for img in essay.images.all %}
+            <div style="margin-bottom: 20px; page-break-inside: avoid;">
+                <div class="label" style="margin-bottom: 5px;">Ensayo: {{ essay.code }} - {{ img.caption|default:"Sin nota" }}</div>
+                {% if img.image %}
+                <img src="{{ img.image.url }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
+                {% endif %}
+            </div>
+            {% endfor %}
         {% endfor %}
 
-        {% if not essays_with_images and not complaints_with_images %}
-        <div style="text-align: center; color: #94a3b8; padding: 20px;">No se encontraron imágenes adjuntas en los
-            registros analizados.</div>
-        {% endif %}
+        {% for complaint in complaints %}
+            {% for img in complaint.images.all %}
+            <div style="margin-bottom: 20px; page-break-inside: avoid;">
+                <div class="label" style="margin-bottom: 5px;">Reclamo: {{ complaint.loading_date|date:"d/m/Y" }} - {{ img.caption|default:"Sin nota" }}</div>
+                {% if img.image %}
+                <img src="{{ img.image.url }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% endfor %}
     </div>
     DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO - Harinas y Panificados
     </div>
