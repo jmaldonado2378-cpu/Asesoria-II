@@ -247,36 +247,44 @@ def generar_informe_tecnico_estandar(request):
         Lee un archivo de imagen y lo devuelve como string Base64.
         Intenta resolver la ruta de forma robusta para el entorno local.
         """
-        if not path:
-            return None
-        
-        # 1. Intentar ruta absoluta directa
-        final_path = path
-        if not os.path.exists(final_path):
-            # 2. Si falla, intentar buscar solo el nombre del archivo dentro de la carpeta media actual
-            # Esto corrige errores si la base de datos tiene rutas de otro entorno
-            try:
-                # Extraer parte relativa (ej: ensayos/1/foto.jpg)
-                if 'media' in path:
-                    relative_path = path.split('media')[-1].lstrip('\\').lstrip('/')
-                    final_path = os.path.join(settings.MEDIA_ROOT, relative_path)
-            except:
-                pass
-
+        if not path: return None
         try:
+            # 1. Intentar ruta absoluta directa
+            final_path = path
+            if not os.path.exists(final_path):
+                # 2. Si falla, intentar buscar solo el nombre del archivo dentro de la carpeta media
+                filename = os.path.basename(path)
+                final_path = os.path.join(settings.MEDIA_ROOT, filename)
+                
+                # 3. Intentar reconstruir desde la ruta relativa si existe 'media'
+                if not os.path.exists(final_path):
+                    try:
+                        if 'media' in path:
+                            relative_path = path.split('media')[-1].lstrip('\\').lstrip('/')
+                            final_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+                    except:
+                        pass
+                
+                # 4. Búsqueda profunda si persiste el fallo
+                if not os.path.exists(final_path):
+                    for root, dirs, files in os.walk(settings.MEDIA_ROOT):
+                        if filename in files:
+                            final_path = os.path.join(root, filename)
+                            break
+            
             if os.path.exists(final_path):
                 with open(final_path, "rb") as image_file:
                     encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-                    # Detectar extensión para el mime type
                     ext = os.path.splitext(final_path)[1].lower().replace('.', '')
                     if ext not in ['jpg', 'jpeg', 'png', 'gif']: ext = 'jpeg'
                     return f"data:image/{ext};base64,{encoded_string}"
-            else:
-                print(f"CRITICAL: Image not found at {final_path}")
-                return None
         except Exception as e:
-            print(f"DEBUG ERROR: Base64 conversion failed for {final_path}: {str(e)}")
+            print(f"ERROR Base64: {str(e)}")
             return None
+        return None
+
+@api_view(['POST'])
+def generar_informe_tecnico_estandar(request):
 
     project_id = request.data.get('project')
     start_date = request.data.get('start_date')
@@ -526,7 +534,7 @@ def generar_reporte_ensayo_individual(request, pk):
     # Galería procesada
     images_b64 = []
     for img in ensayo.images.all():
-        b64 = get_image_base64_robust(img.image.path)
+        b64 = get_image_base64(img.image.path)
         if b64:
             images_b64.append({'url': b64, 'caption': img.caption})
 
@@ -535,7 +543,7 @@ def generar_reporte_ensayo_individual(request, pk):
     
     # Logo base64
     logo_path = os.path.join(settings.BASE_DIR, 'lab', 'static', 'images', 'logo_institucional.png')
-    logo_b64 = get_image_base64_robust(logo_path)
+    logo_b64 = get_image_base64(logo_path)
 
     context = {
         'ensayo': ensayo,
@@ -557,3 +565,14 @@ def generar_reporte_ensayo_individual(request, pk):
     buffer.seek(0)
     filename = f"Ensayo_{ensayo.code}.pdf"
     return FileResponse(buffer, as_attachment=True, filename=filename)
+
+@api_view(['GET'])
+def serve_media_view(request, path):
+    """
+    Vista personalizada para servir archivos media en producción (Render).
+    Solo para debugging o entornos controlados donde Whitenoise no maneja media.
+    """
+    file_path = os.path.join(settings.MEDIA_ROOT, path)
+    if os.path.exists(file_path):
+        return FileResponse(open(file_path, 'rb'))
+    return HttpResponse(status=404)
