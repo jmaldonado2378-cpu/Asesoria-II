@@ -138,7 +138,7 @@ class EnsayoAdmin(ImportExportModelAdmin):
         ('Proceso: FERMENTADOS (Panes)', {
             'classes': ('collapse',),
             'fields': (
-                ('kneading_time_min', 'kneading_temp_c', 'sobado_turns'),
+                ('kneading_time_v1_min', 'kneading_time_v2_min', 'kneading_temp_c', 'sobado_turns'),
                 ('piece_weight_g', 'fermentation_time_min', 'fermentation_temp_c'),
                 ('fermentation_humidity_pct', 'scoring_score'),
                 ('oven_temp_c', 'oven_time_min'),

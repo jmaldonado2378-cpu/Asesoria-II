@@ -117,8 +117,12 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CONFIGURACIÓN TOTALMENTE LOCAL (C:\GESTION_MALDONADO)
-MEDIA_ROOT = 'C:\\GESTION_MALDONADO\\04_SOFTWARE_APP\\BACKEND\\media'
+# CONFIGURACIÓN DE MEDIA (Dinámica local/producción)
+if 'RENDER' in os.environ:
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+else:
+    # Ruta absoluta para compatibilidad con tu sistema local actual
+    MEDIA_ROOT = 'C:\\GESTION_MALDONADO\\04_SOFTWARE_APP\\BACKEND\\media'
 MEDIA_URL = '/media/'
 
 # Configuración de django-import-export

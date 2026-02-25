@@ -29,6 +29,88 @@ from .serializers import (
     ComplaintImageSerializer
 )
 
+# --- UTILIDADES GLOBALES (REPORTES) ---
+
+def resolve_image_path(path):
+    """
+    Resuelve una ruta de imagen de forma robusta, buscando en MEDIA_ROOT
+    si la ruta absoluta falla. Útil para migraciones entre entornos (Win/Linux).
+    """
+    if not path: return None
+    from django.conf import settings
+    
+    # 1. Intentar ruta absoluta directa
+    if os.path.exists(path):
+        return path
+        
+    # 2. Intentar buscar el nombre del archivo dentro de MEDIA_ROOT
+    filename = os.path.basename(path)
+    final_path = os.path.join(settings.MEDIA_ROOT, filename)
+    if os.path.exists(final_path):
+        return final_path
+        
+    # 3. Intentar reconstruir desde la ruta relativa si contiene 'media'
+    try:
+        if 'media' in path:
+            relative_path = path.split('media')[-1].lstrip('\\').lstrip('/')
+            final_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+            if os.path.exists(final_path):
+                return final_path
+    except:
+        pass
+        
+    # 4. Búsqueda profunda (último recurso)
+    for root, dirs, files in os.walk(settings.MEDIA_ROOT):
+        if filename in files:
+            return os.path.join(root, filename)
+            
+    return None
+
+def parse_smart_date(val):
+    """Parsea fechas en múltiples formatos (ISO, DD/MM/YYYY, etc)"""
+    if not val: return None
+    if isinstance(val, (datetime, timezone.datetime)):
+        return val.date()
+    val_str = str(val).split('T')[0] # Limpiar ISO strings con tiempo
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d"):
+        try:
+            return datetime.strptime(val_str, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+def get_image_base64(path):
+    """
+    Lee un archivo de imagen y lo devuelve como string Base64.
+    """
+    resolved_path = resolve_image_path(path)
+    if not resolved_path: return None
+    try:
+        with open(resolved_path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+            ext = os.path.splitext(resolved_path)[1].lower().replace('.', '')
+            if ext not in ['jpg', 'jpeg', 'png', 'gif']: ext = 'jpeg'
+            return f"data:image/{ext};base64,{encoded_string}"
+    except Exception as e:
+        print(f"ERROR Base64: {str(e)}")
+        return None
+    return None
+
+def link_callback(uri, rel):
+    """
+    Convierte URIs de MEDIA a rutas absolutas en disco para xhtml2pdf.
+    """
+    from django.conf import settings
+    if uri.startswith(settings.MEDIA_URL):
+        path = os.path.join(settings.MEDIA_ROOT, uri.replace(settings.MEDIA_URL, ""))
+    elif os.path.isabs(uri):
+        path = uri
+    else:
+        path = os.path.join(settings.MEDIA_ROOT, uri)
+        
+    resolved = resolve_image_path(path)
+    return resolved if resolved else uri
+
 class ClientViewSet(viewsets.ModelViewSet):
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
@@ -145,31 +227,33 @@ def generar_reporte_reclamo_estandar(request):
         curr_row = 1
         
         for img in complaint.images.all():
-            if img.image and os.path.exists(img.image.path):
-                from openpyxl.drawing.image import Image as OpenpyxlImage
-                try:
-                    # Título de la foto
-                    title = f"FOTO: {img.caption or 'Sin nota'}"
-                    ws_photos.cell(row=curr_row, column=1, value=title)
-                    ws_photos.cell(row=curr_row, column=1).font = openpyxl.styles.Font(bold=True, size=12)
-                    curr_row += 1
+            if img.image:
+                resolved_path = resolve_image_path(img.image.path)
+                if resolved_path:
+                    from openpyxl.drawing.image import Image as OpenpyxlImage
+                    try:
+                        # Título de la foto
+                        title = f"FOTO: {img.caption or 'Sin nota'}"
+                        ws_photos.cell(row=curr_row, column=1, value=title)
+                        ws_photos.cell(row=curr_row, column=1).font = openpyxl.styles.Font(bold=True, size=12)
+                        curr_row += 1
 
-                    # Insertar Imagen
-                    img_data = OpenpyxlImage(img.image.path)
-                    
-                    # Redimensión proporcional para el Excel
-                    orig_w, orig_h = img_data.width, img_data.height
-                    aspect = orig_w / orig_h
-                    img_data.width = 500
-                    img_data.height = 500 / aspect
-                    
-                    ws_photos.add_image(img_data, f'A{curr_row}')
-                    
-                    # Espaciado (aproximadamente la altura de la imagen en filas)
-                    rows_to_skip = int(img_data.height / 15) + 2
-                    curr_row += rows_to_skip
-                except Exception as e:
-                    print(f"Error inyectando imagen {img.id}: {e}")
+                        # Insertar Imagen
+                        img_data = OpenpyxlImage(resolved_path)
+                        
+                        # Redimensión proporcional para el Excel
+                        orig_w, orig_h = img_data.width, img_data.height
+                        aspect = orig_w / orig_h
+                        img_data.width = 500
+                        img_data.height = 500 / aspect
+                        
+                        ws_photos.add_image(img_data, f'A{curr_row}')
+                        
+                        # Espaciado (aproximadamente la altura de la imagen en filas)
+                        rows_to_skip = int(img_data.height / 15) + 2
+                        curr_row += rows_to_skip
+                    except Exception as e:
+                        print(f"Error inyectando imagen {img.id}: {e}")
 
     output = io.BytesIO()
     wb.save(output)
@@ -183,105 +267,8 @@ def generar_reporte_reclamo_estandar(request):
     response["Content-Disposition"] = f"attachment; filename={filename}"
     return response
 
-@api_view(['GET'])
-def serve_media_view(request, path):
-    """
-    VISTA DE EMERGENCIA: Sirve archivos de MEDIA_ROOT incluso en producción.
-    """
-    from django.http import FileResponse
-    from django.conf import settings
-    import os
-    
-    path = path.replace('..', '')
-    file_path = os.path.join(settings.MEDIA_ROOT, path)
-    if os.path.exists(file_path):
-        return FileResponse(open(file_path, 'rb'))
-    return Response({"error": "File not found"}, status=404)
 
-@api_view(['POST'])
-def generar_informe_tecnico_estandar(request):
-    import io
-    import openpyxl
-    from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
-    from openpyxl.utils import get_column_letter
-    from django.template.loader import render_to_string
-    try:
-        from xhtml2pdf import pisa
-    except ImportError:
-        pisa = None
-    from django.core.mail import EmailMessage
-    from django.conf import settings
-    
-    def link_callback(uri, rel):
-        """
-        Convierte URIs de MEDIA a rutas absolutas en disco para xhtml2pdf.
-        Esto evita el uso de Base64 y reduce drásticamente el consumo de recursos.
-        """
-        if uri.startswith(settings.MEDIA_URL):
-            path = os.path.join(settings.MEDIA_ROOT, uri.replace(settings.MEDIA_URL, ""))
-        elif os.path.isabs(uri):
-            path = uri
-        else:
-            path = os.path.join(settings.MEDIA_ROOT, uri)
-            
-        if not os.path.isfile(path):
-            print(f"WARNING: File not found for PDF: {path}")
-            return uri
-        return path
-
-    def parse_smart_date(val):
-        """Parsea fechas en múltiples formatos (ISO, DD/MM/YYYY, etc)"""
-        if not val: return None
-        if isinstance(val, (datetime, timezone.datetime)):
-            return val.date()
-        val_str = str(val).split('T')[0] # Limpiar ISO strings con tiempo
-        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d"):
-            try:
-                return datetime.strptime(val_str, fmt).date()
-            except ValueError:
-                continue
-        return None
-
-    def get_image_base64(path):
-        """
-        Lee un archivo de imagen y lo devuelve como string Base64.
-        Intenta resolver la ruta de forma robusta para el entorno local.
-        """
-        if not path: return None
-        try:
-            # 1. Intentar ruta absoluta directa
-            final_path = path
-            if not os.path.exists(final_path):
-                # 2. Si falla, intentar buscar solo el nombre del archivo dentro de la carpeta media
-                filename = os.path.basename(path)
-                final_path = os.path.join(settings.MEDIA_ROOT, filename)
-                
-                # 3. Intentar reconstruir desde la ruta relativa si existe 'media'
-                if not os.path.exists(final_path):
-                    try:
-                        if 'media' in path:
-                            relative_path = path.split('media')[-1].lstrip('\\').lstrip('/')
-                            final_path = os.path.join(settings.MEDIA_ROOT, relative_path)
-                    except:
-                        pass
-                
-                # 4. Búsqueda profunda si persiste el fallo
-                if not os.path.exists(final_path):
-                    for root, dirs, files in os.walk(settings.MEDIA_ROOT):
-                        if filename in files:
-                            final_path = os.path.join(root, filename)
-                            break
-            
-            if os.path.exists(final_path):
-                with open(final_path, "rb") as image_file:
-                    encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-                    ext = os.path.splitext(final_path)[1].lower().replace('.', '')
-                    if ext not in ['jpg', 'jpeg', 'png', 'gif']: ext = 'jpeg'
-                    return f"data:image/{ext};base64,{encoded_string}"
-        except Exception as e:
-            print(f"ERROR Base64: {str(e)}")
-            return None
-        return None
+# --- VISTAS DE REPORTES ---
 
 @api_view(['POST'])
 def generar_informe_tecnico_estandar(request):
@@ -348,6 +335,10 @@ def generar_informe_tecnico_estandar(request):
             if pisa is None:
                 return Response({"error": "Librería xhtml2pdf no está instalada en el servidor."}, status=500)
                 
+            # Logo institucional en Base64 para el PDF
+            logo_path = os.path.join(settings.BASE_DIR, 'lab', 'static', 'images', 'logo_institucional.png')
+            logo_b64 = get_image_base64(logo_path)
+            
             context = {
                 'project': project,
                 'start_date': start_date,
@@ -358,6 +349,7 @@ def generar_informe_tecnico_estandar(request):
                 'visits': visits,
                 'complaints': complaints,
                 'media_root': settings.MEDIA_ROOT,
+                'logo_b64': logo_b64,
             }
             html = render_to_string('reports/gestion_reporte_pdf.html', context)
             buffer = io.BytesIO()
@@ -440,18 +432,23 @@ def generar_informe_tecnico_estandar(request):
             nonlocal row_ph
             worksheet.write(row, col, title, fmt_ph_label)
             row_ph += 1
-            if img_obj and img_obj.image and os.path.exists(img_obj.image.path):
-                try:
-                    # Insertar con escalado proporcional (aprox 15cm = 567 px)
-                    # Usamos info de la imagen si es posible, o escalado fijo
-                    worksheet.insert_image(row_ph, col, img_obj.image.path, {
-                        'x_scale': 0.5, 
-                        'y_scale': 0.5,
-                        'object_position': 1
-                    })
-                    row_ph += 25 # Espacio para la siguiente
-                except:
-                    worksheet.write(row_ph, col, "ERROR: Foto", workbook.add_format({'font_color': 'red'}))
+            
+            if img_obj and img_obj.image:
+                # Usar utilidad global para resolver la ruta real del archivo
+                resolved_path = resolve_image_path(img_obj.image.path)
+                if resolved_path:
+                    try:
+                        worksheet.insert_image(row_ph, col, resolved_path, {
+                            'x_scale': 0.5, 
+                            'y_scale': 0.5,
+                            'object_position': 1
+                        })
+                        row_ph += 25
+                    except:
+                        worksheet.write(row_ph, col, "ERROR: Insertando foto", workbook.add_format({'font_color': 'red'}))
+                        row_ph += 2
+                else:
+                    worksheet.write(row_ph, col, "ERROR: No se encontró el archivo de imagen", workbook.add_format({'font_color': 'red'}))
                     row_ph += 2
             else:
                 worksheet.write(row_ph, col, "SIN IMAGEN", workbook.add_format({'bg_color': '#CCCCCC'}))
@@ -503,35 +500,7 @@ def generar_reporte_ensayo_individual(request, pk):
 
     ensayo = get_object_or_404(Ensayo, pk=pk)
     
-    # Pre-procesar imágenes a Base64 para máxima compatibilidad
-    def get_image_base64_robust(path):
-        if not path: return None
-        try:
-            # Si ya es una URL absoluta de sistema
-            if os.path.exists(path):
-                final_path = path
-            else:
-                # Buscar en MEDIA_ROOT
-                filename = os.path.basename(path)
-                final_path = os.path.join(settings.MEDIA_ROOT, filename)
-                # O intentar reconstruir desde la ruta relativa guardada si existe
-                if not os.path.exists(final_path):
-                    # Intentar subcarpetas comunes
-                    for root, dirs, files in os.walk(settings.MEDIA_ROOT):
-                        if filename in files:
-                            final_path = os.path.join(root, filename)
-                            break
-            
-            if os.path.exists(final_path):
-                with open(final_path, "rb") as f:
-                    encoded = base64.b64encode(f.read()).decode('utf-8')
-                    ext = os.path.splitext(final_path)[1].lower().replace('.', '')
-                    return f"data:image/{ext};base64,{encoded}"
-        except:
-            return None
-        return None
-
-    # Galería procesada
+    # Galería procesada usando utilidad global
     images_b64 = []
     for img in ensayo.images.all():
         b64 = get_image_base64(img.image.path)
@@ -541,7 +510,7 @@ def generar_reporte_ensayo_individual(request, pk):
     # Datos de evaluación organizados
     eval_data = ensayo.evaluation_data
     
-    # Logo base64
+    # Logo base64 usando utilidad global
     logo_path = os.path.join(settings.BASE_DIR, 'lab', 'static', 'images', 'logo_institucional.png')
     logo_b64 = get_image_base64(logo_path)
 
@@ -557,7 +526,11 @@ def generar_reporte_ensayo_individual(request, pk):
 
     html = render_to_string('reports/ensayo_pdf.html', context)
     buffer = io.BytesIO()
-    pisa_status = pisa.CreatePDF(io.BytesIO(html.encode("utf-8")), dest=buffer)
+    pisa_status = pisa.CreatePDF(
+        io.BytesIO(html.encode("utf-8")), 
+        dest=buffer,
+        link_callback=link_callback
+    )
     
     if pisa_status.err:
         return Response({"error": "Error al generar PDF"}, status=400)
