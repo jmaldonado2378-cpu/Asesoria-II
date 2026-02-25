@@ -37,7 +37,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
 
     return (
         <div className="flex items-end gap-2 p-4 bg-slate-950/50 backdrop-blur-md border-t border-slate-900">
-            <div className="flex-grow relative">
+            <div className="grow relative">
                 <textarea
                     ref={textareaRef}
                     value={text}

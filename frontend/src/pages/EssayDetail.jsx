@@ -19,8 +19,8 @@ const WebProcessRow = ({ label, name, unit, value, onChange, isEditing, formData
             <div className="flex items-center gap-2">
                 {isEditing ? (
                     <input
-                        type="number"
-                        step="any"
+                        type="text"
+                        inputMode="decimal"
                         name={name}
                         value={displayValue !== null ? displayValue : ''}
                         onChange={onChange}
@@ -139,7 +139,12 @@ export default function EssayDetail() {
         });
     };
 
-    const handleInputChange = (e) => { const { name, value, type } = e.target; setFormData(prev => ({ ...prev, [name]: (type === 'number' && value === '') ? null : value })); };
+    const handleInputChange = (e) => {
+        const { name, value, type } = e.target;
+        const isDecimal = e.target.getAttribute('inputmode') === 'decimal';
+        const finalValue = isDecimal ? String(value).replace(/,/g, '.') : value;
+        setFormData(prev => ({ ...prev, [name]: (type === 'number' && value === '') ? null : finalValue }));
+    };
 
     const handleDetailChange = (index, field, value) => {
         const updatedDetails = [...detailsData];
@@ -148,9 +153,9 @@ export default function EssayDetail() {
 
         if (field === 'quantity_grams') {
             item.quantity_grams = value;
-            item.quantity = (parseFloat(value) || 0) / 1000;
+            item.quantity = ((parseFloat(String(value).replace(/,/g, '.')) || 0) / 1000).toFixed(9);
         } else if (field === 'price_per_kg') {
-            item.price_per_kg = (value === '') ? null : value;
+            item.price_per_kg = (value === '') ? null : parseFloat(String(value).replace(/,/g, '.')).toFixed(4);
         }
 
         // 1. Calcular el Sumatorio de Harinas Base (Divisor Panadero)
@@ -195,9 +200,15 @@ export default function EssayDetail() {
     const handleSave = async () => {
         try {
             await fetch(`${API_URL}/api/ensayos/${id}/`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...formData, evaluation_data: evalData, final_score: finalScore }) });
-            const updatePromises = detailsData.map(detail => fetch(`${API_URL}/api/ensayo-details/${detail.id}/`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantity: detail.quantity, price_per_kg: detail.price_per_kg || detail.cost_per_kg }) }));
+            const updatePromises = detailsData.map(async detail => {
+                const qValue = parseFloat(detail.quantity) || 0;
+                const pValue = parseFloat(detail.price_per_kg || detail.cost_per_kg) || 0;
+                const r = await fetch(`${API_URL}/api/ensayo-details/${detail.id}/`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantity: qValue.toFixed(9), price_per_kg: pValue.toFixed(4) }) });
+                if (!r.ok) { throw new Error(await r.text()); }
+                return r;
+            });
             await Promise.all(updatePromises); fetchData(); setIsEditing(false); alert('Guardado correctamente');
-        } catch (error) { alert('Error al guardar.'); }
+        } catch (error) { alert(`Error al guardar: ${error.message}`); }
     };
 
     const handleAddIngredient = async () => {
@@ -209,12 +220,17 @@ export default function EssayDetail() {
                 body: JSON.stringify({
                     ensayo: id,
                     ingredient: newIngredientId,
-                    quantity: parseFloat(newIngredientGrams) / 1000,
-                    price_per_kg: parseFloat(newIngredientPrice) || 0
+                    quantity: (parseFloat(String(newIngredientGrams).replace(/,/g, '.')) / 1000).toFixed(9),
+                    price_per_kg: (parseFloat(String(newIngredientPrice).replace(/,/g, '.')) || 0).toFixed(4)
                 })
             });
-            if (res.ok) { setNewIngredientId(''); setNewIngredientGrams(''); setNewIngredientPrice(''); fetchData(); }
-        } catch (e) { console.error(e); }
+            if (res.ok) {
+                setNewIngredientId(''); setNewIngredientGrams(''); setNewIngredientPrice(''); fetchData();
+            } else {
+                const errText = await res.text();
+                alert(`Error backend: ${res.status} - ${errText}`);
+            }
+        } catch (e) { alert(`Exception: ${e.message}`); console.error(e); }
     };
 
     const handleDeleteIngredient = async (id) => { if (confirm('¿Borrar?')) { await fetch(`${API_URL}/api/ensayo-details/${id}/`, { method: 'DELETE' }); fetchData(); } };
@@ -307,8 +323,8 @@ export default function EssayDetail() {
                                                 {isEditing && baseFlourIndex >= 0 ? (
                                                     <div className="flex items-center justify-end gap-2">
                                                         <input
-                                                            type="number"
-                                                            step="any"
+                                                            type="text"
+                                                            inputMode="decimal"
                                                             value={detailsData[baseFlourIndex]?.quantity_grams || ''}
                                                             onChange={(e) => handleDetailChange(baseFlourIndex, 'quantity_grams', e.target.value)}
                                                             className="w-24 text-right p-1 border border-blue-300 rounded outline-none font-bold focus:border-indigo-600 focus:bg-white"
@@ -332,10 +348,10 @@ export default function EssayDetail() {
                                             <tr key={row.id} className={((row.is_base_flour && idx === baseFlourIndex) || (!isEditing && row.is_base_flour)) ? 'hidden' : 'bg-white hover:bg-slate-50 transition'}>
                                                 <td className="p-3 text-slate-700">{row.ingredient_name}</td>
                                                 <td className="p-3 text-right font-mono font-bold text-blue-800 bg-blue-50/30">
-                                                    {isEditing ? <input type="number" step="any" value={row.quantity_grams || ''} onChange={(e) => handleDetailChange(idx, 'quantity_grams', e.target.value)} className="w-24 text-right p-1 border border-blue-300 rounded outline-none font-bold focus:border-blue-500 focus:bg-white" /> : <span>{parseFloat(row.quantity_grams).toFixed(4)} g</span>}
+                                                    {isEditing ? <input type="text" inputMode="decimal" value={row.quantity_grams || ''} onChange={(e) => handleDetailChange(idx, 'quantity_grams', e.target.value)} className="w-24 text-right p-1 border border-blue-300 rounded outline-none font-bold focus:border-blue-500 focus:bg-white" /> : <span>{parseFloat(row.quantity_grams).toFixed(4)} g</span>}
                                                 </td>
                                                 <td className="p-3 text-right font-mono text-slate-600">
-                                                    {isEditing ? <input type="number" step="any" value={row.price_per_kg || row.cost_per_kg || ''} onChange={(e) => handleDetailChange(idx, 'price_per_kg', e.target.value)} className="w-24 text-right p-1 border border-blue-200 rounded outline-none text-xs focus:border-green-400" /> : <span>${parseFloat(row.price_per_kg || row.cost_per_kg || 0).toFixed(2)}</span>}
+                                                    {isEditing ? <input type="text" inputMode="decimal" value={row.price_per_kg || row.cost_per_kg || ''} onChange={(e) => handleDetailChange(idx, 'price_per_kg', e.target.value)} className="w-24 text-right p-1 border border-blue-200 rounded outline-none text-xs focus:border-green-400" /> : <span>${parseFloat(row.price_per_kg || row.cost_per_kg || 0).toFixed(2)}</span>}
                                                 </td>
                                                 <td className="p-3 text-right font-mono font-bold bg-slate-50/50 text-blue-900 border-l border-slate-100">
                                                     ${(parseFloat(row.quantity || 0) * parseFloat(row.price_per_kg || row.cost_per_kg || 0)).toFixed(2)}
@@ -362,10 +378,10 @@ export default function EssayDetail() {
                                                     </select>
                                                 </td>
                                                 <td className="p-3 text-right">
-                                                    <input type="number" step="any" placeholder="Gramos" value={newIngredientGrams} onChange={(e) => setNewIngredientGrams(e.target.value)} className="w-24 text-right p-2 border border-blue-200 rounded text-xs outline-none focus:border-blue-400" />
+                                                    <input type="text" inputMode="decimal" placeholder="Gramos" value={newIngredientGrams} onChange={(e) => setNewIngredientGrams(e.target.value)} className="w-24 text-right p-2 border border-blue-200 rounded text-xs outline-none focus:border-blue-400" />
                                                 </td>
                                                 <td className="p-3 text-right">
-                                                    <input type="number" step="any" placeholder="$/Kg" value={newIngredientPrice} onChange={(e) => setNewIngredientPrice(e.target.value)} className="w-20 text-right p-2 border border-green-200 rounded text-xs bg-green-50/20 outline-none focus:border-green-400" />
+                                                    <input type="text" inputMode="decimal" placeholder="$/Kg" value={newIngredientPrice} onChange={(e) => setNewIngredientPrice(e.target.value)} className="w-20 text-right p-2 border border-green-200 rounded text-xs bg-green-50/20 outline-none focus:border-green-400" />
                                                 </td>
                                                 <td colSpan="2"></td>
                                                 <td className="p-3 text-center"><button onClick={handleAddIngredient} className="bg-blue-600 text-white p-1.5 rounded hover:bg-blue-700 transition active:scale-95"><Plus size={16} /></button></td>
@@ -439,11 +455,11 @@ export default function EssayDetail() {
 
                         <section><h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-2 mb-4 flex items-center gap-2"><ClipboardCheck size={16} /> Evaluación de Calidad</h3>
                             <div className="bg-white border border-slate-200 rounded-sm p-6 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
-                                {Object.keys(evalData).map(cat => (<div key={cat} className="contents"><div className="col-span-2 mt-4 first:mt-0 mb-2 border-b border-slate-100 pb-1"><h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest font-bold tracking-tighter">{cat}</h4></div>
+                                {Object.keys(evalData).map(cat => (<div key={cat} className="contents"><div className="col-span-2 mt-4 first:mt-0 mb-2 border-b border-slate-100 pb-1"><h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{cat}</h4></div>
                                     {evalData[cat].map((item, idx) => (
                                         <div key={idx} className="flex justify-between py-1.5 border-b border-slate-50 hover:bg-slate-50 px-2 rounded transition">
                                             <div className="flex gap-3"><button onClick={() => isEditing && handleEvalChange(cat, idx, 'active', !item.active)} className="transition hover:scale-110">{item.active ? <CheckSquare size={18} className="text-blue-600" /> : <Square size={18} className="text-slate-300" />}</button><span className={`text-sm ${item.active ? 'text-slate-700 font-bold' : 'text-slate-400'}`}>{item.name}</span></div>
-                                            {item.active && (<div className="flex items-center gap-2"><span className="text-[10px] text-slate-400 uppercase font-bold">Pto:</span>{isEditing ? <input type="number" step="any" className="w-12 text-center border p-1 rounded font-bold outline-none focus:border-blue-400" value={item.score} onChange={(e) => handleEvalChange(cat, idx, 'score', e.target.value)} /> : <span className="font-bold text-slate-800 bg-slate-100 px-2 rounded font-mono">{item.score || '-'}</span>}</div>)}
+                                            {item.active && (<div className="flex items-center gap-2"><span className="text-[10px] text-slate-400 uppercase font-bold">Pto:</span>{isEditing ? <input type="text" inputMode="decimal" className="w-12 text-center border p-1 rounded font-bold outline-none focus:border-blue-400" value={item.score} onChange={(e) => handleEvalChange(cat, idx, 'score', String(e.target.value).replace(/,/g, '.'))} /> : <span className="font-bold text-slate-800 bg-slate-100 px-2 rounded font-mono">{item.score || '-'}</span>}</div>)}
                                         </div>
                                     ))}</div>
                                 ))}

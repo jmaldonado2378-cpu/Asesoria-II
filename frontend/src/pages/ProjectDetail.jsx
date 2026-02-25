@@ -461,7 +461,7 @@ export default function ProjectDetail() {
 
                 {/* GENERADOR DE INFORME (MODAL SIMULADO) */}
                 {showReportForm && (
-                    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-100 flex items-center justify-center p-4">
                         <div className="bg-white w-full max-w-2xl rounded-sm shadow-2xl p-10 space-y-8 animate-in zoom-in-95 duration-200">
                             <div className="flex justify-between items-center border-b border-slate-100 pb-4">
                                 <h2 className="text-xl font-serif font-black text-slate-900 uppercase tracking-tighter italic">Configurar Informe Técnico</h2>
@@ -508,7 +508,7 @@ export default function ProjectDetail() {
 
                 {/* HISTORIAL DE INFORMES */}
                 <div className="bg-white shadow-2xl border border-slate-300 rounded-sm p-8 mb-8">
-                    <h2 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2 mb-6 text-indigo-600">
+                    <h2 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2 mb-6 text-indigo-600">
                         <Clock size={18} /> Historial de Informes Generados
                     </h2>
 

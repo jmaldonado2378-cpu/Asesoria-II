@@ -53,7 +53,7 @@ export function SidebarHistory({ activeSessionId, onSelectSession, onNewChat }: 
 
             <Separator className="bg-slate-900 mx-4 w-auto" />
 
-            <ScrollArea className="flex-grow px-2 py-4">
+            <ScrollArea className="grow px-2 py-4">
                 <div className="space-y-1">
                     <div className="px-2 mb-2 text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Historial Reciente</div>
                     {sessions.map((session) => (
