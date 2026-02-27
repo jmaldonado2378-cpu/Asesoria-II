@@ -159,6 +159,7 @@ class EnsayoImageViewSet(viewsets.ModelViewSet):
                 upload_url = f"{supabase_url}/storage/v1/object/{bucket_name}/{filename}"
                 req_upload = urllib.request.Request(upload_url, data=file_obj.read(), method="POST")
                 req_upload.add_header("Authorization", f"Bearer {supabase_key}")
+                req_upload.add_header("apikey", supabase_key)
                 req_upload.add_header("Content-Type", file_obj.content_type or "application/octet-stream")
                 
                 try:
@@ -243,6 +244,7 @@ class ComplaintImageViewSet(viewsets.ModelViewSet):
                 upload_url = f"{supabase_url}/storage/v1/object/{bucket_name}/complaints/{filename}"
                 req_upload = urllib.request.Request(upload_url, data=file_obj.read(), method="POST")
                 req_upload.add_header("Authorization", f"Bearer {supabase_key}")
+                req_upload.add_header("apikey", supabase_key)
                 req_upload.add_header("Content-Type", file_obj.content_type or "application/octet-stream")
                 
                 try:
