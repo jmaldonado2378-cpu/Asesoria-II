@@ -13,8 +13,5 @@ urlpatterns = [
     path('api/', include('lab.urls')),
 ]
 
-# Servir archivos media mediante vista personalizada (para compatibilidad con DEBUG=False en Render)
-from lab.views import serve_media_view
-urlpatterns += [
-    path('media/<path:path>', serve_media_view, name='serve_media'),
-]
+# Los archivos estáticos se manejan con whitenoise
+# Las imágenes ahora se sirven directamente desde Supabase Storage CDN

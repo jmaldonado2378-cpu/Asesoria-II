@@ -227,25 +227,27 @@
     <div class="section-title">Anexo Fotográfico de Auditoría</div>
     <div style="width: 100%;">
         {% for essay in essays %}
-            {% for img in essay.images.all %}
-            <div style="margin-bottom: 20px; page-break-inside: avoid;">
-                <div class="label" style="margin-bottom: 5px;">Ensayo: {{ essay.code }} - {{ img.caption|default:"Sin nota" }}</div>
-                {% if img.image %}
-                <img src="{{ img.image.url }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
-                {% endif %}
-            </div>
-            {% endfor %}
+        {% for img in essay.images.all %}
+        <div style="margin-bottom: 20px; page-break-inside: avoid;">
+            <div class="label" style="margin-bottom: 5px;">Ensayo: {{ essay.code }} - {{ img.caption|default:"Sin nota"
+                }}</div>
+            {% if img.image %}
+            <img src="{{ img.image }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
+            {% endif %}
+        </div>
+        {% endfor %}
         {% endfor %}
 
         {% for complaint in complaints %}
-            {% for img in complaint.images.all %}
-            <div style="margin-bottom: 20px; page-break-inside: avoid;">
-                <div class="label" style="margin-bottom: 5px;">Reclamo: {{ complaint.loading_date|date:"d/m/Y" }} - {{ img.caption|default:"Sin nota" }}</div>
-                {% if img.image %}
-                <img src="{{ img.image.url }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
-                {% endif %}
-            </div>
-            {% endfor %}
+        {% for img in complaint.images.all %}
+        <div style="margin-bottom: 20px; page-break-inside: avoid;">
+            <div class="label" style="margin-bottom: 5px;">Reclamo: {{ complaint.loading_date|date:"d/m/Y" }} - {{
+                img.caption|default:"Sin nota" }}</div>
+            {% if img.image %}
+            <img src="{{ img.image }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
+            {% endif %}
+        </div>
+        {% endfor %}
         {% endfor %}
     </div>
     DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO - Harinas y Panificados

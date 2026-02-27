@@ -15,6 +15,7 @@ from .models import (
     ProjectIngredientPrice, Visit, EnsayoDetail, EnsayoImage,
     TechnicalReport, Complaint, ComplaintImage
 )
+from supabase import create_client, Client
 import base64
 from .serializers import (
     ClientSerializer, 
@@ -136,6 +137,50 @@ class EnsayoImageViewSet(viewsets.ModelViewSet):
     queryset = EnsayoImage.objects.all()
     serializer_class = EnsayoImageSerializer
 
+    def create(self, request, *args, **kwargs):
+        if 'image' in request.FILES:
+            file_obj = request.FILES['image']
+            
+            supabase_url = settings.SUPABASE_URL
+            supabase_key = settings.SUPABASE_KEY
+            if not supabase_url or not supabase_key:
+                return Response({'error': 'Supabase no configurado en el backend'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            try:
+                supabase: Client = create_client(supabase_url, supabase_key)
+                
+                ext = os.path.splitext(file_obj.name)[1]
+                # Secure filename with timestamp
+                safe_name = file_obj.name.replace(' ', '_')
+                filename = f"{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
+                
+                # We use the bucket 'ensayo_photos'
+                res = supabase.storage.from_("ensayo_photos").upload(
+                    file=file_obj.read(),
+                    path=filename,
+                    file_options={"content-type": file_obj.content_type}
+                )
+                
+                public_url = supabase.storage.from_("ensayo_photos").get_public_url(filename)
+                
+                # Make data mutable
+                data = request.data.copy()
+                data['image'] = public_url
+                
+                serializer = self.get_serializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+                headers = self.get_success_headers(serializer.data)
+                return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+                
+            except Exception as e:
+                import traceback
+                print(traceback.format_exc())
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                
+        # Fallback if no file is sent, or if it's sent as a URL string directly
+        return super().create(request, *args, **kwargs)
+
 class ProjectIngredientPriceViewSet(viewsets.ModelViewSet):
     queryset = ProjectIngredientPrice.objects.all()
     serializer_class = ProjectIngredientPriceSerializer
@@ -169,6 +214,49 @@ class ComplaintViewSet(viewsets.ModelViewSet):
 class ComplaintImageViewSet(viewsets.ModelViewSet):
     queryset = ComplaintImage.objects.all()
     serializer_class = ComplaintImageSerializer
+
+    def create(self, request, *args, **kwargs):
+        if 'image' in request.FILES:
+            file_obj = request.FILES['image']
+            
+            supabase_url = settings.SUPABASE_URL
+            supabase_key = settings.SUPABASE_KEY
+            if not supabase_url or not supabase_key:
+                return Response({'error': 'Supabase no configurado en el backend'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            try:
+                supabase: Client = create_client(supabase_url, supabase_key)
+                
+                ext = os.path.splitext(file_obj.name)[1]
+                safe_name = file_obj.name.replace(' ', '_')
+                filename = f"{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
+                
+                # Reusing 'ensayo_photos' bucket or a generic media bucket? Let's use 'ensayo_photos' for all app images to simplify unless specified otherwise
+                bucket_name = "ensayo_photos" 
+                
+                res = supabase.storage.from_(bucket_name).upload(
+                    file=file_obj.read(),
+                    path=f"complaints/{filename}",
+                    file_options={"content-type": file_obj.content_type}
+                )
+                
+                public_url = supabase.storage.from_(bucket_name).get_public_url(f"complaints/{filename}")
+                
+                data = request.data.copy()
+                data['image'] = public_url
+                
+                serializer = self.get_serializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+                headers = self.get_success_headers(serializer.data)
+                return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+                
+            except Exception as e:
+                import traceback
+                print(traceback.format_exc())
+                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                
+        return super().create(request, *args, **kwargs)
 
 # --- RECLAMOS TÉCNICOS (CARGA MANUAL EXCLUSIVA) ---
 # Se ha eliminado la lógica de importación masiva para garantizar la integridad de los datos manuales.
@@ -227,20 +315,23 @@ def generar_reporte_reclamo_estandar(request):
         ws_photos.column_dimensions['A'].width = 80
         curr_row = 1
         
+        import httpx
         for img in complaint.images.all():
             if img.image:
-                resolved_path = resolve_image_path(img.image.path)
-                if resolved_path:
-                    from openpyxl.drawing.image import Image as OpenpyxlImage
-                    try:
+                try:
+                    response = httpx.get(str(img.image), timeout=10.0)
+                    if response.status_code == 200:
+                        from openpyxl.drawing.image import Image as OpenpyxlImage
+                        
                         # Título de la foto
                         title = f"FOTO: {img.caption or 'Sin nota'}"
                         ws_photos.cell(row=curr_row, column=1, value=title)
                         ws_photos.cell(row=curr_row, column=1).font = openpyxl.styles.Font(bold=True, size=12)
                         curr_row += 1
 
-                        # Insertar Imagen
-                        img_data = OpenpyxlImage(resolved_path)
+                        # Insertar Imagen desde RAM
+                        img_stream = io.BytesIO(response.content)
+                        img_data = OpenpyxlImage(img_stream)
                         
                         # Redimensión proporcional para el Excel
                         orig_w, orig_h = img_data.width, img_data.height
@@ -253,8 +344,8 @@ def generar_reporte_reclamo_estandar(request):
                         # Espaciado (aproximadamente la altura de la imagen en filas)
                         rows_to_skip = int(img_data.height / 15) + 2
                         curr_row += rows_to_skip
-                    except Exception as e:
-                        print(f"Error inyectando imagen {img.id}: {e}")
+                except Exception as e:
+                    print(f"Error inyectando imagen {img.id}: {e}")
 
     output = io.BytesIO()
     wb.save(output)
@@ -435,21 +526,23 @@ def generar_informe_tecnico_estandar(request):
             row_ph += 1
             
             if img_obj and img_obj.image:
-                # Usar utilidad global para resolver la ruta real del archivo
-                resolved_path = resolve_image_path(img_obj.image.path)
-                if resolved_path:
-                    try:
-                        worksheet.insert_image(row_ph, col, resolved_path, {
+                import httpx
+                try:
+                    response = httpx.get(str(img_obj.image), timeout=10.0)
+                    if response.status_code == 200:
+                        img_stream = io.BytesIO(response.content)
+                        worksheet.insert_image(row_ph, col, "image.jpg", {
+                            'image_data': img_stream,
                             'x_scale': 0.5, 
                             'y_scale': 0.5,
                             'object_position': 1
                         })
                         row_ph += 25
-                    except:
-                        worksheet.write(row_ph, col, "ERROR: Insertando foto", workbook.add_format({'font_color': 'red'}))
+                    else:
+                        worksheet.write(row_ph, col, "ERROR: No se pudo descargar la imagen", workbook.add_format({'font_color': 'red'}))
                         row_ph += 2
-                else:
-                    worksheet.write(row_ph, col, "ERROR: No se encontró el archivo de imagen", workbook.add_format({'font_color': 'red'}))
+                except Exception as e:
+                    worksheet.write(row_ph, col, f"ERROR: Insertando foto ({e})", workbook.add_format({'font_color': 'red'}))
                     row_ph += 2
             else:
                 worksheet.write(row_ph, col, "SIN IMAGEN", workbook.add_format({'bg_color': '#CCCCCC'}))
@@ -501,12 +594,11 @@ def generar_reporte_ensayo_individual(request, pk):
 
     ensayo = get_object_or_404(Ensayo, pk=pk)
     
-    # Galería procesada usando utilidad global
-    images_b64 = []
+    # Galería
+    images_list = []
     for img in ensayo.images.all():
-        b64 = get_image_base64(img.image.path)
-        if b64:
-            images_b64.append({'url': b64, 'caption': img.caption})
+        if img.image:
+            images_list.append({'url': str(img.image), 'caption': img.caption})
 
     # Datos de evaluación organizados
     eval_data = ensayo.evaluation_data
@@ -518,7 +610,7 @@ def generar_reporte_ensayo_individual(request, pk):
     context = {
         'ensayo': ensayo,
         'details': ensayo.details.all(),
-        'images': images_b64,
+        'images': images_list,
         'logo': logo_b64,
         'eval_data': eval_data,
         'date': timezone.now(),
