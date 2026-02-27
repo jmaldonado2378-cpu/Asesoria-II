@@ -2,9 +2,9 @@ import Sidebar from './Sidebar';
 
 export default function Layout({ children }) {
     return (
-        <div className="flex min-h-screen bg-slate-100">
+        <div className="flex min-h-screen print:min-h-0 print:block print:h-auto bg-slate-100 print:bg-white">
             <Sidebar />
-            <main className="flex-1 overflow-auto">
+            <main className="flex-1 overflow-auto print:overflow-visible print:h-auto">
                 {children}
             </main>
         </div>

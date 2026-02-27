@@ -258,12 +258,12 @@ export default function EssayDetail() {
     );
 
     return (
-        <div className="min-h-screen bg-slate-100 p-8 pb-20 print:p-0 print:bg-white">
+        <div className="min-h-screen bg-slate-100 p-8 pb-20 print:p-0 print:bg-white print:min-h-0 print:block print:h-auto">
 
 
             {/* --- INTERFAZ WEB --- */}
-            <div className="print:hidden">
-                <div className="max-w-5xl mx-auto mb-6 flex justify-between items-center">
+            <div>
+                <div className="max-w-5xl mx-auto mb-6 flex justify-between items-center print:hidden">
                     <Link to="/essays" className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-medium transition"><ArrowLeft size={18} /> Volver</Link>
                     <div className="flex gap-3">
                         <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-900 font-medium shadow-sm transition"><Printer size={16} /> Imprimir Reporte</button>
