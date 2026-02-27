@@ -26,5 +26,4 @@ urlpatterns = [
     path('', include(router.urls)),
     path('generar-informe-tecnico-estandar/', views.generar_informe_tecnico_estandar, name='generar-informe-tecnico-estandar'),
     path('generar-reporte-reclamo-estandar/', views.generar_reporte_reclamo_estandar, name='generar-reporte-reclamo-estandar'),
-    path('ensayos/<int:pk>/reporte-pdf/', views.generar_reporte_ensayo_individual, name='generar-reporte-ensayo-individual'),
 ]

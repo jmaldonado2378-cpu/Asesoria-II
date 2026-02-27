@@ -156,6 +156,7 @@ class EnsayoImageViewSet(viewsets.ModelViewSet):
                 safe_name = file_obj.name.replace(' ', '_')
                 filename = f"{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
                 
+                bucket_name = "ensayo_photos"
                 upload_url = f"{supabase_url}/storage/v1/object/{bucket_name}/{filename}"
                 req_upload = urllib.request.Request(upload_url, data=file_obj.read(), method="POST")
                 req_upload.add_header("Authorization", f"Bearer {supabase_key}")
@@ -594,58 +595,8 @@ def generar_informe_tecnico_estandar(request):
             "error": f"Error en generación final: {str(e)}",
             "traceback": error_details 
         }, status=500)
-
-@api_view(['GET'])
-def generar_reporte_ensayo_individual(request, pk):
-    """
-    Genera un PDF profesional para un ensayo individual.
-    """
-    from django.template.loader import render_to_string
-    from django.conf import settings
-    try:
-        from xhtml2pdf import pisa
-    except ImportError:
-        return Response({"error": "xhtml2pdf no instalado"}, status=500)
-
-    ensayo = get_object_or_404(Ensayo, pk=pk)
     
-    # Galería
-    images_list = []
-    for img in ensayo.images.all():
-        if img.image:
-            images_list.append({'url': str(img.image), 'caption': img.caption})
 
-    # Datos de evaluación organizados
-    eval_data = ensayo.evaluation_data
-    
-    # Logo base64 usando utilidad global
-    logo_path = os.path.join(settings.BASE_DIR, 'lab', 'static', 'images', 'logo_institucional.png')
-    logo_b64 = get_image_base64(logo_path)
-
-    context = {
-        'ensayo': ensayo,
-        'details': ensayo.details.all(),
-        'images': images_list,
-        'logo': logo_b64,
-        'eval_data': eval_data,
-        'date': timezone.now(),
-        'total_cost': sum(d.quantity * d.price_per_kg for d in ensayo.details.all() if d.quantity and d.price_per_kg)
-    }
-
-    html = render_to_string('reports/ensayo_pdf.html', context)
-    buffer = io.BytesIO()
-    pisa_status = pisa.CreatePDF(
-        io.BytesIO(html.encode("utf-8")), 
-        dest=buffer,
-        link_callback=link_callback
-    )
-    
-    if pisa_status.err:
-        return Response({"error": "Error al generar PDF"}, status=400)
-
-    buffer.seek(0)
-    filename = f"Ensayo_{ensayo.code}.pdf"
-    return FileResponse(buffer, as_attachment=True, filename=filename)
 
 def serve_media_view(request, path):
     """
