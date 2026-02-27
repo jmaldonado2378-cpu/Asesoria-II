@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view, parser_classes
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from datetime import datetime
+from django.conf import settings
 from .models import (
     Client, Project, Ensayo, Ingredient, 
     ProjectIngredientPrice, Visit, EnsayoDetail, EnsayoImage,
@@ -539,7 +540,6 @@ def generar_reporte_ensayo_individual(request, pk):
     filename = f"Ensayo_{ensayo.code}.pdf"
     return FileResponse(buffer, as_attachment=True, filename=filename)
 
-@api_view(['GET'])
 def serve_media_view(request, path):
     """
     Vista personalizada para servir archivos media en producción (Render).
