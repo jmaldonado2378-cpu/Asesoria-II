@@ -15,8 +15,9 @@ from .models import (
     ProjectIngredientPrice, Visit, EnsayoDetail, EnsayoImage,
     TechnicalReport, Complaint, ComplaintImage
 )
-from supabase import create_client, Client
 import base64
+import urllib.request
+import urllib.error
 from .serializers import (
     ClientSerializer, 
     ProjectSerializer, 
@@ -101,7 +102,11 @@ def get_image_base64(path):
 def link_callback(uri, rel):
     """
     Convierte URIs de MEDIA a rutas absolutas en disco para xhtml2pdf.
+    Mantiene URLs externas intactas.
     """
+    if uri.startswith('http://') or uri.startswith('https://') or uri.startswith('data:'):
+        return uri
+        
     from django.conf import settings
     if uri.startswith(settings.MEDIA_URL):
         path = os.path.join(settings.MEDIA_ROOT, uri.replace(settings.MEDIA_URL, ""))
@@ -147,21 +152,24 @@ class EnsayoImageViewSet(viewsets.ModelViewSet):
                 return Response({'error': 'Supabase no configurado en el backend'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             try:
-                supabase: Client = create_client(supabase_url, supabase_key)
-                
                 ext = os.path.splitext(file_obj.name)[1]
-                # Secure filename with timestamp
                 safe_name = file_obj.name.replace(' ', '_')
                 filename = f"{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
                 
-                # We use the bucket 'ensayo_photos'
-                res = supabase.storage.from_("ensayo_photos").upload(
-                    file=file_obj.read(),
-                    path=filename,
-                    file_options={"content-type": file_obj.content_type}
-                )
+                upload_url = f"{supabase_url}/storage/v1/object/{bucket_name}/{filename}"
+                req_upload = urllib.request.Request(upload_url, data=file_obj.read(), method="POST")
+                req_upload.add_header("Authorization", f"Bearer {supabase_key}")
+                req_upload.add_header("Content-Type", file_obj.content_type or "application/octet-stream")
                 
-                public_url = supabase.storage.from_("ensayo_photos").get_public_url(filename)
+                try:
+                    with urllib.request.urlopen(req_upload, timeout=15.0) as res:
+                        pass
+                except urllib.error.HTTPError as e:
+                    import traceback
+                    print(f"Supabase upload error: {e.read().decode('utf-8', errors='ignore')}")
+                    raise Exception(f"HTTPError {e.code}: {e.reason}")
+                
+                public_url = f"{supabase_url}/storage/v1/object/public/{bucket_name}/{filename}"
                 
                 # Make data mutable
                 data = request.data.copy()
@@ -225,22 +233,27 @@ class ComplaintImageViewSet(viewsets.ModelViewSet):
                 return Response({'error': 'Supabase no configurado en el backend'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             try:
-                supabase: Client = create_client(supabase_url, supabase_key)
-                
                 ext = os.path.splitext(file_obj.name)[1]
                 safe_name = file_obj.name.replace(' ', '_')
                 filename = f"{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
                 
-                # Reusing 'ensayo_photos' bucket or a generic media bucket? Let's use 'ensayo_photos' for all app images to simplify unless specified otherwise
+                # Reusing 'ensayo_photos' bucket
                 bucket_name = "ensayo_photos" 
                 
-                res = supabase.storage.from_(bucket_name).upload(
-                    file=file_obj.read(),
-                    path=f"complaints/{filename}",
-                    file_options={"content-type": file_obj.content_type}
-                )
+                upload_url = f"{supabase_url}/storage/v1/object/{bucket_name}/complaints/{filename}"
+                req_upload = urllib.request.Request(upload_url, data=file_obj.read(), method="POST")
+                req_upload.add_header("Authorization", f"Bearer {supabase_key}")
+                req_upload.add_header("Content-Type", file_obj.content_type or "application/octet-stream")
                 
-                public_url = supabase.storage.from_(bucket_name).get_public_url(f"complaints/{filename}")
+                try:
+                    with urllib.request.urlopen(req_upload, timeout=15.0) as res:
+                        pass
+                except urllib.error.HTTPError as e:
+                    import traceback
+                    print(f"Supabase upload error: {e.read().decode('utf-8', errors='ignore')}")
+                    raise Exception(f"HTTPError {e.code}: {e.reason}")
+                
+                public_url = f"{supabase_url}/storage/v1/object/public/{bucket_name}/complaints/{filename}"
                 
                 data = request.data.copy()
                 data['image'] = public_url
@@ -315,23 +328,23 @@ def generar_reporte_reclamo_estandar(request):
         ws_photos.column_dimensions['A'].width = 80
         curr_row = 1
         
-        import httpx
         for img in complaint.images.all():
             if img.image:
                 try:
-                    response = httpx.get(str(img.image), timeout=10.0)
-                    if response.status_code == 200:
-                        from openpyxl.drawing.image import Image as OpenpyxlImage
-                        
-                        # Título de la foto
-                        title = f"FOTO: {img.caption or 'Sin nota'}"
-                        ws_photos.cell(row=curr_row, column=1, value=title)
-                        ws_photos.cell(row=curr_row, column=1).font = openpyxl.styles.Font(bold=True, size=12)
-                        curr_row += 1
+                    req_get = urllib.request.Request(str(img.image))
+                    with urllib.request.urlopen(req_get, timeout=10.0) as response:
+                        if response.status == 200:
+                            from openpyxl.drawing.image import Image as OpenpyxlImage
+                            
+                            # Título de la foto
+                            title = f"FOTO: {img.caption or 'Sin nota'}"
+                            ws_photos.cell(row=curr_row, column=1, value=title)
+                            ws_photos.cell(row=curr_row, column=1).font = openpyxl.styles.Font(bold=True, size=12)
+                            curr_row += 1
 
-                        # Insertar Imagen desde RAM
-                        img_stream = io.BytesIO(response.content)
-                        img_data = OpenpyxlImage(img_stream)
+                            # Insertar Imagen desde RAM
+                            img_stream = io.BytesIO(response.read())
+                            img_data = OpenpyxlImage(img_stream)
                         
                         # Redimensión proporcional para el Excel
                         orig_w, orig_h = img_data.width, img_data.height
@@ -526,21 +539,21 @@ def generar_informe_tecnico_estandar(request):
             row_ph += 1
             
             if img_obj and img_obj.image:
-                import httpx
                 try:
-                    response = httpx.get(str(img_obj.image), timeout=10.0)
-                    if response.status_code == 200:
-                        img_stream = io.BytesIO(response.content)
-                        worksheet.insert_image(row_ph, col, "image.jpg", {
-                            'image_data': img_stream,
-                            'x_scale': 0.5, 
-                            'y_scale': 0.5,
-                            'object_position': 1
-                        })
-                        row_ph += 25
-                    else:
-                        worksheet.write(row_ph, col, "ERROR: No se pudo descargar la imagen", workbook.add_format({'font_color': 'red'}))
-                        row_ph += 2
+                    req_get = urllib.request.Request(str(img_obj.image))
+                    with urllib.request.urlopen(req_get, timeout=10.0) as response:
+                        if response.status == 200:
+                            img_stream = io.BytesIO(response.read())
+                            worksheet.insert_image(row_ph, col, "image.jpg", {
+                                'image_data': img_stream,
+                                'x_scale': 0.5, 
+                                'y_scale': 0.5,
+                                'object_position': 1
+                            })
+                            row_ph += 25
+                        else:
+                            worksheet.write(row_ph, col, "ERROR: No se pudo descargar la imagen", workbook.add_format({'font_color': 'red'}))
+                            row_ph += 2
                 except Exception as e:
                     worksheet.write(row_ph, col, f"ERROR: Insertando foto ({e})", workbook.add_format({'font_color': 'red'}))
                     row_ph += 2
