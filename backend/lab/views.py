@@ -1,6 +1,13 @@
 import io
 import os
 import xlsxwriter
+try:
+    from xhtml2pdf import pisa
+    from django.template.loader import render_to_string
+except ImportError:
+    pisa = None
+    render_to_string = None
+
 from django.utils import timezone
 from django.http import HttpResponse, FileResponse
 from django.shortcuts import get_object_or_404
@@ -446,26 +453,57 @@ def generar_informe_tecnico_estandar(request):
             # Logo institucional en Base64 para el PDF
             logo_path = os.path.join(settings.BASE_DIR, 'lab', 'static', 'images', 'logo_institucional.png')
             logo_b64 = get_image_base64(logo_path)
-            
+
+            # Pre-serializar ensayos con imágenes para el template (xhtml2pdf no soporta ORM lazy loading)
+            essays_for_pdf = []
+            for e in essays:
+                base_flour_detail = e.details.filter(ingredient__is_base_flour=True).first()
+                score_num = float(e.final_score) if e.final_score else 0
+                essays_for_pdf.append({
+                    'code': e.code or f'ENS-{e.id}',
+                    'date': e.date,
+                    'base_flour_name': base_flour_detail.ingredient.name if base_flour_detail else "No especificada",
+                    'final_score': f"{score_num:.1f}" if e.final_score else None,
+                    'final_score_num': score_num,
+                    'conclusion': e.conclusion or '',
+                })
+
+            # Pre-serializar imágenes de ensayos
+            essays_with_imgs = []
+            for e in essays:
+                imgs = [{'image': img.image, 'caption': img.caption or ''} for img in e.images.all()]
+                if imgs:
+                    essays_with_imgs.append({'code': e.code or f'ENS-{e.id}', 'images': imgs})
+
+
+            # Pre-serializar imágenes de reclamos
+            complaints_with_imgs = []
+            for c in complaints:
+                imgs = [{'image': img.image, 'caption': img.caption or ''} for img in c.images.all()]
+                if imgs:
+                    complaints_with_imgs.append({'loading_date': c.loading_date, 'images': imgs})
+
             context = {
                 'project': project,
-                'start_date': start_date,
-                'end_date': end_date,
+                'start_date': s_date,
+                'end_date': e_date,
                 'date': timezone.now(),
                 'conclusions': str(conclusions) if conclusions else "",
-                'essays': essays,
+                'essays': essays_for_pdf,
                 'visits': visits,
                 'complaints': complaints,
-                'media_root': settings.MEDIA_ROOT,
                 'logo_b64': logo_b64,
+                'essays_data_with_images': essays_with_imgs,
+                'complaints_with_images': complaints_with_imgs,
             }
             html = render_to_string('reports/gestion_reporte_pdf.html', context)
             buffer = io.BytesIO()
             pisa_status = pisa.CreatePDF(
-                io.BytesIO(html.encode("utf-8")), 
+                html,
                 dest=buffer,
                 link_callback=link_callback
             )
+
             
             if pisa_status.err:
                 return Response({"error": "Error al generar PDF vía xhtml2pdf"}, status=400)
@@ -473,6 +511,7 @@ def generar_informe_tecnico_estandar(request):
             buffer.seek(0)
             filename = f"IT_{client_name}_{proj_name}_{report_date_str}.pdf"
             return FileResponse(buffer, as_attachment=True, filename=filename)
+
 
         # --- LÓGICA EXCEL ESTÁNDAR ---
         import xlsxwriter

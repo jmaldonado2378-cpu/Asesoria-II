@@ -1,7 +1,22 @@
 import { useState } from 'react';
 import { API_URL } from '../config';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Package, Truck, DollarSign, FileText, Activity, Tag, Info } from 'lucide-react';
+import { ArrowLeft, Save, Package, Truck, DollarSign, FileText, Activity, Tag } from 'lucide-react';
+
+const inputStyle = {
+    background: 'var(--bg-main)',
+    border: '1px solid var(--border)',
+    color: 'var(--text-1)',
+};
+const labelStyle = { color: 'var(--text-2)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em' };
+
+function FormLabel({ icon, children }) {
+    return (
+        <label className="flex items-center gap-2 mb-2" style={labelStyle}>
+            {icon} {children}
+        </label>
+    );
+}
 
 export default function NewIngredient() {
     const navigate = useNavigate();
@@ -18,7 +33,6 @@ export default function NewIngredient() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.name) return alert('El nombre del ingrediente es obligatorio');
-
         try {
             const res = await fetch(`${API_URL}/api/ingredients/`, {
                 method: 'POST',
@@ -42,147 +56,122 @@ export default function NewIngredient() {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData({
-            ...formData,
-            [name]: type === 'checkbox' ? checked : value
-        });
+        setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 p-8 flex flex-col items-center">
-            <div className="w-full max-w-3xl">
+        <div className="min-h-screen p-8 flex flex-col items-center" style={{ background: 'var(--bg-main)' }}>
+            <div className="w-full max-w-2xl">
+
+                {/* Back */}
                 <div className="mb-6 flex justify-between items-center">
-                    <Link to="/ingredients" className="flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold text-xs uppercase tracking-widest transition group">
-                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Volver a Insumos
+                    <Link to="/ingredients" className="flex items-center gap-2 text-sm font-medium transition hover:text-white"
+                        style={{ color: 'var(--text-2)' }}>
+                        <ArrowLeft size={15} /> Volver a Insumos
                     </Link>
-                    <div className="text-orange-600 text-[10px] font-bold uppercase tracking-[0.3em] flex items-center gap-2">
-                        <Activity size={12} /> Alta de Insumos v2.0
+                    <div className="text-xs font-bold flex items-center gap-2" style={{ color: 'var(--accent)' }}>
+                        <Activity size={12} /> Alta de Insumos
                     </div>
                 </div>
 
-                <div className="bg-white shadow-2xl rounded-sm overflow-hidden border border-slate-300">
-                    {/* Industrial Header */}
-                    <div className="bg-slate-900 p-8 text-white relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-1.5 bg-orange-600"></div>
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 text-orange-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">
-                                <Package size={12} /> Gestión de Suministros
-                            </div>
-                            <h1 className="text-3xl font-serif font-bold uppercase tracking-tighter leading-none">Nuevo Ingrediente</h1>
-                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2">Especificación Técnica y Costeo de Materia Prima</p>
+                {/* Card */}
+                <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
+
+                    {/* Header */}
+                    <div className="p-7 relative overflow-hidden" style={{ background: '#020617', borderBottom: '1px solid var(--border)' }}>
+                        <div className="absolute top-0 left-0 w-full h-1" style={{ background: 'var(--accent)' }} />
+                        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-1"
+                            style={{ color: 'var(--accent)' }}>
+                            <Package size={12} /> Gestión de Suministros
                         </div>
-                        <Package size={80} className="text-slate-800 absolute -right-6 -bottom-6 opacity-30" />
+                        <h1 className="text-xl font-bold text-white">Nuevo Ingrediente</h1>
+                        <p className="text-xs mt-0.5" style={{ color: 'var(--text-2)' }}>Especificación Técnica y Costeo de Materia Prima</p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="p-10 space-y-8">
-                        <div className="space-y-6">
-                            {/* SECCIÓN BÁSICA */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="col-span-1 md:col-span-2">
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                        <Package size={14} className="text-orange-600" /> Nombre del Insumo / Ingrediente
-                                    </label>
-                                    <input
-                                        name="name"
-                                        required
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        className="w-full p-4 border border-slate-200 rounded-sm bg-slate-50 text-slate-900 font-black text-xl outline-none focus:border-orange-600 focus:bg-white transition-all shadow-inner"
-                                        placeholder="Ej: Harina de Trigo 000 Extra"
-                                    />
-                                </div>
+                    <form onSubmit={handleSubmit} className="p-7 space-y-6">
 
-                                <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                        <Tag size={14} className="text-orange-400" /> Tipo de Insumo
-                                    </label>
-                                    <select
-                                        name="type"
-                                        value={formData.type}
-                                        onChange={handleChange}
-                                        className="w-full p-3 border border-slate-200 rounded-sm bg-white font-bold text-xs outline-none focus:border-orange-600 shadow-sm"
-                                    >
-                                        <option value="Harina">Harina</option>
-                                        <option value="Ingrediente General">Ingrediente General</option>
-                                        <option value="Aditivo">Aditivo</option>
-                                        <option value="Mejorador">Mejorador</option>
-                                        <option value="Enzimático">Enzimático</option>
-                                        <option value="Otro">Otro</option>
-                                    </select>
-                                </div>
+                        {/* Nombre */}
+                        <div>
+                            <FormLabel icon={<Package size={13} />}>Nombre del Insumo / Ingrediente</FormLabel>
+                            <input name="name" required value={formData.name} onChange={handleChange}
+                                className="w-full px-4 py-3 rounded-lg text-base font-bold outline-none placeholder:text-slate-700"
+                                style={inputStyle}
+                                placeholder="Ej: Harina de Trigo 000 Extra" />
+                        </div>
 
-                                <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                        <Truck size={14} className="text-orange-400" /> Marca / Proveedor
-                                    </label>
-                                    <input
-                                        name="brand"
-                                        value={formData.brand}
-                                        onChange={handleChange}
-                                        className="w-full p-3 border border-slate-200 rounded-sm bg-white font-bold text-xs outline-none focus:border-orange-600 shadow-sm"
-                                        placeholder="Ej: Molino Cañuelas"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                        <DollarSign size={14} className="text-green-600" /> Costo Base por Kg
-                                    </label>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">$</span>
-                                        <input
-                                            type="number"
-                                            step="0.0001"
-                                            name="default_price"
-                                            value={formData.default_price}
-                                            onChange={handleChange}
-                                            className="w-full p-3 pl-8 border border-slate-200 rounded-sm font-mono text-sm font-black outline-none focus:border-green-600 shadow-sm"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="flex items-end pb-2">
-                                    <label className="flex items-center gap-3 cursor-pointer group">
-                                        <div className="relative">
-                                            <input
-                                                type="checkbox"
-                                                name="is_base_flour"
-                                                checked={formData.is_base_flour}
-                                                onChange={handleChange}
-                                                className="sr-only peer"
-                                            />
-                                            <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-600"></div>
-                                        </div>
-                                        <span className="text-[10px] font-black uppercase text-slate-500 group-hover:text-orange-600 transition-colors tracking-widest">Definir como Harina Base</span>
-                                    </label>
-                                </div>
+                        {/* Tipo + Marca */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <FormLabel icon={<Tag size={13} />}>Tipo de Insumo</FormLabel>
+                                <select name="type" value={formData.type} onChange={handleChange}
+                                    className="w-full px-3 py-2.5 rounded-lg text-sm font-medium outline-none"
+                                    style={inputStyle}>
+                                    <option value="Harina">Harina</option>
+                                    <option value="Ingrediente General">Ingrediente General</option>
+                                    <option value="Aditivo">Aditivo</option>
+                                    <option value="Mejorador">Mejorador</option>
+                                    <option value="Enzimático">Enzimático</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
                             </div>
-
-                            {/* SECCIÓN NOTAS TÉCNICAS */}
-                            <div className="border-t border-slate-100 pt-8">
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <FileText size={14} className="text-orange-400" /> Observaciones y Notas Técnicas
-                                </label>
-                                <textarea
-                                    name="observations"
-                                    rows="4"
-                                    value={formData.observations}
-                                    onChange={handleChange}
-                                    className="w-full p-4 border border-slate-200 rounded-sm outline-none focus:border-orange-600 font-medium text-sm bg-slate-50 shadow-inner resize-none"
-                                    placeholder="Especificar aquí detalles sobre dosificación, fecha de vencimiento o requisitos de almacenamiento..."
-                                />
+                            <div>
+                                <FormLabel icon={<Truck size={13} />}>Marca / Proveedor</FormLabel>
+                                <input name="brand" value={formData.brand} onChange={handleChange}
+                                    className="w-full px-3 py-2.5 rounded-lg text-sm outline-none placeholder:text-slate-700"
+                                    style={inputStyle}
+                                    placeholder="Ej: Molino Cañuelas" />
                             </div>
                         </div>
 
-                        <div className="pt-8 border-t border-slate-100 flex justify-end gap-4">
-                            <Link to="/ingredients" className="px-8 py-3 bg-white border border-slate-300 text-slate-500 rounded-sm font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition active:scale-95">
+                        {/* Precio + Harina Base */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
+                            <div>
+                                <FormLabel icon={<DollarSign size={13} />}>Costo Base por Kg</FormLabel>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-mono"
+                                        style={{ color: 'var(--text-2)' }}>$</span>
+                                    <input type="number" step="0.0001" name="default_price"
+                                        value={formData.default_price} onChange={handleChange}
+                                        className="w-full pl-7 pr-3 py-2.5 rounded-lg font-mono text-sm outline-none"
+                                        style={inputStyle} />
+                                </div>
+                            </div>
+                            <div className="pb-1">
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                    <div className="relative">
+                                        <input type="checkbox" name="is_base_flour"
+                                            checked={formData.is_base_flour} onChange={handleChange}
+                                            className="sr-only peer" />
+                                        <div className="w-10 h-5 rounded-full transition-all peer-checked:bg-green-500"
+                                            style={{ background: formData.is_base_flour ? 'var(--accent)' : 'var(--border)' }}>
+                                            <div className={`absolute top-[2px] left-[2px] bg-white rounded-full h-4 w-4 transition-transform ${formData.is_base_flour ? 'translate-x-5' : ''}`}></div>
+                                        </div>
+                                    </div>
+                                    <span className="text-xs font-bold uppercase tracking-widest"
+                                        style={{ color: 'var(--text-2)' }}>Definir como Harina Base</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Observaciones */}
+                        <div>
+                            <FormLabel icon={<FileText size={13} />}>Observaciones y Notas Técnicas</FormLabel>
+                            <textarea name="observations" rows="4" value={formData.observations} onChange={handleChange}
+                                className="w-full px-4 py-3 rounded-lg text-sm outline-none resize-none placeholder:text-slate-700"
+                                style={inputStyle}
+                                placeholder="Dosificación, fecha de vencimiento, requisitos de almacenamiento..." />
+                        </div>
+
+                        {/* Buttons */}
+                        <div className="pt-2 flex justify-end gap-3" style={{ borderTop: '1px solid var(--border)' }}>
+                            <Link to="/ingredients" className="px-5 py-2.5 rounded-lg text-sm font-bold transition"
+                                style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}>
                                 Cancelar
                             </Link>
-                            <button
-                                type="submit"
-                                className="flex items-center gap-3 bg-green-600 hover:bg-slate-900 text-white font-black py-3 px-10 rounded-sm shadow-2xl transition active:scale-95 text-[10px] uppercase tracking-widest"
-                            >
-                                <Save size={18} /> Registrar Insumo
+                            <button type="submit"
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition active:scale-95"
+                                style={{ background: 'var(--accent)', color: '#0f172a' }}>
+                                <Save size={16} /> Registrar Insumo
                             </button>
                         </div>
                     </form>

@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, Save, Building, FolderKanban, Calendar, ChefHat } from 'lucide-react';
+import { ArrowLeft, Save, Building, FolderKanban, Calendar, ChefHat, Loader2 } from 'lucide-react';
+
+/* ── Design System helpers ── */
+const input = {
+    background: 'var(--bg-main)',
+    border: '1px solid var(--border)',
+    color: 'var(--text-1)',
+};
+const label = { color: 'var(--text-2)' };
 
 export default function NewEssay() {
     const navigate = useNavigate();
@@ -10,7 +18,6 @@ export default function NewEssay() {
     const [clients, setClients] = useState([]);
     const [projects, setProjects] = useState([]);
 
-    // Form State
     const [selectedClient, setSelectedClient] = useState(location.state?.preselectedClient || '');
     const [formData, setFormData] = useState({
         project: location.state?.preselectedProject || '',
@@ -21,7 +28,6 @@ export default function NewEssay() {
     });
 
     useEffect(() => {
-        // Cargar Clientes y Proyectos en paralelo
         Promise.all([
             fetch(`${API_URL}/api/clients/`).then(res => res.json()),
             fetch(`${API_URL}/api/projects/`).then(res => res.json())
@@ -29,10 +35,9 @@ export default function NewEssay() {
             setClients(clientsData);
             setProjects(projectsData);
             setLoading(false);
-        }).catch(err => alert('Error cargando datos iniciales'));
+        }).catch(() => alert('Error cargando datos iniciales'));
     }, []);
 
-    // Filtrar proyectos según cliente seleccionado
     const filteredProjects = selectedClient
         ? projects.filter(p => p.client === parseInt(selectedClient))
         : [];
@@ -40,117 +45,130 @@ export default function NewEssay() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.project) return alert('Debes seleccionar un Proyecto');
-
         try {
             const res = await fetch(`${API_URL}/api/ensayos/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
-
             if (!res.ok) throw new Error('Error al crear');
-
             const newEssay = await res.json();
-            // Redirigir a la ficha para empezar a cargar la receta
             navigate(`/essays/${newEssay.id}`);
-
-        } catch (error) {
+        } catch {
             alert('Error creando el ensayo. Verifica los datos.');
         }
     };
 
-    if (loading) return <div className="p-10 text-center font-mono text-sm">Cargando formulario...</div>;
+    if (loading) return (
+        <div className="min-h-screen flex items-center justify-center gap-3 text-xs uppercase tracking-widest"
+            style={{ background: 'var(--bg-main)', color: 'var(--text-2)' }}>
+            <Loader2 className="animate-spin" size={18} style={{ color: 'var(--accent)' }} />
+            Cargando formulario...
+        </div>
+    );
 
     return (
-        <div className="min-h-screen bg-slate-100 p-8 flex flex-col items-center">
+        <div className="min-h-screen p-8 flex flex-col items-center" style={{ background: 'var(--bg-main)' }}>
             <div className="w-full max-w-2xl">
+
+                {/* Back link */}
                 <div className="mb-6">
-                    <Link to="/essays" className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-medium transition">
-                        <ArrowLeft size={18} /> Cancelar y Volver
+                    <Link to="/essays" className="flex items-center gap-2 text-sm font-medium transition hover:text-white"
+                        style={{ color: 'var(--text-2)' }}>
+                        <ArrowLeft size={16} /> Cancelar y Volver
                     </Link>
                 </div>
 
-                <div className="bg-white shadow-xl rounded-sm overflow-hidden border border-slate-300">
-                    <div className="bg-slate-900 p-8 text-white relative">
-                        <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600"></div>
-                        <h1 className="text-3xl font-serif font-bold uppercase tracking-tighter">Apertura de Ensayo</h1>
-                        <p className="text-slate-400 text-[10px] mt-2 uppercase tracking-[0.2em] font-mono font-bold">Laboratorio Molinero I+D / Protocolo de Inicio</p>
+                {/* Card */}
+                <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
+
+                    {/* Header */}
+                    <div className="p-8 relative overflow-hidden" style={{ background: '#020617', borderBottom: '1px solid var(--border)' }}>
+                        {/* Accent top bar */}
+                        <div className="absolute top-0 left-0 w-full h-1" style={{ background: 'var(--accent)' }} />
+                        <h1 className="text-2xl font-bold text-white">Apertura de Ensayo</h1>
+                        <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-2)' }}>
+                            Laboratorio Molinero I+D · Protocolo de Inicio
+                        </p>
                     </div>
 
+                    {/* Form */}
                     <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                        {/* SELECCIÓN DE CLIENTE */}
-                        <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
-                                <Building size={14} /> Cliente
-                            </label>
-                            <select
-                                value={selectedClient}
+
+                        {/* Cliente */}
+                        <FormField label="Cliente" icon={<Building size={14} />}>
+                            <select value={selectedClient}
                                 onChange={(e) => { setSelectedClient(e.target.value); setFormData({ ...formData, project: '' }); }}
-                                className="w-full p-4 border border-slate-300 rounded-sm bg-slate-50 focus:bg-white focus:border-indigo-600 outline-none transition uppercase text-xs font-bold tracking-tight shadow-inner"
-                            >
-                                <option value="">-- Seleccione un Cliente --</option>
+                                className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all"
+                                style={input}>
+                                <option value="">— Seleccione un Cliente —</option>
                                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
-                        </div>
+                        </FormField>
 
-                        {/* SELECCIÓN DE PROYECTO */}
-                        <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
-                                <FolderKanban size={14} /> Proyecto Asociado
-                            </label>
-                            <select
-                                disabled={!selectedClient}
+                        {/* Proyecto */}
+                        <FormField label="Proyecto Asociado" icon={<FolderKanban size={14} />}>
+                            <select disabled={!selectedClient}
                                 value={formData.project}
                                 onChange={(e) => setFormData({ ...formData, project: e.target.value })}
-                                className="w-full p-4 border border-slate-300 rounded-sm bg-slate-50 focus:bg-white focus:border-indigo-600 outline-none transition disabled:opacity-50 uppercase text-xs font-bold tracking-tight shadow-inner"
-                            >
-                                <option value="">-- Seleccione un Proyecto --</option>
+                                className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all disabled:opacity-40"
+                                style={input}>
+                                <option value="">— Seleccione un Proyecto —</option>
                                 {filteredProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
-                            {!selectedClient && <p className="text-[10px] text-orange-600 mt-2 font-bold uppercase tracking-tighter">* Primero debe seleccionar un cliente.</p>}
-                        </div>
+                            {!selectedClient && (
+                                <p className="text-xs mt-1.5" style={{ color: '#fb923c' }}>
+                                    * Seleccione primero un cliente.
+                                </p>
+                            )}
+                        </FormField>
 
+                        {/* Fecha + Tipo */}
                         <div className="grid grid-cols-2 gap-6">
-                            {/* FECHA */}
-                            <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
-                                    <Calendar size={14} /> Fecha de Ensayo
-                                </label>
-                                <input
-                                    type="date"
-                                    value={formData.date}
+                            <FormField label="Fecha de Ensayo" icon={<Calendar size={14} />}>
+                                <input type="date" value={formData.date}
                                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                    className="w-full p-4 border border-slate-300 rounded-sm bg-slate-50 focus:bg-white focus:border-indigo-600 outline-none font-mono font-bold text-sm shadow-inner"
-                                />
-                            </div>
-
-                            {/* TIPO DE PROCESO */}
-                            <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
-                                    <ChefHat size={14} /> Tipo de Proceso
-                                </label>
-                                <select
-                                    value={formData.baking_type}
+                                    className="w-full px-4 py-3 rounded-lg text-sm font-mono outline-none transition-all"
+                                    style={input} />
+                            </FormField>
+                            <FormField label="Tipo de Proceso" icon={<ChefHat size={14} />}>
+                                <select value={formData.baking_type}
                                     onChange={(e) => setFormData({ ...formData, baking_type: e.target.value })}
-                                    className="w-full p-4 border border-slate-300 rounded-sm bg-slate-50 focus:bg-white focus:border-indigo-600 outline-none font-bold text-sm shadow-inner"
-                                >
-                                    <option value="Fermentado">📦 PANIFICACIÓN</option>
-                                    <option value="Batido">🧁 PASTELERÍA</option>
+                                    className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all"
+                                    style={input}>
+                                    <option value="Fermentado">📦 Panificación</option>
+                                    <option value="Batido">🧁 Pastelería</option>
                                 </select>
-                            </div>
+                            </FormField>
                         </div>
 
-                        <div className="pt-8 border-t border-slate-100 flex justify-end">
-                            <button
-                                type="submit"
-                                className="flex items-center gap-3 bg-slate-900 hover:bg-slate-800 text-white font-bold py-5 px-12 rounded shadow-2xl transform active:scale-95 transition text-xs uppercase tracking-widest border border-slate-700"
-                            >
-                                <Save size={18} className="text-indigo-400" /> Iniciar Protocolo Técnico
+                        {/* Submit */}
+                        <div className="pt-6 flex justify-end gap-3" style={{ borderTop: '1px solid var(--border)' }}>
+                            <Link to="/essays" className="px-5 py-2.5 rounded-lg text-sm font-bold transition"
+                                style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}>
+                                Cancelar
+                            </Link>
+                            <button type="submit"
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition active:scale-95"
+                                style={{ background: 'var(--accent)', color: '#0f172a' }}>
+                                <Save size={16} /> Iniciar Protocolo
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
+        </div>
+    );
+}
+
+function FormField({ label: lbl, icon, children }) {
+    return (
+        <div>
+            <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-2"
+                style={{ color: 'var(--text-2)' }}>
+                {icon} {lbl}
+            </label>
+            {children}
         </div>
     );
 }

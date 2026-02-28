@@ -2,17 +2,9 @@ import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 import { Link } from 'react-router-dom';
 import {
-    Calendar,
-    FolderKanban,
-    FlaskConical,
-    ArrowRight,
-    Clock,
-    CheckCircle,
-    Activity,
-    TrendingUp,
-    LayoutDashboard,
-    AlertCircle,
-    Package
+    Calendar, FolderKanban, FlaskConical, ArrowRight,
+    Clock, Activity, TrendingUp, AlertCircle, Package,
+    Plus, ChevronRight
 } from 'lucide-react';
 
 export default function Home() {
@@ -20,211 +12,257 @@ export default function Home() {
     const [upcomingVisits, setUpcomingVisits] = useState([]);
     const [recentEssays, setRecentEssays] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [userName, setUserName] = useState('Consultor');
+    const hour = new Date().getHours();
+    const greeting = hour < 13 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+    const today = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
     useEffect(() => {
+        const savedSettings = localStorage.getItem('appSettings');
+        if (savedSettings) {
+            const cfg = JSON.parse(savedSettings);
+            if (cfg.userName) setUserName(cfg.userName);
+        }
+
         Promise.all([
             fetch(`${API_URL}/api/projects/`).then(r => r.json()),
             fetch(`${API_URL}/api/visits/`).then(r => r.json()),
-            fetch(`${API_URL}/api/ensayos/`).then(r => r.json())
+            fetch(`${API_URL}/api/ensayos/`).then(r => r.json()),
         ]).then(([proj, visits, essays]) => {
-            // Stats
-            const activeProjs = proj.filter(p => p.status === 'En Curso').length;
-            const pendingVisits = visits.filter(v => v.status === 'Pendiente').length;
-            const totalEssays = essays.length;
+            const activeProjs = Array.isArray(proj) ? proj.filter(p => p.status === 'En Curso').length : 0;
+            const pendingVisits = Array.isArray(visits) ? visits.filter(v => v.status === 'Pendiente').length : 0;
+            const totalEssays = Array.isArray(essays) ? essays.length : 0;
             setStats({ projects: activeProjs, visits: pendingVisits, essays: totalEssays });
 
-            // Próximas Visitas (Filtrar pendientes y ordenar por fecha asc)
-            const next = visits
-                .filter(v => v.status === 'Pendiente')
-                .sort((a, b) => new Date(a.date) - new Date(b.date))
-                .slice(0, 3);
-            setUpcomingVisits(next);
-
-            // Ensayos Recientes (Ordenar por fecha desc)
-            const recent = essays
-                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                .slice(0, 3);
-            setRecentEssays(recent);
-
+            if (Array.isArray(visits)) {
+                setUpcomingVisits(
+                    visits.filter(v => v.status === 'Pendiente')
+                        .sort((a, b) => new Date(a.date) - new Date(b.date))
+                        .slice(0, 5)
+                );
+            }
+            if (Array.isArray(essays)) {
+                setRecentEssays(essays.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 4));
+            }
             setLoading(false);
-        }).catch(e => {
-            console.error(e);
-            setLoading(false);
-        });
+        }).catch(() => setLoading(false));
     }, []);
 
     if (loading) return (
-        <div className="min-h-screen bg-slate-100 flex items-center justify-center font-mono text-[10px] uppercase tracking-[0.3em] text-slate-400 pl-20">
-            <Activity className="animate-spin mr-3 text-orange-600" size={20} /> Inicializando Centro de Control...
+        <div className="min-h-screen flex items-center justify-center gap-3 text-xs uppercase tracking-widest"
+            style={{ color: 'var(--text-2)' }}>
+            <Activity className="animate-spin" size={18} style={{ color: 'var(--accent)' }} />
+            Inicializando sistema...
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-slate-100 p-8 pl-28"> {/* pl-28 para dejar espacio al sidebar */}
-            <div className="max-w-7xl mx-auto">
+        <div className="min-h-screen p-8" style={{ background: 'var(--bg-main)' }}>
+            <div className="max-w-7xl mx-auto space-y-8">
 
-                {/* HEADER PANEL */}
-                <header className="mb-12 border-b-2 border-slate-200 pb-8 relative overflow-hidden">
-                    <div className="flex items-center gap-3 text-orange-600 text-[10px] font-black uppercase tracking-[0.4em] mb-3">
-                        <LayoutDashboard size={18} /> Operaciones Globales I+D v3.1
+                {/* ── HEADER ── */}
+                <header className="flex items-start justify-between">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--text-2)' }}>
+                            {today}
+                        </p>
+                        <h1 className="text-3xl font-bold text-white">
+                            {greeting},{' '}
+                            <span style={{ color: 'var(--accent)' }}>{userName}</span>
+                        </h1>
+                        <p className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>
+                            Resumen de actividad técnica y visitas programadas
+                        </p>
                     </div>
-                    <h1 className="text-5xl font-serif font-black text-slate-900 uppercase tracking-tight leading-none">
-                        Dashboard de <br />
-                        <span className="text-orange-600">Control Técnico</span>
-                    </h1>
-                    <TrendingUp size={120} className="absolute -right-10 -bottom-10 text-slate-200 opacity-50 pointer-events-none" />
+                    <div className="flex gap-3">
+                        <Link to="/essays/new"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
+                            style={{ background: 'var(--accent)', color: '#0f172a' }}>
+                            <Plus size={16} /> Nuevo Ensayo
+                        </Link>
+                        <Link to="/visits/new"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all active:scale-95"
+                            style={{ background: 'var(--accent-2)', color: 'white' }}>
+                            <Plus size={16} /> Agregar Visita
+                        </Link>
+                    </div>
                 </header>
 
-                {/* KPIs INDUSTRIALES */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-                    <StatCard
-                        label="Proyectos Activos"
-                        val={stats.projects}
-                        icon={<FolderKanban size={24} />}
-                        color="border-orange-600"
-                        bg="bg-orange-600"
-                    />
-                    <StatCard
-                        label="Agenda Pendiente"
-                        val={stats.visits}
-                        icon={<Calendar size={24} />}
-                        color="border-indigo-600"
-                        bg="bg-indigo-600"
-                    />
-                    <StatCard
-                        label="Ensayos Realizados"
-                        val={stats.essays}
-                        icon={<FlaskConical size={24} />}
-                        color="border-slate-900"
-                        bg="bg-slate-900"
-                    />
+                {/* ── KPI CARDS ── */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <KpiCard label="Proyectos Activos" value={stats.projects} sub="+0 este mes" icon={<FolderKanban size={18} />} accent="var(--accent)" />
+                    <KpiCard label="Visitas Pendientes" value={stats.visits} sub="próximas en agenda" icon={<Calendar size={18} />} accent="#fb923c" />
+                    <KpiCard label="Ensayos Realizados" value={stats.essays} sub="total histórico" icon={<FlaskConical size={18} />} accent="#60a5fa" />
+                    <KpiCard label="Score Promedio" value="—" sub="promedio general" icon={<TrendingUp size={18} />} accent="#c084fc" />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    {/* PRÓXIMAS VISITAS */}
-                    <section className="bg-white rounded-sm shadow-2xl border border-slate-300 overflow-hidden">
-                        <div className="p-6 border-b-2 border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs flex items-center gap-2">
-                                <Clock size={16} className="text-orange-600" /> Próximas Visitas de Campo
-                            </h3>
-                            <Link to="/visits" className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:text-orange-600 transition-colors flex items-center gap-1 group">
-                                Ver Agenda <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                {/* ── MAIN GRID ── */}
+                <div className="grid lg:grid-cols-5 gap-6">
+
+                    {/* Próximas visitas (60%) */}
+                    <section className="lg:col-span-3 rounded-xl overflow-hidden"
+                        style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
+                        <div className="flex justify-between items-center px-6 py-4"
+                            style={{ borderBottom: '1px solid var(--border)' }}>
+                            <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-white">
+                                <Clock size={14} style={{ color: 'var(--accent)' }} /> Próximas Visitas
+                            </h2>
+                            <Link to="/visits" className="text-xs font-bold uppercase tracking-wide flex items-center gap-1 transition-colors hover:text-white"
+                                style={{ color: 'var(--accent)' }}>
+                                Ver todas <ArrowRight size={12} />
                             </Link>
                         </div>
-                        <div className="divide-y-2 divide-slate-50 font-mono">
-                            {upcomingVisits.length === 0 ? (
-                                <div className="p-12 text-center text-slate-300 uppercase text-[10px] font-bold tracking-[0.2em] italic">
-                                    No se detectan intervenciones programadas.
-                                </div>
-                            ) : (
-                                upcomingVisits.map(v => (
-                                    <div key={v.id} className="p-6 flex justify-between items-center hover:bg-orange-50 transition-colors group">
-                                        <div className="space-y-1">
-                                            <div className="font-serif font-black text-slate-900 uppercase tracking-tight text-sm group-hover:text-orange-600 transition-colors">{v.client_name}</div>
-                                            <div className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-2">
-                                                <Calendar size={12} className="text-slate-300" /> {v.date} — <Clock size={12} className="text-slate-300" /> {v.start_time?.substring(0, 5)} hs
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <span className="text-[9px] font-black uppercase tracking-widest bg-slate-900 text-white px-3 py-1 rounded-sm border border-slate-800 shadow-lg group-hover:bg-orange-600 group-hover:border-orange-500 transition-colors">
-                                                {v.visit_type}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
+
+                        {/* Tabla */}
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="text-left text-[11px] font-bold uppercase tracking-wider"
+                                        style={{ color: 'var(--text-2)', borderBottom: '1px solid var(--border)' }}>
+                                        <th className="px-6 py-3">Cliente</th>
+                                        <th className="px-4 py-3">Fecha</th>
+                                        <th className="px-4 py-3">Tipo</th>
+                                        <th className="px-4 py-3">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {upcomingVisits.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="px-6 py-10 text-center text-sm italic"
+                                                style={{ color: 'var(--text-2)' }}>
+                                                No hay visitas pendientes
+                                            </td>
+                                        </tr>
+                                    ) : upcomingVisits.map((v, i) => (
+                                        <tr key={v.id}
+                                            style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(37,51,71,0.4)', borderBottom: '1px solid rgba(51,65,85,0.3)' }}
+                                            className="hover:bg-white/5 transition-colors">
+                                            <td className="px-6 py-3 font-semibold text-white">{v.client_name}</td>
+                                            <td className="px-4 py-3 text-xs font-mono" style={{ color: 'var(--text-2)' }}>{v.date}</td>
+                                            <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-2)' }}>{v.visit_type}</td>
+                                            <td className="px-4 py-3">
+                                                <StatusBadge status={v.status} />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </section>
 
-                    {/* ENSAYOS RECIENTES */}
-                    <section className="bg-slate-900 rounded-sm shadow-2xl border border-slate-800 overflow-hidden text-white">
-                        <div className="p-6 border-b-2 border-slate-800 flex justify-between items-center bg-slate-800/50">
-                            <h3 className="font-black text-white uppercase tracking-widest text-xs flex items-center gap-2">
-                                <FlaskConical size={16} className="text-orange-500" /> Registro Reciente de Ensayos
-                            </h3>
-                            <Link to="/essays" className="text-[10px] font-black text-orange-400 uppercase tracking-widest hover:text-white transition-colors flex items-center gap-1 group">
-                                Ver Todos <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                    {/* Ensayos recientes (40%) */}
+                    <section className="lg:col-span-2 rounded-xl overflow-hidden"
+                        style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
+                        <div className="flex justify-between items-center px-6 py-4"
+                            style={{ borderBottom: '1px solid var(--border)' }}>
+                            <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-white">
+                                <FlaskConical size={14} style={{ color: 'var(--accent)' }} /> Ensayos Recientes
+                            </h2>
+                            <Link to="/essays" className="text-xs font-bold uppercase tracking-wide flex items-center gap-1 transition-colors hover:text-white"
+                                style={{ color: 'var(--accent)' }}>
+                                Ver todos <ArrowRight size={12} />
                             </Link>
                         </div>
-                        <div className="divide-y-2 divide-slate-800 font-mono">
+                        <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
                             {recentEssays.length === 0 ? (
-                                <div className="p-12 text-center text-slate-600 uppercase text-[10px] font-bold tracking-[0.2em] italic">
-                                    Archivo histórico vacío o en proceso de carga.
+                                <div className="px-6 py-10 text-center text-sm italic" style={{ color: 'var(--text-2)' }}>
+                                    No hay ensayos registrados
                                 </div>
-                            ) : (
-                                recentEssays.map(e => (
-                                    <Link key={e.id} to={`/essays/${e.id}`} className="p-6 flex justify-between items-center hover:bg-slate-800 transition-all group block">
-                                        <div className="space-y-1">
-                                            <div className="font-serif font-black text-white uppercase tracking-tighter text-base group-hover:text-orange-400 transition-colors">
-                                                {e.code || `ENS-${e.id.toString().padStart(3, '0')}`}
+                            ) : recentEssays.map(e => {
+                                const score = e.final_score ? parseFloat(e.final_score) : null;
+                                const scoreColor = score === null ? 'var(--text-2)'
+                                    : score >= 8 ? 'var(--score-high)'
+                                        : score >= 6 ? 'var(--score-mid)'
+                                            : 'var(--score-low)';
+                                return (
+                                    <Link key={e.id} to={`/essays/${e.id}`}
+                                        className="flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-colors group">
+                                        <div className="space-y-0.5">
+                                            <div className="font-bold text-sm font-mono group-hover:text-green-400 transition-colors"
+                                                style={{ color: 'var(--accent)' }}>
+                                                {e.code || `ENS-${String(e.id).padStart(3, '0')}`}
                                             </div>
-                                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 group-hover:text-slate-400 transition-colors">
-                                                <Users size={12} /> {e.client_name || 'Sin Cliente Asignado'}
+                                            <div className="text-xs" style={{ color: 'var(--text-2)' }}>
+                                                {e.client_name || 'Sin cliente'} · {e.date}
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-4">
-                                            {e.final_score ? (
-                                                <div className="text-right">
-                                                    <div className={`text-2xl font-black ${parseFloat(e.final_score) >= 8 ? 'text-green-500' : 'text-orange-500'}`}>
-                                                        {parseFloat(e.final_score).toFixed(1)}
-                                                    </div>
-                                                    <div className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">Quality Score</div>
-                                                </div>
+                                        <div className="flex items-center gap-3">
+                                            {score !== null ? (
+                                                <span className="text-2xl font-black" style={{ color: scoreColor }}>
+                                                    {score.toFixed(1)}
+                                                </span>
                                             ) : (
-                                                <div className="w-10 h-10 rounded-full border-2 border-slate-700 flex items-center justify-center text-slate-700">
-                                                    <AlertCircle size={16} />
-                                                </div>
+                                                <AlertCircle size={16} style={{ color: 'var(--text-2)' }} />
                                             )}
-                                            <ChevronRight size={16} className="text-slate-700 group-hover:text-orange-500 group-hover:translate-x-1 transition-all" />
+                                            <ChevronRight size={14} style={{ color: 'var(--text-2)' }} className="group-hover:text-white transition-colors" />
                                         </div>
                                     </Link>
-                                ))
-                            )}
+                                );
+                            })}
                         </div>
                     </section>
                 </div>
 
-                {/* ACCESS DOCK */}
-                <div className="mt-12 p-8 bg-white border border-slate-300 rounded-sm shadow-xl flex flex-wrap justify-between items-center gap-8">
-                    <div className="space-y-1">
-                        <div className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">Acceso Rápido</div>
-                        <div className="text-2xl font-serif font-black text-slate-900 uppercase tracking-tighter">Terminal de Datos</div>
+                {/* ── ACCESO RÁPIDO ── */}
+                <section className="rounded-xl p-6" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
+                    <h3 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'var(--text-2)' }}>
+                        Acceso Rápido
+                    </h3>
+                    <div className="flex flex-wrap gap-3">
+                        <QuickBtn to="/essays/new" label="Nuevo Ensayo" icon={<FlaskConical size={16} />} />
+                        <QuickBtn to="/visits/new" label="Agendar Visita" icon={<Calendar size={16} />} />
+                        <QuickBtn to="/ingredients" label="Insumos" icon={<Package size={16} />} />
+                        <QuickBtn to="/projects" label="Ver Proyectos" icon={<FolderKanban size={16} />} />
                     </div>
-                    <div className="flex flex-wrap gap-4">
-                        <DockButton to="/essays/new" label="Nuevo Ensayo" icon={<FlaskConical size={18} />} />
-                        <DockButton to="/visits/new" label="Agendar Visita" icon={<Calendar size={18} />} />
-                        <DockButton to="/ingredients" label="Insumos" icon={<Package size={18} />} />
-                    </div>
-                </div>
+                </section>
+
             </div>
         </div>
     );
 }
 
-function StatCard({ label, val, icon, color, bg }) {
+/* ── Sub-components ── */
+function KpiCard({ label, value, sub, icon, accent }) {
     return (
-        <div className={`bg-white p-8 rounded-sm shadow-2xl border border-slate-300 border-l-[6px] ${color} relative overflow-hidden group hover:bg-slate-50 transition-colors`}>
-            <div className={`absolute -right-6 -bottom-6 text-slate-100 transition-transform group-hover:scale-110 group-hover:rotate-12`}>
-                {icon && typeof icon === 'object' ? Object.assign({}, icon, { props: { ...icon.props, size: 140 } }) : null}
+        <div className="rounded-xl p-5 relative overflow-hidden transition-transform hover:-translate-y-1"
+            style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
+            <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-2)' }}>{label}</span>
+                <span style={{ color: accent }}>{icon}</span>
             </div>
-            <div className="relative z-10">
-                <div className="flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">
-                    <span className="text-orange-600">{icon}</span> {label}
-                </div>
-                <div className="text-6xl font-serif font-black text-slate-900 leading-none tracking-tighter">{val}</div>
-            </div>
+            <div className="text-4xl font-black text-white leading-none mb-1">{value}</div>
+            <div className="text-[11px] font-medium" style={{ color: 'var(--text-2)' }}>{sub}</div>
+            {/* Accent glow corner */}
+            <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full opacity-10"
+                style={{ background: accent }} />
         </div>
     );
 }
 
-function DockButton({ to, label, icon }) {
+function StatusBadge({ status }) {
+    const map = {
+        'Pendiente': { bg: 'rgba(67,20,7,0.8)', text: '#fb923c' },
+        'Realizada': { bg: 'rgba(20,83,45,0.8)', text: '#4ade80' },
+        'Confirmada': { bg: 'rgba(30,58,95,0.8)', text: '#60a5fa' },
+        'Cancelada': { bg: 'rgba(69,10,10,0.8)', text: '#f87171' },
+    };
+    const s = map[status] || { bg: 'rgba(51,65,85,0.5)', text: '#94a3b8' };
     return (
-        <Link
-            to={to}
-            className="flex items-center gap-3 px-6 py-3 bg-slate-100 hover:bg-slate-900 text-slate-600 hover:text-white border border-slate-200 hover:border-slate-800 rounded-sm transition-all font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-sm"
-        >
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
+            style={{ background: s.bg, color: s.text }}>
+            {status}
+        </span>
+    );
+}
+
+function QuickBtn({ to, label, icon }) {
+    return (
+        <Link to={to}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all active:scale-95 hover:bg-opacity-100"
+            style={{ border: '1px solid var(--accent)', color: 'var(--accent)', background: 'transparent' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-dim)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
             {icon} {label}
         </Link>
     );
 }
-

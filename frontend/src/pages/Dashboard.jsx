@@ -118,7 +118,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-3 text-indigo-600 text-[10px] font-bold uppercase tracking-[0.3em] mb-3">
                         <Activity size={16} /> Sistema de Inteligencia Técnica v4.1
                     </div>
-                    <h1 className="text-5xl font-serif font-black text-slate-900 uppercase tracking-tighter leading-none">
+                    <h1 className="text-5xl font-black text-slate-900 uppercase tracking-tighter leading-none">
                         Dashboard<br />
                         <span className="text-indigo-600">Financiero & Técnico</span>
                     </h1>
@@ -249,7 +249,7 @@ function StatCard({ icon, label, val, color }) {
             <div className="flex items-center gap-2 text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1.5 relative z-10">
                 <span className="text-indigo-600">{icon && React.isValidElement(icon) ? React.cloneElement(icon, { size: 12 }) : null}</span> {label}
             </div>
-            <div className={`text-4xl font-serif font-black ${color} relative z-10`}>{val}</div>
+            <div className={`text-4xl font-black ${color} relative z-10`}>{val}</div>
         </div>
     );
 }

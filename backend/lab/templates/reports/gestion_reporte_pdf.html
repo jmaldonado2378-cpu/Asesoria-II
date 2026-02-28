@@ -3,255 +3,504 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Informe Técnico de Gestión - GESTIÓN TÉCNICA Y DESARROLLO</title>
+    <title>Informe Técnico de Gestión</title>
     <style>
         @page {
             size: A4;
             margin: 1.5cm;
         }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-family: Helvetica, Arial, sans-serif;
             color: #1e293b;
-            line-height: 1.2;
-            font-size: 9pt;
+            font-size: 8.5pt;
+            line-height: 1.4;
+        }
+
+        /* =============================================
+           HEADER — igual al Reporte de Ensayo
+           ============================================= */
+        .header-wrap {
+            background-color: #0f172a;
+            padding: 18px 22px 16px 22px;
+            margin-bottom: 0;
+            position: relative;
+        }
+
+        .header-accent {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #6366f1;
         }
 
         .header-table {
             width: 100%;
-            border-bottom: 2px solid #475569;
-            margin-bottom: 20px;
+            border-collapse: collapse;
         }
 
-        .logo-box {
-            width: 150px;
-            background-color: #f1f5f9;
-            border: 1px dashed #cbd5e1;
-            text-align: center;
-            padding: 10px;
+        .header-left {
+            vertical-align: top;
+        }
+
+        .header-right {
+            text-align: right;
+            vertical-align: top;
+            width: 120px;
+        }
+
+        .header-org {
+            font-size: 7pt;
+            font-weight: bold;
             color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1.5pt;
+            margin-bottom: 8px;
+        }
+
+        .header-title {
+            font-size: 22pt;
+            font-weight: bold;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: -0.5pt;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .header-meta {
+            display: inline-block;
             font-size: 8pt;
         }
 
-        .report-title {
-            text-align: right;
-            vertical-align: middle;
+        .header-code {
+            background-color: #6366f1;
+            color: #ffffff;
+            padding: 2px 8px;
+            font-weight: bold;
+            font-size: 7.5pt;
+            display: inline-block;
+            margin-right: 8px;
         }
 
-        .report-title h1 {
-            margin: 0;
-            color: #0f172a;
-            font-size: 16pt;
+        .header-client {
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        .header-dot {
+            color: #4b5563;
+            margin: 0 6px;
+        }
+
+        .header-date {
+            color: #94a3b8;
+        }
+
+        .header-score-label {
+            font-size: 7pt;
+            font-weight: bold;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1pt;
+            margin-bottom: 4px;
+        }
+
+        /* =============================================
+           FICHA PROYECTO
+           ============================================= */
+        .meta-block {
+            background-color: #f8fafc;
+            border-left: 3px solid #6366f1;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            margin-top: 0;
         }
 
         .meta-table {
             width: 100%;
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 20px;
+            border-collapse: collapse;
         }
 
         .meta-table td {
-            padding: 8px;
-            border: none;
+            padding: 3px 12px 3px 0;
+            vertical-align: top;
         }
 
-        .label {
-            color: #64748b;
+        .meta-label {
+            font-size: 7pt;
+            color: #94a3b8;
             font-weight: bold;
-            font-size: 8pt;
             text-transform: uppercase;
+            letter-spacing: 0.5pt;
+            width: 70px;
         }
 
+        .meta-value {
+            font-size: 9pt;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        /* =============================================
+           TÍTULOS DE SECCIÓN
+           ============================================= */
         .section-title {
-            background-color: #475569;
-            padding: 4px 10px;
+            background-color: #0f172a;
             color: #ffffff;
             font-weight: bold;
-            margin-top: 20px;
-            margin-bottom: 10px;
-            font-size: 9pt;
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            letter-spacing: 1pt;
+            padding: 5px 11px;
+            margin-top: 18px;
+            margin-bottom: 0;
         }
 
-        table.data-table {
+        .section-title-accent {
+            background-color: #ea580c;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            letter-spacing: 1pt;
+            padding: 5px 11px;
+            margin-top: 18px;
+            margin-bottom: 0;
+        }
+
+        /* =============================================
+           TABLAS DE DATOS
+           ============================================= */
+        .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-
-        table.data-table th {
-            background-color: #f1f5f9;
-            text-align: left;
-            padding: 8px;
-            border-bottom: 1px solid #cbd5e1;
             font-size: 8pt;
-            color: #475569;
-        }
-
-        table.data-table td {
-            padding: 8px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .conclusions-box {
-            padding: 15px;
             border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            background-color: #fff;
-            min-height: 100px;
+        }
+
+        .data-table th {
+            background-color: #f1f5f9;
+            border-bottom: 1px solid #cbd5e1;
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 7pt;
+            color: #475569;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.3pt;
+        }
+
+        .data-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+            word-wrap: break-word;
+        }
+
+        .data-table tr:nth-child(even) td {
+            background-color: #fafafa;
+        }
+
+        .data-table .empty-row td {
+            text-align: center;
+            color: #94a3b8;
+            padding: 14px;
+            font-style: italic;
+        }
+
+        /* Anchos específicos tabla Visitas */
+        .col-fecha {
+            width: 14%;
+        }
+
+        .col-tipo {
+            width: 18%;
+        }
+
+        .col-obj {
+            width: 48%;
+            word-wrap: break-word;
+        }
+
+        .col-estado {
+            width: 20%;
+        }
+
+        /* Anchos específicos tabla Ensayos */
+        .col-code {
+            width: 16%;
+        }
+
+        .col-edate {
+            width: 13%;
+        }
+
+        .col-flour {
+            width: 22%;
+        }
+
+        .col-score {
+            width: 12%;
+            text-align: center;
+        }
+
+        .col-conc {
+            width: 37%;
+        }
+
+        /* Anchos específicos tabla Reclamos */
+        .col-rcdate {
+            width: 14%;
+        }
+
+        .col-batch {
+            width: 13%;
+        }
+
+        .col-status {
+            width: 14%;
+        }
+
+        .col-desc {
+            width: 30%;
+        }
+
+        .col-conct {
+            width: 29%;
+        }
+
+        /* =============================================
+           SCORES Y BADGES
+           ============================================= */
+        .score-high {
+            color: #16a34a;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+
+        .score-mid {
+            color: #ea580c;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+
+        .score-low {
+            color: #dc2626;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+
+        .badge-open {
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        .badge-inprogress {
+            color: #d97706;
+            font-weight: bold;
+        }
+
+        .badge-closed {
+            color: #16a34a;
+            font-weight: bold;
+        }
+
+        /* =============================================
+           CONCLUSIONES
+           ============================================= */
+        .conclusions-box {
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-top: none;
+            background-color: #ffffff;
+            min-height: 50px;
+            font-size: 8.5pt;
+            line-height: 1.55;
+            color: #334155;
+        }
+
+        /* =============================================
+           FOOTER
+           ============================================= */
+        .footer-bar {
+            margin-top: 28px;
+            padding-top: 8px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 7pt;
+            color: #94a3b8;
+            text-align: center;
+            font-style: italic;
         }
     </style>
 </head>
 
 <body>
-    <table class="header-table">
-        <tr>
-            <td>
-                <div class="logo-box">
+
+    <!-- ===== HEADER INSTITUCIONAL (idéntico al Reporte de Ensayo) ===== -->
+    <div class="header-wrap">
+        <div class="header-accent"></div>
+        <table class="header-table">
+            <tr>
+                <td class="header-left">
+                    <div class="header-org">Gestión Técnica y Desarrollo &nbsp;·&nbsp; Harinas y Panificados</div>
+                    <div class="header-title">Informe Técnico</div>
+                    <div class="header-meta">
+                        <span class="header-code">IT-{{ project.id }}-{{ date|date:"Ymd" }}</span>
+                        <span class="header-client">{{ project.client.name }}</span>
+                        <span class="header-dot">·</span>
+                        <span class="header-date">{{ date|date:"d/m/Y" }}</span>
+                    </div>
+                </td>
+                <td class="header-right">
                     {% if logo_b64 %}
-                    <img src="{{ logo_b64 }}" alt="Logo" style="max-height: 50px; display: block; margin: 0 auto;">
-                    {% else %}
-                    <div style="color: #cbd5e1; font-size: 8pt;">Logo No Disponible</div>
+                    <img src="{{ logo_b64 }}" alt="Logo" style="height: 40px; display: block; margin-left: auto;">
                     {% endif %}
-                </div>
-            </td>
-            <td class="report-title">
-                <h1>GESTIÓN TÉCNICA Y DESARROLLO</h1>
-                <div style="font-size: 8pt; color: #64748b;">Ref: IT-{{ project.id }}-{{ date|date:"Ymd" }}</div>
-            </td>
-        </tr>
-    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
 
-    <table class="meta-table">
-        <tr>
-            <td width="50%"><span class="label">Cliente:</span> {{ project.client.name }}</td>
-            <td width="50%"><span class="label">Fecha:</span> {{ date|date:"d/m/Y" }}</td>
-        </tr>
-        <tr>
-            <td><span class="label">Proyecto:</span> {{ project.name }}</td>
-            <td><span class="label">Estado:</span> {{ project.status }}</td>
-        </tr>
-    </table>
+    <!-- ===== FICHA DEL PROYECTO ===== -->
+    <div class="meta-block">
+        <table class="meta-table">
+            <tr>
+                <td class="meta-label">Cliente</td>
+                <td class="meta-value">{{ project.client.name }}</td>
+                <td class="meta-label">Período</td>
+                <td class="meta-value">{{ start_date|date:"d/m/Y" }} → {{ end_date|date:"d/m/Y" }}</td>
+            </tr>
+            <tr>
+                <td class="meta-label">Proyecto</td>
+                <td class="meta-value">{{ project.name }}</td>
+                <td class="meta-label">Estado</td>
+                <td class="meta-value">{{ project.status }}</td>
+            </tr>
+        </table>
+    </div>
 
+    <!-- ===== CONCLUSIONES ===== -->
     <div class="section-title">Conclusiones y Observaciones Técnicas</div>
     <div class="conclusions-box">
         {{ conclusions|default:"Sin observaciones registradas para el período."|linebreaks }}
     </div>
 
-    <div class="section-title">Resultados de Laboratorio / Ensayos</div>
+    <!-- ===== ENSAYOS ===== -->
+    <div class="section-title">Resultados de Laboratorio · Ensayos</div>
     <table class="data-table">
         <thead>
             <tr>
-                <th>Código</th>
-                <th>Fecha</th>
-                <th>Harina Base</th>
-                <th>Puntaje</th>
-                <th>Conclusión</th>
+                <th class="col-code">Código</th>
+                <th class="col-edate">Fecha</th>
+                <th class="col-flour">Harina Base</th>
+                <th class="col-score" style="text-align:center">Score</th>
+                <th class="col-conc">Conclusión</th>
             </tr>
         </thead>
         <tbody>
             {% for e in essays %}
             <tr>
-                <td><b>{{ e.code }}</b></td>
+                <td><strong>{{ e.code }}</strong></td>
                 <td>{{ e.date|date:"d/m/Y" }}</td>
-                <td>{{ e.get_base_flour_name|default:"-" }}</td>
-                <td>{{ e.final_score|default:"0" }} / 10</td>
-                <td>{{ e.conclusion|truncatewords:20|default:"-" }}</td>
+                <td>{{ e.base_flour_name|default:"—" }}</td>
+                <td style="text-align:center">
+                    {% if e.final_score %}
+                    {% if e.final_score_num >= 8 %}<span class="score-high">{{ e.final_score }}</span>
+                    {% elif e.final_score_num >= 6 %}<span class="score-mid">{{ e.final_score }}</span>
+                    {% else %}<span class="score-low">{{ e.final_score }}</span>
+                    {% endif %}
+                    {% else %}—{% endif %}
+                </td>
+                <td>{{ e.conclusion|truncatewords:25|default:"—" }}</td>
             </tr>
             {% empty %}
-            <tr>
-                <td colspan="5" style="text-align: center; color: #94a3b8;">No se registraron ensayos en este período.
-                </td>
+            <tr class="empty-row">
+                <td colspan="5">No se registraron ensayos en este período.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
+    <!-- ===== VISITAS ===== -->
     <div class="section-title">Agenda de Visitas y Actividades</div>
-    <table class="data-table">
+    <table class="data-table" style="table-layout: fixed;">
+        <colgroup>
+            <col style="width: 80px;">
+            <col style="width: 95px;">
+            <col style="width: 235px;">
+            <col style="width: 100px;">
+        </colgroup>
         <thead>
             <tr>
-                <th>Fecha</th>
-                <th>Tipo</th>
-                <th>Objetivo</th>
-                <th>Estado</th>
+                <th style="overflow:hidden;">Fecha</th>
+                <th style="overflow:hidden;">Tipo</th>
+                <th style="overflow:hidden;">Objetivo</th>
+                <th style="text-align:center; overflow:hidden;">Estado</th>
             </tr>
         </thead>
         <tbody>
             {% for v in visits %}
             <tr>
-                <td>{{ v.date|date:"d/m/Y" }}</td>
-                <td>{{ v.visit_type }}</td>
-                <td>{{ v.objective }}</td>
-                <td>{{ v.status }}</td>
+                <td style="overflow:hidden;">{{ v.date|date:"d/m/Y" }}</td>
+                <td style="overflow:hidden;">{{ v.visit_type }}</td>
+                <td style="word-wrap:break-word; overflow:hidden;">{{ v.objective|truncatewords:18 }}</td>
+                <td style="text-align:center; overflow:hidden;">{{ v.status }}</td>
             </tr>
             {% empty %}
-            <tr>
-                <td colspan="4" style="text-align: center; color: #94a3b8;">No se registraron visitas en este período.
-                </td>
+            <tr class="empty-row">
+                <td colspan="4">No se registraron visitas en este período.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <div class="section-title">Resumen de Reclamos Técnicos</div>
+
+    <!-- ===== RECLAMOS ===== -->
+    <div class="section-title-accent">Resumen de Reclamos Técnicos</div>
     <table class="data-table">
         <thead>
             <tr>
-                <th>F. Carga</th>
-                <th>Lote</th>
-                <th>Estado</th>
-                <th>Descripción</th>
-                <th>Conclusión Técnica</th>
+                <th class="col-rcdate">F. Carga</th>
+                <th class="col-batch">Lote</th>
+                <th class="col-status">Estado</th>
+                <th class="col-desc">Descripción</th>
+                <th class="col-conct">Conclusión Técnica</th>
             </tr>
         </thead>
         <tbody>
             {% for c in complaints %}
             <tr>
                 <td>{{ c.loading_date|date:"d/m/Y" }}</td>
-                <td>{{ c.batch|default:"-" }}</td>
-                <td><span
-                        style="color: {% if c.status == 'Cerrado' %}#10b981{% elif c.status == 'En Proceso' %}#f59e0b{% else %}#ef4444{% endif %}; font-weight: bold;">{{
-                        c.status }}</span></td>
-                <td>{{ c.description|truncatewords:15|default:"-" }}</td>
-                <td>{{ c.technical_conclusion|truncatewords:20|default:"---" }}</td>
+                <td>{{ c.batch|default:"—" }}</td>
+                <td>
+                    {% if c.status == "Cerrado" %}<span class="badge-closed">{{ c.status }}</span>
+                    {% elif c.status == "En Proceso" %}<span class="badge-inprogress">{{ c.status }}</span>
+                    {% else %}<span class="badge-open">{{ c.status }}</span>{% endif %}
+                </td>
+                <td>{{ c.description|truncatewords:15|default:"—" }}</td>
+                <td>{{ c.technical_conclusion|truncatewords:20|default:"—" }}</td>
             </tr>
             {% empty %}
-            <tr>
-                <td colspan="5" style="text-align: center; color: #94a3b8;">No se registraron reclamos en este período.
-                </td>
+            <tr class="empty-row">
+                <td colspan="5">No se registraron reclamos en este período.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    <div class="section-title">Anexo Fotográfico de Auditoría</div>
-    <div style="width: 100%;">
-        {% for essay in essays %}
-        {% for img in essay.images.all %}
-        <div style="margin-bottom: 20px; page-break-inside: avoid;">
-            <div class="label" style="margin-bottom: 5px;">Ensayo: {{ essay.code }} - {{ img.caption|default:"Sin nota"
-                }}</div>
-            {% if img.image %}
-            <img src="{{ img.image }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
-            {% endif %}
-        </div>
-        {% endfor %}
-        {% endfor %}
 
-        {% for complaint in complaints %}
-        {% for img in complaint.images.all %}
-        <div style="margin-bottom: 20px; page-break-inside: avoid;">
-            <div class="label" style="margin-bottom: 5px;">Reclamo: {{ complaint.loading_date|date:"d/m/Y" }} - {{
-                img.caption|default:"Sin nota" }}</div>
-            {% if img.image %}
-            <img src="{{ img.image }}" style="width: 15cm; border: 1px solid #e2e8f0; display: block;">
-            {% endif %}
-        </div>
-        {% endfor %}
-        {% endfor %}
+    <!-- ===== FOOTER ===== -->
+    <div class="footer-bar">
+        DOCUMENTO CONFIDENCIAL · PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO · Harinas y Panificados
     </div>
-    DOCUMENTO CONFIDENCIAL • PROPIEDAD INTELECTUAL GESTIÓN TÉCNICA Y DESARROLLO - Harinas y Panificados
-    </div>
+
 </body>
 
 </html>

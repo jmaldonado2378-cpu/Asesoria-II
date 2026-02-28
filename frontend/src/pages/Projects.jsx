@@ -27,119 +27,111 @@ export default function Projects() {
     );
 
     const getStatusStyle = (status) => {
-        switch (status) {
-            case 'En Curso': return 'bg-blue-50 text-blue-700 border-blue-200';
-            case 'Terminado': return 'bg-green-50 text-green-700 border-green-200';
-            case 'Pendiente': return 'bg-amber-50 text-amber-700 border-amber-200';
-            case 'Cancelado': return 'bg-slate-50 text-slate-500 border-slate-200';
-            default: return 'bg-slate-50 text-slate-600 border-slate-200';
-        }
+        const map = {
+            'En Curso': { bg: 'rgba(30,58,95,0.8)', color: '#60a5fa' },
+            'Terminado': { bg: 'rgba(20,83,45,0.8)', color: '#4ade80' },
+            'Pendiente': { bg: 'rgba(67,20,7,0.8)', color: '#fb923c' },
+            'Cancelado': { bg: 'rgba(51,65,85,0.4)', color: '#94a3b8' },
+        };
+        return map[status] || { bg: 'rgba(51,65,85,0.4)', color: '#94a3b8' };
     };
 
     if (loading) return (
-        <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="animate-spin text-indigo-600" size={40} />
+        <div className="flex items-center justify-center min-h-[400px]" style={{ color: 'var(--text-2)' }}>
+            <Loader2 className="animate-spin" size={40} style={{ color: 'var(--accent)' }} />
         </div>
     );
 
     return (
-        <div className="p-8 max-w-[1600px] mx-auto">
-            <header className="flex justify-between items-end mb-10 border-b-2 border-slate-200 pb-8">
+        <div className="p-8 max-w-[1600px] mx-auto" style={{ background: 'var(--bg-main)', minHeight: '100vh' }}>
+            <header className="flex justify-between items-end mb-10 pb-8" style={{ borderBottom: '2px solid var(--border)' }}>
                 <div>
-                    <h1 className="text-4xl font-serif font-bold text-slate-900 flex items-center gap-3 uppercase tracking-tighter leading-none">
-                        <Briefcase className="text-indigo-600" size={32} /> Proyectos
+                    <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                        <Briefcase size={28} style={{ color: 'var(--accent)' }} /> Proyectos
                     </h1>
-                    <p className="text-slate-500 mt-3 font-mono text-[10px] uppercase font-bold tracking-[0.2em]">Gestión Técnico-Comercial y Seguimiento de Cuentas</p>
+                    <p className="mt-1 text-sm" style={{ color: 'var(--text-2)' }}>Gestión Técnico-Comercial y Seguimiento de Cuentas</p>
                 </div>
                 <Link
                     to="/projects/new"
-                    className="bg-slate-900 text-white px-8 py-3.5 rounded-sm shadow-xl hover:bg-slate-800 transition transform active:scale-95 font-bold text-xs uppercase tracking-widest flex items-center gap-2 border border-slate-700"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition active:scale-95"
+                    style={{ background: 'var(--accent)', color: '#0f172a' }}
                 >
-                    <Plus size={18} /> Iniciar Nuevo Proyecto
+                    <Plus size={16} /> Nuevo Proyecto
                 </Link>
             </header>
 
             {/* BARRA DE BÚSQUEDA INDUSTRIAL */}
-            <div className="mb-8 relative max-w-xl group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={18} />
+            <div className="mb-8 relative max-w-xl">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 transition-colors" size={16} style={{ color: 'var(--text-2)' }} />
                 <input
                     type="text"
-                    placeholder="Filtrar por Cliente o Nombre de Proyecto..."
+                    placeholder="Filtrar por cliente o proyecto..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 bg-white border border-slate-300 rounded-sm shadow-sm outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 transition-all font-bold text-sm text-slate-700 placeholder:text-slate-300 placeholder:font-normal"
+                    className="w-full pl-11 pr-4 py-3 rounded-lg text-sm font-medium outline-none transition-all"
+                    style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
                 />
             </div>
 
-            <div className="bg-white shadow-2xl rounded-sm border border-slate-300 overflow-hidden">
+            <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
                 <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-50 border-b-2 border-slate-200">
-                        <tr>
-                            <th className="p-5 text-[10px] uppercase tracking-widest font-black text-slate-500 border-r border-slate-100">
-                                <div className="flex items-center gap-2"><Building size={12} /> Cliente</div>
-                            </th>
-                            <th className="p-5 text-[10px] uppercase tracking-widest font-black text-slate-500 border-r border-slate-100">
-                                <div className="flex items-center gap-2"><Briefcase size={12} /> Proyecto</div>
-                            </th>
-                            <th className="p-5 text-[10px] uppercase tracking-widest font-black text-slate-500 border-r border-slate-100 text-center">Estado</th>
-                            <th className="p-5 text-[10px] uppercase tracking-widest font-black text-slate-500 border-r border-slate-100">Tipo</th>
-                            <th className="p-5 text-[10px] uppercase tracking-widest font-black text-slate-500">
-                                <div className="flex items-center gap-2"><Calendar size={12} /> Inicio</div>
-                            </th>
-                            <th className="p-5 text-[10px] uppercase tracking-widest font-black text-slate-500 text-right pr-6">Acción</th>
+                    <thead style={{ background: '#0f172a', borderBottom: '1px solid var(--border)' }}>
+                        <tr className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-2)' }}>
+                            <th className="px-6 py-3">Cliente</th>
+                            <th className="px-4 py-3">Proyecto</th>
+                            <th className="px-4 py-3 text-center">Estado</th>
+                            <th className="px-4 py-3">Tipo</th>
+                            <th className="px-4 py-3">Inicio</th>
+                            <th className="px-4 py-3 text-right">Acción</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody>
                         {filteredProjects.length === 0 ? (
                             <tr>
-                                <td colSpan="6" className="p-20 text-center text-slate-400 font-mono text-xs uppercase tracking-[0.2em]">No se encontraron proyectos activos</td>
+                                <td colSpan="6" className="p-16 text-center italic text-sm" style={{ color: 'var(--text-2)' }}>No se encontraron proyectos</td>
                             </tr>
                         ) : (
-                            filteredProjects.map((project) => (
-                                <tr key={project.id} className="hover:bg-indigo-50/30 transition-colors group">
-                                    <td className="p-4 border-r border-slate-50">
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-serif font-black text-slate-900 uppercase tracking-tighter group-hover:text-indigo-600 transition-colors">{project.client_name}</span>
-                                            <span className="text-[9px] font-mono text-slate-400 uppercase">Account: #ID-{project.client}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 border-r border-slate-50">
-                                        <Link to={`/projects/${project.id}`} className="text-sm font-bold text-slate-700 hover:underline flex items-center gap-2">
-                                            {project.name}
-                                            <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 transition-all text-indigo-600 -translate-x-2 group-hover:translate-x-0" />
-                                        </Link>
-                                    </td>
-                                    <td className="p-4 border-r border-slate-50 text-center">
-                                        <span className={`px-2.5 py-1 rounded-sm text-[9px] font-black uppercase tracking-widest border ${getStatusStyle(project.status)} shadow-sm`}>
-                                            {project.status}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 border-r border-slate-50">
-                                        <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 italic">
-                                            <Tag size={12} className="text-indigo-300" /> {project.project_type}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 border-r border-slate-50 font-mono text-[11px] text-slate-600">
-                                        {new Date(project.start_date).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                    </td>
-                                    <td className="p-4 text-right">
-                                        <Link
-                                            to={`/projects/${project.id}`}
-                                            className="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white transition rounded-sm text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 w-fit ml-auto border border-slate-200 group-hover:border-slate-900 shadow-sm"
-                                        >
-                                            Expediente <Activity size={12} />
-                                        </Link>
-                                    </td>
-                                </tr>
-                            ))
+                            filteredProjects.map((project, i) => {
+                                const st = getStatusStyle(project.status);
+                                return (
+                                    <tr key={project.id}
+                                        style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(37,51,71,0.3)', borderBottom: '1px solid rgba(51,65,85,0.3)' }}
+                                        className="hover:bg-white/5 transition-colors group">
+                                        <td className="px-6 py-3">
+                                            <span className="font-semibold text-white text-sm">{project.client_name}</span>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <Link to={`/projects/${project.id}`} className="text-sm font-bold flex items-center gap-1 hover:underline"
+                                                style={{ color: 'var(--accent)' }}>
+                                                {project.name} <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </Link>
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
+                                                style={{ background: st.bg, color: st.color }}>
+                                                {project.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-2)' }}>{project.project_type}</td>
+                                        <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-2)' }}>
+                                            {new Date(project.start_date).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            <Link to={`/projects/${project.id}`}
+                                                className="text-xs font-bold px-3 py-1.5 rounded-lg transition"
+                                                style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}>
+                                                Ver
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>
-                <div className="bg-slate-900 p-4 flex justify-between items-center text-white">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                        <Activity size={14} className="animate-pulse text-indigo-500" /> Terminal: Activa
-                    </span>
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-widest">Total Registros: {filteredProjects.length}</span>
+                <div className="p-4 flex justify-between items-center text-sm" style={{ background: '#0f172a', borderTop: '1px solid var(--border)' }}>
+                    <span className="text-xs font-mono" style={{ color: 'var(--text-2)' }}>Sistema activo</span>
+                    <span className="text-xs font-mono" style={{ color: 'var(--text-2)' }}>Total: {filteredProjects.length} proyectos</span>
                 </div>
             </div>
         </div>

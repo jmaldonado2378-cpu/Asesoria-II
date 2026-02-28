@@ -92,188 +92,128 @@ export default function ClientDetail() {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-slate-100 p-8 flex items-center justify-center font-mono text-[10px] uppercase tracking-[0.3em] text-slate-400">
-            <Loader2 className="animate-spin mr-3 text-orange-600" size={20} /> Recuperando Expediente #ID-{id}...
+        <div className="flex items-center justify-center min-h-screen" style={{ background: 'var(--bg-main)', color: 'var(--text-2)' }}>
+            <Loader2 className="animate-spin mr-3" size={20} style={{ color: 'var(--accent)' }} />
+            <span className="text-xs font-mono uppercase tracking-widest">Recuperando Expediente #{id}...</span>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-slate-100 p-8 flex flex-col items-center font-sans">
+        <div className="min-h-screen p-8 flex flex-col items-center" style={{ background: 'var(--bg-main)' }}>
             <div className="w-full max-w-4xl">
                 <div className="mb-6 flex justify-between items-center">
-                    <Link to="/clients" className="flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold text-xs uppercase tracking-widest transition group">
-                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Volver a Cartera
+                    <Link to="/clients" className="flex items-center gap-2 text-sm font-medium transition hover:text-white"
+                        style={{ color: 'var(--text-2)' }}>
+                        <ArrowLeft size={15} /> Volver a Cartera
                     </Link>
-                    <div className="text-orange-600 text-[10px] font-bold uppercase tracking-[0.3em] flex items-center gap-2">
-                        <Activity size={12} /> Gestión Avanzada de Cuentas v3.0
+                    <div className="text-xs font-bold flex items-center gap-2" style={{ color: 'var(--accent)' }}>
+                        <Activity size={12} /> Expediente de Cliente
                     </div>
                 </div>
 
-                <div className="bg-white shadow-2xl rounded-sm overflow-hidden border border-slate-300">
-                    {/* HEADER INDUSTRIAL */}
-                    <div className="bg-slate-900 p-10 text-white relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-1.5 bg-orange-600"></div>
-                        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-                            <div>
-                                <div className="flex items-center gap-2 text-orange-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-4">
-                                    <Building size={12} /> Expediente Maestro de Cliente
-                                </div>
-                                <h1 className="text-4xl font-serif font-black text-white leading-none uppercase tracking-tighter">{client.name}</h1>
-                                <div className="flex items-center gap-4 mt-6">
-                                    <span className={`px-3 py-1 rounded-sm text-[9px] font-black uppercase tracking-widest border-2 ${client.is_active !== false ? 'bg-green-600/10 text-green-400 border-green-600/20' : 'bg-red-600/10 text-red-400 border-red-600/20'}`}>
-                                        {client.is_active !== false ? 'Cuenta Activa' : 'Cuenta Inactiva'}
-                                    </span>
-                                    <span className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-widest bg-slate-800 px-3 py-1 border border-slate-700 rounded-sm italic">UID: PRO-CL-{id}</span>
-                                </div>
-                            </div>
-                            <div className="bg-white p-4 shadow-2xl transform rotate-2 border-2 border-slate-200">
-                                <Building size={48} className="text-slate-900" />
-                            </div>
+                <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
+                    <div className="p-7 relative overflow-hidden" style={{ background: '#020617', borderBottom: '1px solid var(--border)' }}>
+                        <div className="absolute top-0 left-0 w-full h-1" style={{ background: 'var(--accent)' }} />
+                        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--accent)' }}>
+                            <Building size={12} /> Expediente Maestro de Cliente
                         </div>
-                        <Building size={120} className="text-slate-800 absolute -right-10 -bottom-10 opacity-30 pointer-events-none" />
+                        <h1 className="text-2xl font-bold text-white">{client.name}</h1>
+                        <div className="flex items-center gap-3 mt-3">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded ${client.is_active !== false ? 'text-green-400' : 'text-red-400'}`}
+                                style={{ background: client.is_active !== false ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', border: `1px solid ${client.is_active !== false ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}` }}>
+                                {client.is_active !== false ? 'Cuenta Activa' : 'Cuenta Inactiva'}
+                            </span>
+                            <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ color: 'var(--text-2)', border: '1px solid var(--border)' }}>UID: PRO-CL-{id}</span>
+                        </div>
                     </div>
 
-                    <div className="p-10 space-y-12">
-
-                        {/* SECCIÓN GEOLOCALIZACIÓN */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-                            <div className="md:col-span-2">
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 flex gap-2 items-center">
-                                    <MapPin size={14} className="text-orange-600" /> Dirección de Planta / Oficina Central
-                                </label>
-                                <div className="flex gap-2">
-                                    <input
-                                        name="address"
-                                        value={client.address || ''}
-                                        onChange={handleClientChange}
-                                        className="flex-1 p-4 border border-slate-200 rounded-sm focus:border-orange-600 outline-none bg-slate-50 font-bold text-sm transition focus:bg-white shadow-inner uppercase tracking-tight"
-                                        placeholder="Cargar dirección para activar mapa..."
-                                    />
-                                    <button
-                                        onClick={openGoogleMaps}
-                                        className="bg-slate-900 text-white px-8 rounded-sm border border-slate-800 hover:bg-orange-600 transition flex items-center gap-3 font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95"
-                                        title="Abrir en Google Maps"
-                                    >
-                                        <Map size={20} className="text-orange-400" /> G-MAPS
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">CUIT / VAT Number</label>
-                                <input
-                                    name="cuit"
-                                    value={client.cuit || ''}
-                                    onChange={handleClientChange}
-                                    className="w-full p-4 border border-slate-200 rounded-sm outline-none focus:border-orange-600 font-mono font-black text-sm bg-white shadow-sm"
-                                    placeholder="XX-XXXXXXXX-X"
-                                />
+                    <div className="p-8 space-y-8">
+                        <div>
+                            <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--text-2)' }}>
+                                <MapPin size={13} /> Dirección de Planta
+                            </label>
+                            <div className="flex gap-2">
+                                <input name="address" value={client.address || ''} onChange={handleClientChange}
+                                    className="flex-1 px-4 py-3 rounded-lg text-sm outline-none"
+                                    style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
+                                    placeholder="Dirección de planta..." />
+                                <button onClick={openGoogleMaps} type="button"
+                                    className="px-4 py-2.5 rounded-lg text-sm font-bold transition"
+                                    style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-2)' }}>G-Maps</button>
                             </div>
                         </div>
 
-                        {/* SECCIÓN ESTRATÉGICA: CONTACTOS */}
-                        <div className="border-t-2 border-slate-100 pt-10">
-                            <div className="flex justify-between items-center mb-8">
-                                <div>
-                                    <h3 className="text-[12px] font-black text-slate-900 uppercase tracking-[0.2em] flex gap-3 items-center">
-                                        <User size={20} className="text-orange-600" /> Agenda de Contactos ({contacts.length})
-                                    </h3>
-                                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1 tracking-widest">Responsables de Área y Comunicación Técnica</p>
-                                </div>
-                                <button
-                                    onClick={addContact}
-                                    className="bg-orange-50 text-orange-600 px-6 py-2.5 border border-orange-200 rounded-sm text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 hover:text-white transition flex items-center gap-3 shadow-sm"
-                                >
-                                    <Plus size={16} /> Nuevo Nodo
+                        <div style={{ borderTop: '1px solid var(--border)' }} className="pt-6">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--text-2)' }}>
+                                    <User size={16} style={{ color: 'var(--accent)' }} /> Agenda de Contactos ({contacts.length})
+                                </h3>
+                                <button onClick={addContact} type="button"
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition"
+                                    style={{ border: '1px solid var(--accent)', color: 'var(--accent)' }}>
+                                    <Plus size={13} /> Agregar
                                 </button>
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {contacts.map((contact, index) => (
-                                    <div key={index} className="bg-slate-50 border-2 border-slate-100 rounded-sm p-6 relative group hover:border-orange-400 hover:bg-white transition shadow-sm">
-                                        <div className="absolute top-4 right-4 text-[9px] font-black text-slate-300 tracking-[0.1em] uppercase bg-slate-100 px-2 py-0.5 rounded-sm">Punto de Contacto #{index + 1}</div>
-
-                                        <div className="space-y-4 pt-4">
+                                    <div key={index} className="rounded-lg p-4 relative"
+                                        style={{ background: 'var(--bg-main)', border: '1px solid var(--border)' }}>
+                                        <div className="text-xs font-mono mb-3" style={{ color: 'var(--text-2)' }}>Contacto #{index + 1}</div>
+                                        <div className="space-y-3">
                                             <div>
-                                                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Cargo / Función</label>
-                                                <div className="flex items-center gap-2 border-b-2 border-slate-200 pb-1 group-hover:border-orange-300">
-                                                    <Briefcase size={14} className="text-orange-400" />
-                                                    <input
-                                                        value={contact.position}
-                                                        onChange={(e) => handleContactChange(index, 'position', e.target.value)}
-                                                        className="w-full bg-transparent outline-none text-[11px] font-black text-slate-800 uppercase"
-                                                        placeholder="Ej: Gerente de Calidad"
-                                                    />
-                                                </div>
+                                                <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{ color: 'var(--text-2)', fontSize: '10px' }}>Cargo</label>
+                                                <input value={contact.position} onChange={(e) => handleContactChange(index, 'position', e.target.value)}
+                                                    className="w-full px-3 py-1.5 rounded-lg text-xs font-bold outline-none"
+                                                    style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
+                                                    placeholder="Ej: Gerente de Calidad" />
                                             </div>
-
-                                            <div className="grid grid-cols-1 gap-4">
+                                            <div>
+                                                <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{ color: 'var(--text-2)', fontSize: '10px' }}>Nombre</label>
+                                                <input value={contact.name} onChange={(e) => handleContactChange(index, 'name', e.target.value)}
+                                                    className="w-full px-3 py-1.5 rounded-lg text-xs font-bold outline-none"
+                                                    style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', color: 'var(--text-1)' }} />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2">
                                                 <div>
-                                                    <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Nombre y Apellido</label>
-                                                    <input
-                                                        value={contact.name}
-                                                        onChange={(e) => handleContactChange(index, 'name', e.target.value)}
-                                                        className="w-full p-2.5 border border-slate-200 rounded-sm text-xs font-bold font-serif outline-none focus:border-orange-500 shadow-sm"
-                                                    />
+                                                    <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{ color: 'var(--text-2)', fontSize: '10px' }}>Teléfono</label>
+                                                    <input value={contact.phone} onChange={(e) => handleContactChange(index, 'phone', e.target.value)}
+                                                        className="w-full px-3 py-1.5 rounded-lg text-xs font-mono outline-none"
+                                                        style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', color: 'var(--text-1)' }} />
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Teléfono Directo</label>
-                                                        <div className="flex items-center gap-2 border border-slate-200 rounded-sm px-2 bg-white focus-within:border-orange-500">
-                                                            <Phone size={14} className="text-orange-300" />
-                                                            <input
-                                                                value={contact.phone}
-                                                                onChange={(e) => handleContactChange(index, 'phone', e.target.value)}
-                                                                className="w-full p-2 outline-none text-[10px] font-black font-mono"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Email corporativo</label>
-                                                        <div className="flex items-center gap-2 border border-slate-200 rounded-sm px-2 bg-white focus-within:border-orange-500">
-                                                            <Mail size={14} className="text-orange-300" />
-                                                            <input
-                                                                value={contact.email}
-                                                                onChange={(e) => handleContactChange(index, 'email', e.target.value)}
-                                                                className="w-full p-2 outline-none text-[10px] font-bold font-mono lowercase"
-                                                            />
-                                                        </div>
-                                                    </div>
+                                                <div>
+                                                    <label className="text-xs font-bold uppercase tracking-widest block mb-1" style={{ color: 'var(--text-2)', fontSize: '10px' }}>Email</label>
+                                                    <input value={contact.email} onChange={(e) => handleContactChange(index, 'email', e.target.value)}
+                                                        className="w-full px-3 py-1.5 rounded-lg text-xs font-mono outline-none lowercase"
+                                                        style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', color: 'var(--text-1)' }} />
                                                 </div>
                                             </div>
+                                            {contacts.length > 1 && (
+                                                <button onClick={() => removeContact(index)} type="button"
+                                                    className="w-full py-1.5 rounded-lg text-xs font-bold transition hover:text-red-400"
+                                                    style={{ border: '1px dashed var(--border)', color: 'var(--text-2)' }}>
+                                                    Eliminar
+                                                </button>
+                                            )}
                                         </div>
-
-                                        {contacts.length > 1 && (
-                                            <button
-                                                onClick={() => removeContact(index)}
-                                                className="mt-6 w-full py-2 bg-slate-100 text-slate-400 hover:bg-red-50 hover:text-red-600 transition text-[9px] font-black uppercase tracking-widest border border-slate-200 border-dashed rounded-sm"
-                                            >
-                                                Eliminar de Agenda
-                                            </button>
-                                        )}
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        {/* ACCIONES DE EXPEDIENTE */}
-                        <div className="pt-12 border-t-2 border-slate-100 flex justify-between items-center">
-                            <button
-                                onClick={handleDelete}
-                                className="text-[10px] font-black text-slate-300 hover:text-red-600 uppercase tracking-[0.2em] flex items-center gap-2 transition"
-                            >
-                                <Trash2 size={16} /> Depurar Registro
+                        <div className="pt-4 flex justify-between items-center" style={{ borderTop: '1px solid var(--border)' }}>
+                            <button onClick={handleDelete} type="button"
+                                className="flex items-center gap-2 text-xs font-bold transition hover:text-red-400"
+                                style={{ color: 'var(--text-2)' }}>
+                                <Trash2 size={14} /> Eliminar Cliente
                             </button>
-                            <div className="flex gap-4">
-                                <Link to="/clients" className="px-10 py-4 bg-white border-2 border-slate-200 text-slate-500 rounded-sm font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition active:scale-95">
-                                    Descartar
-                                </Link>
-                                <button
-                                    onClick={handleSave}
-                                    disabled={saving}
-                                    className="flex items-center gap-4 bg-orange-600 hover:bg-slate-900 text-white font-black py-4 px-12 rounded-sm shadow-2xl transition active:scale-95 text-[10px] uppercase tracking-[0.2em] disabled:opacity-50"
-                                >
-                                    {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={20} />}
-                                    {saving ? 'Persistiendo...' : 'Actualizar Expediente'}
+                            <div className="flex gap-3">
+                                <Link to="/clients" className="px-5 py-2.5 rounded-lg text-sm font-bold transition"
+                                    style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}>Cancelar</Link>
+                                <button onClick={handleSave} type="button" disabled={saving}
+                                    className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition active:scale-95 disabled:opacity-50"
+                                    style={{ background: 'var(--accent)', color: '#0f172a' }}>
+                                    {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                                    {saving ? 'Guardando...' : 'Actualizar Expediente'}
                                 </button>
                             </div>
                         </div>

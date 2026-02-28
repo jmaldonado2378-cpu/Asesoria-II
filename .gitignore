@@ -1,2 +1,78 @@
-.vercel
+# Environment and Secrets
+.env
 .env*.local
+.env.local
+
+# Node
+node_modules/
+dist/
+build/
+.next/
+.vercel/
+.vercel_build_output/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+ENV/
+env/
+.Python
+env.bak/
+venv.bak/
+
+# Django and DB
+db.sqlite3
+*.log
+*.tmp
+*.pdf
+media/
+static/
+
+# Migration & Temporary Clutter in Backend
+backend/dump_*.json
+backend/dump_*.txt
+backend/dump_*.py
+backend/load_*.py
+backend/migrate_*.py
+backend/test_*.py
+backend/analyze_*.py
+backend/exhaustive_*.py
+backend/final_template_check.py
+backend/find_real_template.py
+backend/fix_images*.py
+backend/search_excel_text.py
+backend/upload_images.py
+backend/verify_gold_standard.py
+backend/audit.py
+backend/check_labels.py
+backend/datadump.json
+backend/dump_all_results.txt
+backend/dump_error.txt
+backend/error_ensayo.txt
+backend/load_all_results.txt
+backend/migration.log
+backend/out.tmp
+backend/output.pdf
+backend/test_ensayo.pdf
+backend/*.log
+backend/error.log
+backend/*.jpg
+backend/*.jpeg
+backend/*.png
+
+# Temporary Files in Root
+clean_encoding.py
+test_api.py
+test_api_ping.py
+update_reqs.py
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

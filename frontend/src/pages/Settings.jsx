@@ -10,7 +10,8 @@ export default function Settings() {
         defaultBagWeight: 25,
         hourlyRate: 5000,
         currency: '$',
-        logoUrl: ''
+        logoUrl: '',
+        userName: 'Consultor'
     });
 
     useEffect(() => {
@@ -41,7 +42,7 @@ export default function Settings() {
                         <div className="flex items-center gap-2 text-orange-600 text-[10px] font-black uppercase tracking-[0.3em] mb-2">
                             <Activity size={14} /> Nucleus Kernel Config v3.1
                         </div>
-                        <h1 className="text-4xl font-serif font-black text-slate-900 uppercase tracking-tighter leading-none">Configuración <span className="text-orange-600">Global</span></h1>
+                        <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter leading-none">Configuración <span className="text-orange-600">Global</span></h1>
                     </div>
                     <button onClick={handleSave} className="bg-slate-900 text-white px-8 py-3.5 rounded-sm shadow-xl hover:bg-orange-600 transition transform active:scale-95 font-black text-xs uppercase tracking-widest flex items-center gap-2 border border-slate-700">
                         <Save size={18} /> Guardar Cambios
@@ -104,6 +105,10 @@ export default function Settings() {
                                             </div>
                                         </div>
                                         <div>
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Nombre del Consultor / Usuario (Encabezado)</label>
+                                            <input name="userName" value={config.userName} onChange={handleChange} placeholder="Tu Nombre" className="w-full p-4 border border-slate-200 bg-slate-50 rounded-sm font-bold text-sm outline-none focus:border-orange-600 shadow-inner" />
+                                        </div>
+                                        <div>
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">URL del Logo (Opcional)</label>
                                             <input name="logoUrl" value={config.logoUrl} onChange={handleChange} placeholder="https://miempresa.com/logo.png" className="w-full p-4 border border-slate-200 bg-slate-50 rounded-sm font-mono text-[10px] outline-none focus:border-orange-600 shadow-inner" />
                                         </div>
@@ -117,7 +122,7 @@ export default function Settings() {
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div>
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 flex items-center gap-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
                                                 <Package size={14} className="text-slate-300" /> Bolsa Estándar (Kg)
                                             </label>
                                             <input type="number" name="defaultBagWeight" value={config.defaultBagWeight} onChange={handleChange} className="w-full p-4 border border-slate-200 bg-slate-50 rounded-sm font-mono text-lg font-black outline-none focus:border-orange-600 shadow-inner" />

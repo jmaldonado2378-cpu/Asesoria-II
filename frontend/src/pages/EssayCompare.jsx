@@ -108,7 +108,7 @@ export default function EssayCompare() {
                                 <GitCompare size={32} className="text-indigo-400" />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-serif font-bold text-slate-900 uppercase tracking-tighter leading-none">
+                                <h1 className="text-3xl font-bold text-slate-900 uppercase tracking-tighter leading-none">
                                     Matriz Comparativa<br />
                                     <span className="text-indigo-600 text-2xl">Laboratorio de Calidad</span>
                                 </h1>
@@ -132,7 +132,7 @@ export default function EssayCompare() {
                                 {essays.map(e => (
                                     <th key={e.id} className={`p-5 min-w-[200px] text-center border-r border-slate-800 align-top transition-colors ${parseFloat(e.final_score) === maxScore ? 'bg-indigo-950 print:bg-slate-100' : 'bg-slate-900 print:bg-white'}`}>
                                         <div className="text-[9px] text-slate-500 font-mono mb-1">{e.date}</div>
-                                        <div className="text-lg font-serif font-bold text-white print:text-black mb-1 tracking-tight uppercase">{e.code || `ENS-${e.id}`}</div>
+                                        <div className="text-lg font-bold text-white print:text-black mb-1 tracking-tight uppercase">{e.code || `ENS-${e.id}`}</div>
                                         <span className="px-2 py-0.5 rounded-sm text-[8px] uppercase font-bold border border-slate-700 print:border-slate-300 text-slate-400 print:text-slate-600 inline-block mb-3 tracking-widest">
                                             {e.baking_type}
                                         </span>
@@ -147,7 +147,7 @@ export default function EssayCompare() {
                             <tr className="bg-slate-50 font-bold print:bg-slate-100 border-b-2 border-slate-200">
                                 <td className="p-4 sticky left-0 bg-slate-50 z-10 border-r border-slate-300 text-slate-900 uppercase tracking-tighter text-sm print:static print:bg-transparent">PUNTAJE GLOBAL</td>
                                 {essays.map(e => (
-                                    <td key={e.id} className="p-4 text-center text-3xl font-serif border-r border-slate-200 print:border-slate-300">
+                                    <td key={e.id} className="p-4 text-center text-3xl border-r border-slate-200 print:border-slate-300">
                                         {e.final_score ? (
                                             <div className="flex flex-col items-center">
                                                 <span className={parseFloat(e.final_score) >= 8 ? 'text-green-600' : 'text-orange-600 print:text-black'}>{e.final_score}</span>
