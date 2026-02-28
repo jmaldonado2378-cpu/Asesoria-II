@@ -1,11 +1,8 @@
 {
-  "name": "app-asesor-root",
+  "name": "root",
   "private": true,
-  "workspaces": [
-    "frontend"
-  ],
   "scripts": {
-    "build": "npm run build --workspace=frontend"
+    "build": "cd frontend && npm install && npm run build"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.24",

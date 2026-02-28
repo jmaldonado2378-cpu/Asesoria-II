@@ -31,6 +31,7 @@ db.sqlite3
 *.pdf
 media/
 static/
+.vercel/
 
 # Migration & Temporary Clutter in Backend
 backend/dump_*.json
