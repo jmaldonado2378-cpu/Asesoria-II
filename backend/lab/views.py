@@ -178,11 +178,9 @@ class EnsayoImageViewSet(viewsets.ModelViewSet):
                     print(f"Supabase upload error: {e.read().decode('utf-8', errors='ignore')}")
                     raise Exception(f"HTTPError {e.code}: {e.reason}")
                 
-                public_url = f"{supabase_url}/storage/v1/object/public/{bucket_name}/{filename}"
-                
-                # Make data mutable
+                # Guardar solo el nombre del archivo (la propiedad full_url del modelo reconstruirá el resto)
                 data = request.data.copy()
-                data['image'] = public_url
+                data['image'] = filename
                 
                 serializer = self.get_serializer(data=data)
                 serializer.is_valid(raise_exception=True)
@@ -263,10 +261,9 @@ class ComplaintImageViewSet(viewsets.ModelViewSet):
                     print(f"Supabase upload error: {e.read().decode('utf-8', errors='ignore')}")
                     raise Exception(f"HTTPError {e.code}: {e.reason}")
                 
-                public_url = f"{supabase_url}/storage/v1/object/public/{bucket_name}/complaints/{filename}"
-                
+                # Guardar la ruta relativa dentro del bucket
                 data = request.data.copy()
-                data['image'] = public_url
+                data['image'] = f"complaints/{filename}"
                 
                 serializer = self.get_serializer(data=data)
                 serializer.is_valid(raise_exception=True)
