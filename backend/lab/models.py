@@ -254,14 +254,23 @@ class EnsayoImage(models.Model):
 
     @property
     def full_url(self):
+        """Genera la URL completa de Supabase limpiando prefijos redundantes."""
         if not self.image:
             return ""
-        if str(self.image).startswith('http'):
-            return str(self.image)
-        path = str(self.image)
-        if not path.startswith('ensayo_photos/'):
-            path = f"ensayo_photos/{path}"
-        return f"https://uhoudbwppwctcddabdmo.supabase.co/storage/v1/object/public/{path}"
+        img_str = str(self.image)
+        if img_str.startswith('http'):
+            return img_str
+            
+        # Limpieza de prefijos comunes (evita duplicación: ensayo_photos/ensayo_photos/...)
+        path = img_str.strip('/')
+        # Ordenamos de más largo a más corto
+        prefixes = ['media/ensayo_photos/', 'ensayo_photos/', 'media/']
+        for p in prefixes:
+            if path.startswith(p):
+                path = path[len(p):]
+                break
+        
+        return f"https://uhoudbwppwctcddabdmo.supabase.co/storage/v1/object/public/ensayo_photos/{path}"
 
 # --- RECETA ---
 class EnsayoDetail(models.Model):
@@ -361,11 +370,24 @@ class ComplaintImage(models.Model):
 
     @property
     def full_url(self):
+        """Genera la URL completa de Supabase con subcarpeta complaints."""
         if not self.image:
             return ""
-        if str(self.image).startswith('http'):
-            return str(self.image)
-        path = str(self.image)
-        if not path.startswith('ensayo_photos/'):
-            path = f"ensayo_photos/{path}"
-        return f"https://uhoudbwppwctcddabdmo.supabase.co/storage/v1/object/public/{path}"
+        img_str = str(self.image)
+        if img_str.startswith('http'):
+            return img_str
+            
+        # Limpieza de prefijos
+        path = img_str.strip('/')
+        prefixes = ['media/ensayo_photos/', 'ensayo_photos/', 'media/']
+        for p in prefixes:
+            if path.startswith(p):
+                path = path[len(p):]
+                break
+        
+        # Aseguramos la subcarpeta complaints/ dentro del bucket ensayo_photos
+        final_path = path
+        if not final_path.startswith('complaints/'):
+            final_path = f"complaints/{final_path}"
+            
+        return f"https://uhoudbwppwctcddabdmo.supabase.co/storage/v1/object/public/ensayo_photos/{final_path}"
