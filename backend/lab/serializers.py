@@ -26,6 +26,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 # --- IMÁGENES DE ENSAYO ---
 class EnsayoImageSerializer(serializers.ModelSerializer):
+    image = serializers.ReadOnlyField(source='full_url')
     class Meta:
         model = EnsayoImage
         fields = '__all__'
@@ -108,6 +109,7 @@ class TechnicalReportSerializer(serializers.ModelSerializer):
         fields = '__all__'
 # --- RECLAMOS ---
 class ComplaintImageSerializer(serializers.ModelSerializer):
+    image = serializers.ReadOnlyField(source='full_url')
     class Meta:
         model = ComplaintImage
         fields = '__all__'

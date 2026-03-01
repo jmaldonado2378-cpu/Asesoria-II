@@ -252,6 +252,17 @@ class EnsayoImage(models.Model):
     image = models.URLField("URL de Imagen", max_length=1000)
     caption = models.CharField("Nota", max_length=255, blank=True, null=True)
 
+    @property
+    def full_url(self):
+        if not self.image:
+            return ""
+        if str(self.image).startswith('http'):
+            return str(self.image)
+        path = str(self.image)
+        if not path.startswith('ensayo_photos/'):
+            path = f"ensayo_photos/{path}"
+        return f"https://uhoudbwppwctcddabdmo.supabase.co/storage/v1/object/public/{path}"
+
 # --- RECETA ---
 class EnsayoDetail(models.Model):
     ensayo = models.ForeignKey(Ensayo, on_delete=models.CASCADE, related_name="details")
@@ -347,3 +358,14 @@ class ComplaintImage(models.Model):
     complaint = models.ForeignKey(Complaint, on_delete=models.CASCADE, related_name='images')
     image = models.URLField("URL Imagen Reclamo", max_length=1000)
     caption = models.CharField("Nota", max_length=255, blank=True, null=True)
+
+    @property
+    def full_url(self):
+        if not self.image:
+            return ""
+        if str(self.image).startswith('http'):
+            return str(self.image)
+        path = str(self.image)
+        if not path.startswith('ensayo_photos/'):
+            path = f"ensayo_photos/{path}"
+        return f"https://uhoudbwppwctcddabdmo.supabase.co/storage/v1/object/public/{path}"

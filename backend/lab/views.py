@@ -341,7 +341,7 @@ def generar_reporte_reclamo_estandar(request):
         for img in complaint.images.all():
             if img.image:
                 try:
-                    req_get = urllib.request.Request(str(img.image))
+                    req_get = urllib.request.Request(str(img.full_url))
                     with urllib.request.urlopen(req_get, timeout=10.0) as response:
                         if response.status == 200:
                             from openpyxl.drawing.image import Image as OpenpyxlImage
@@ -471,7 +471,7 @@ def generar_informe_tecnico_estandar(request):
             # Pre-serializar imágenes de ensayos
             essays_with_imgs = []
             for e in essays:
-                imgs = [{'image': img.image, 'caption': img.caption or ''} for img in e.images.all()]
+                imgs = [{'image': img.full_url, 'caption': img.caption or ''} for img in e.images.all()]
                 if imgs:
                     essays_with_imgs.append({'code': e.code or f'ENS-{e.id}', 'images': imgs})
 
@@ -479,7 +479,7 @@ def generar_informe_tecnico_estandar(request):
             # Pre-serializar imágenes de reclamos
             complaints_with_imgs = []
             for c in complaints:
-                imgs = [{'image': img.image, 'caption': img.caption or ''} for img in c.images.all()]
+                imgs = [{'image': img.full_url, 'caption': img.caption or ''} for img in c.images.all()]
                 if imgs:
                     complaints_with_imgs.append({'loading_date': c.loading_date, 'images': imgs})
 
@@ -580,9 +580,9 @@ def generar_informe_tecnico_estandar(request):
             worksheet.write(row, col, title, fmt_ph_label)
             row_ph += 1
             
-            if img_obj and img_obj.image:
+            if img_obj and img_obj.full_url:
                 try:
-                    req_get = urllib.request.Request(str(img_obj.image))
+                    req_get = urllib.request.Request(str(img_obj.full_url))
                     with urllib.request.urlopen(req_get, timeout=10.0) as response:
                         if response.status == 200:
                             img_stream = io.BytesIO(response.read())
