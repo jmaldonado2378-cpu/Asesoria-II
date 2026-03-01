@@ -26,10 +26,15 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 # --- IMÁGENES DE ENSAYO ---
 class EnsayoImageSerializer(serializers.ModelSerializer):
-    image = serializers.ReadOnlyField(source='full_url')
     class Meta:
         model = EnsayoImage
         fields = '__all__'
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # Usar la propiedad full_url del modelo para devolver la URL completa al leer
+        ret['image'] = instance.full_url
+        return ret
 
 # --- DETALLE DE RECETA (CORREGIDO) ---
 class EnsayoDetailSerializer(serializers.ModelSerializer):
@@ -109,10 +114,15 @@ class TechnicalReportSerializer(serializers.ModelSerializer):
         fields = '__all__'
 # --- RECLAMOS ---
 class ComplaintImageSerializer(serializers.ModelSerializer):
-    image = serializers.ReadOnlyField(source='full_url')
     class Meta:
         model = ComplaintImage
         fields = '__all__'
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # Usar la propiedad full_url del modelo para devolver la URL completa al leer
+        ret['image'] = instance.full_url
+        return ret
 
 class ComplaintSerializer(serializers.ModelSerializer):
     images = ComplaintImageSerializer(many=True, read_only=True)
