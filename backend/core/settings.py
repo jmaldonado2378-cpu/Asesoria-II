@@ -122,8 +122,8 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # SUPABASE STORAGE CONFIGURATION
-SUPABASE_URL = os.environ.get('NEXT_PUBLIC_SUPABASE_URL', '')
-SUPABASE_KEY = os.environ.get('NEXT_PUBLIC_SUPABASE_ANON_KEY', '')
+SUPABASE_URL = os.environ.get('SUPABASE_URL') or os.environ.get('NEXT_PUBLIC_SUPABASE_URL', '')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY') or os.environ.get('NEXT_PUBLIC_SUPABASE_ANON_KEY', '')
 
 # Mantenemos MEDIA_URL para compatibilidad con uploads anteriores si fueran necesarios
 MEDIA_URL = '/media/'
