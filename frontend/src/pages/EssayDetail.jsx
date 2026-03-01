@@ -271,7 +271,31 @@ export default function EssayDetail() {
     };
 
     const handleDeleteIngredient = async (id) => { if (confirm('¿Borrar?')) { await fetch(`${API_URL}/api/ensayo-details/${id}/`, { method: 'DELETE' }); fetchData(); } };
-    const handleFileUpload = async (e) => { const f = e.target.files[0]; if (!f) return; setUploading(true); const d = new FormData(); d.append('image', f); d.append('ensayo', id); d.append('caption', 'Sin título'); await fetch(`${API_URL}/api/ensayo-images/`, { method: 'POST', body: d }); fetchData(); setUploading(false); };
+    const handleFileUpload = async (e) => {
+        const f = e.target.files[0];
+        if (!f) return;
+        setUploading(true);
+        try {
+            const d = new FormData();
+            d.append('image', f);
+            d.append('ensayo', id);
+            d.append('caption', 'Sin título');
+            const res = await fetch(`${API_URL}/api/ensayo-images/`, {
+                method: 'POST',
+                body: d
+            });
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Error ${res.status}: ${errText}`);
+            }
+            await fetchData();
+        } catch (err) {
+            console.error("Upload error:", err);
+            alert(`❌ Error al subir imagen: ${err.message}`);
+        } finally {
+            setUploading(false);
+        }
+    };
     const handleCaptionChange = (id, txt) => setImages(images.map(i => i.id === id ? { ...i, caption: txt } : i));
     const saveCaption = async (id, txt) => fetch(`${API_URL}/api/ensayo-images/${id}/`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ caption: txt }) });
     const handleDeleteImage = async (id) => { if (confirm('¿Borrar?')) { await fetch(`${API_URL}/api/ensayo-images/${id}/`, { method: 'DELETE' }); setImages(images.filter(i => i.id !== id)); } };
