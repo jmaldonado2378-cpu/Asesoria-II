@@ -1,4 +1,4 @@
-﻿import os
+import os
 from pathlib import Path
 from decimal import Decimal
 import dj_database_url
@@ -97,6 +97,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 CSRF_TRUSTED_ORIGINS = [
     "https://app-asesor.vercel.app",
     "https://app-asesoria.onrender.com",
+    "https://asesoria-ii.vercel.app",
 ]
 
 # ConfiguraciÃ³n de ProducciÃ³n (Render)
