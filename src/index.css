@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === DESIGN SYSTEM — Dark Neon Green (Stitch) === */
+:root {
+  --bg-main: #0f172a;
+  /* slate-950 */
+  --bg-panel: #1e293b;
+  /* slate-800 */
+  --bg-sidebar: #020617;
+  /* casi negro */
+  --bg-hover: #253347;
+  /* slate-700/70 */
+  --accent: #4ade80;
+  /* green-400 neón */
+  --accent-dim: #14532d;
+  /* green-900 */
+  --accent-2: #1d4ed8;
+  /* blue-600 */
+  --text-1: #ffffff;
+  --text-2: #94a3b8;
+  /* slate-400 */
+  --border: #334155;
+  /* slate-700 */
+  --score-high: #4ade80;
+  --score-mid: #fb923c;
+  --score-low: #f87171;
+}
+
+/* === TIPOGRAFÍA GLOBAL === */
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'cv01', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--bg-main);
+    color: var(--text-1);
+  }
+
+  .font-serif {
+    font-family: 'Crimson Text', 'Georgia', serif !important;
+  }
+}
+
+
+
+
+/* ============================================================
+   ESTILOS PARA IMPRESIÓN / EXPORTACIÓN PDF (html2pdf.js)
+   @media print se activa durante la captura de html2pdf.
+   ============================================================ */
+@media print {
+
+  /* Configuración de página A4 */
+  @page {
+    size: A4 portrait;
+    margin: 12mm 14mm;
+  }
+
+  /* Ocultar elementos de UI que no deben aparecer en el PDF */
+  .no-print,
+  button,
+  [data-no-print],
+  nav,
+  aside {
+    display: none !important;
+  }
+
+  /* Reset general */
+  body {
+    background: white !important;
+    color: #1e293b !important;
+    font-size: 9pt !important;
+    font-family: 'Inter', system-ui, sans-serif !important;
+  }
+
+  /* Contenedor principal del reporte */
+  #report-content {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Quitar sombras, bordes redondeados y fondos de escena */
+  #report-content * {
+    box-shadow: none !important;
+  }
+
+  /* Cortes de página limpios */
+  .pdf-section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .pdf-page-break {
+    page-break-before: always;
+    break-before: always;
+    display: block;
+  }
+
+  /* Cabecera del reporte: fondo oscuro naranja/slate */
+  #report-content header {
+    background: #0f172a !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Filas de tabla alternadas */
+  #report-content table tr:nth-child(even) td {
+    background-color: #f8fafc !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Headers de tabla oscuros */
+  #report-content table thead {
+    background: #1e293b !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Colores de badge (status) */
+  .print-badge {
+    border: 1px solid #94a3b8 !important;
+    padding: 2px 6px !important;
+    border-radius: 2px !important;
+  }
+
+  /* TABLERO DE SCORE: mantener naranja */
+  .score-display {
+    color: #ea580c !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Imágenes dentro del reporte: mantener proporciones */
+  #report-content img {
+    max-width: 100% !important;
+    object-fit: cover !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Galería de fotos: máximo 3 por fila en PDF */
+  #report-content .photo-gallery {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Asegurar que los fondos de color se impriman */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
