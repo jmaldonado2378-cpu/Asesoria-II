@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import { API_URL } from '../config';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Building, Calendar, FileText, Briefcase, Settings, Activity, Loader2 } from 'lucide-react';
@@ -23,8 +24,9 @@ function FormField({ label, icon, children }) {
 
 export default function NewProject() {
     const navigate = useNavigate();
-    const [clients, setClients] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: clients, error } = useSWR(`${API_URL}/api/clients/`);
+    const loading = !clients && !error;
+
     const [formData, setFormData] = useState({
         client: '',
         name: '',
@@ -34,13 +36,6 @@ export default function NewProject() {
         start_date: new Date().toISOString().split('T')[0],
         objective: ''
     });
-
-    useEffect(() => {
-        fetch(`${API_URL}/api/clients/`)
-            .then(r => r.json())
-            .then(d => { setClients(d); setLoading(false); })
-            .catch(err => { console.error(err); setLoading(false); });
-    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

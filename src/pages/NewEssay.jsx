@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import { API_URL } from '../config';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, Building, FolderKanban, Calendar, ChefHat, Loader2 } from 'lucide-react';
 
-/* ── Design System helpers ── */
 const input = {
     background: 'var(--bg-main)',
     border: '1px solid var(--border)',
@@ -14,9 +14,11 @@ const label = { color: 'var(--text-2)' };
 export default function NewEssay() {
     const navigate = useNavigate();
     const location = useLocation();
-    const [loading, setLoading] = useState(true);
-    const [clients, setClients] = useState([]);
-    const [projects, setProjects] = useState([]);
+    const { data: clients, error: errorClients } = useSWR(`${API_URL}/api/clients/`);
+    const { data: projects, error: errorProjects } = useSWR(`${API_URL}/api/projects/`);
+
+    const loading = !clients || !projects;
+    const errorData = errorClients || errorProjects;
 
     const [selectedClient, setSelectedClient] = useState(location.state?.preselectedClient || '');
     const [formData, setFormData] = useState({
@@ -27,18 +29,7 @@ export default function NewEssay() {
         conclusion: ''
     });
 
-    useEffect(() => {
-        Promise.all([
-            fetch(`${API_URL}/api/clients/`).then(res => res.json()),
-            fetch(`${API_URL}/api/projects/`).then(res => res.json())
-        ]).then(([clientsData, projectsData]) => {
-            setClients(clientsData);
-            setProjects(projectsData);
-            setLoading(false);
-        }).catch(() => alert('Error cargando datos iniciales'));
-    }, []);
-
-    const filteredProjects = selectedClient
+    const filteredProjects = selectedClient && projects
         ? projects.filter(p => p.client === parseInt(selectedClient))
         : [];
 

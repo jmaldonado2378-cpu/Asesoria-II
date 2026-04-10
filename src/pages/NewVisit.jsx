@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import { API_URL } from '../config';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Calendar, Clock, Briefcase, Users, Activity, FileText, Tag, Loader2 } from 'lucide-react';
@@ -23,9 +24,12 @@ function FormField({ label, icon, children }) {
 
 export default function NewVisit() {
     const navigate = useNavigate();
-    const [clients, setClients] = useState([]);
-    const [projects, setProjects] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: clients, error: errorClients } = useSWR(`${API_URL}/api/clients/`);
+    const { data: projects, error: errorProjects } = useSWR(`${API_URL}/api/projects/`);
+
+    const loading = !clients || !projects;
+    const errorData = errorClients || errorProjects;
+
     const [formData, setFormData] = useState({
         client: '',
         project: '',
@@ -36,17 +40,6 @@ export default function NewVisit() {
         objective: '',
         status: 'Pendiente'
     });
-
-    useEffect(() => {
-        Promise.all([
-            fetch(`${API_URL}/api/clients/`).then(r => r.json()),
-            fetch(`${API_URL}/api/projects/`).then(r => r.json())
-        ]).then(([cData, pData]) => {
-            setClients(cData);
-            setProjects(pData);
-            setLoading(false);
-        }).catch(e => { console.error(e); setLoading(false); });
-    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
