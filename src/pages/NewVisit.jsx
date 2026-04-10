@@ -52,10 +52,15 @@ export default function NewVisit() {
         e.preventDefault();
         if (!formData.client && !formData.project) return alert('Debe seleccionar un cliente o un proyecto');
         try {
+            const payload = {
+                ...formData,
+                client: formData.client ? parseInt(formData.client, 10) : null,
+                project: formData.project ? parseInt(formData.project, 10) : null,
+            };
             const res = await fetch(`${API_URL}/api/visits/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             });
             if (res.ok) {
                 navigate('/visits');

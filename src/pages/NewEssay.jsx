@@ -46,10 +46,14 @@ export default function NewEssay() {
         e.preventDefault();
         if (!formData.project) return alert('Debes seleccionar un Proyecto');
         try {
+            const payload = {
+                ...formData,
+                project: parseInt(formData.project, 10),
+            };
             const res = await fetch(`${API_URL}/api/ensayos/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             });
             if (!res.ok) throw new Error('Error al crear');
             const newEssay = await res.json();

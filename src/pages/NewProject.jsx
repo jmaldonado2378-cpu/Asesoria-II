@@ -46,10 +46,11 @@ export default function NewProject() {
         e.preventDefault();
         if (!formData.client || !formData.name) return alert('Cliente y Nombre requeridos');
         try {
+            const payload = { ...formData, client: parseInt(formData.client, 10) };
             const res = await fetch(`${API_URL}/api/projects/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             });
             if (res.ok) {
                 const newP = await res.json();
