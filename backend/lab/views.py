@@ -448,8 +448,12 @@ def generar_informe_tecnico_estandar(request):
                 return Response({"error": "Librería xhtml2pdf no está instalada en el servidor."}, status=500)
                 
             # Logo institucional en Base64 para el PDF
-            logo_path = os.path.join(settings.BASE_DIR, 'lab', 'static', 'images', 'logo_institucional.png')
-            logo_b64 = get_image_base64(logo_path)
+            logo_b64_req = request.data.get('logo_b64')
+            if logo_b64_req:
+                logo_b64 = logo_b64_req
+            else:
+                logo_path = os.path.join(settings.BASE_DIR, 'lab', 'static', 'images', 'logo_institucional.png')
+                logo_b64 = get_image_base64(logo_path)
 
             # Pre-serializar ensayos con imágenes para el template (xhtml2pdf no soporta ORM lazy loading)
             essays_for_pdf = []
