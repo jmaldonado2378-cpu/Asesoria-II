@@ -67,6 +67,8 @@ class Project(models.Model):
         ('Seguimiento', 'Seguimiento'),
         ('Consulta', 'Consulta'),
         ('Desarrollo', 'Desarrollo'),
+        ('Control', 'Control'),
+        ('Reclamo', 'Reclamo'),
     ]
     FREQUENCY_CHOICES = [
         ('Semanal', 'Semanal'),
@@ -78,6 +80,7 @@ class Project(models.Model):
         ('Pendiente', 'Pendiente'),
         ('En Curso', 'En Curso'),
         ('Terminado', 'Terminado'),
+        ('Finalizado', 'Finalizado'),
         ('Cancelado', 'Cancelado'),
     ]
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="projects", verbose_name="Cliente")
@@ -92,6 +95,7 @@ class Project(models.Model):
     fixed_fee = models.DecimalField("Honorarios Fijos", max_digits=12, decimal_places=2, default=0.00)
     
     custom_prices = models.ManyToManyField('Ingredient', through='ProjectIngredientPrice')
+    metadata = models.JSONField("Datos Específicos del Proyecto", default=dict, blank=True)
 
     class Meta:
         verbose_name = "Proyecto"
@@ -115,6 +119,8 @@ class Visit(models.Model):
         ('Técnica', 'Técnica'),
         ('Comercial', 'Comercial'),
         ('Seguimiento', 'Seguimiento'),
+        ('Llamada', 'Llamada'),
+        ('Prueba', 'Prueba'),
         ('Otro', 'Otro'),
     ]
     STATUS_CHOICES = [
