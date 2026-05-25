@@ -10,8 +10,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dummy-key')
 
-# DEBUG temporal para diagnóstico
-DEBUG = True
+# DEBUG solo si no existe la variable de entorno RENDER
+DEBUG = 'RENDER' not in os.environ
 
 ALLOWED_HOSTS = ['*']
 if 'RENDER_EXTERNAL_HOSTNAME' in os.environ:

@@ -239,8 +239,18 @@ class Ensayo(models.Model):
     def save(self, *args, **kwargs):
         if not self.code:
             current_year = timezone.now().year
-            count = Ensayo.objects.filter(date__year=current_year).count() + 1
-            self.code = f"ENS-{current_year}-{count:03d}"
+            prefix = f"ENS-{current_year}-"
+            existing_codes = Ensayo.objects.filter(code__startswith=prefix).values_list('code', flat=True)
+            max_num = 0
+            for code_str in existing_codes:
+                try:
+                    num_part = int(code_str.split('-')[-1])
+                    if num_part > max_num:
+                        max_num = num_part
+                except (ValueError, IndexError):
+                    continue
+            next_num = max_num + 1
+            self.code = f"{prefix}{next_num:03d}"
         super().save(*args, **kwargs)
 
     def get_total_flour_weight(self):
