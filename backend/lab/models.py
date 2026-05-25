@@ -401,3 +401,37 @@ class ComplaintImage(models.Model):
             final_path = f"complaints/{final_path}"
             
         return f"https://uhoudbwppwctcddabdmo.supabase.co/storage/v1/object/public/ensayo_photos/{final_path}"
+
+class ProjectBudget(models.Model):
+    project = models.OneToOneField(Project, on_delete=models.CASCADE, related_name="budget", verbose_name="Proyecto")
+    client_quote = models.DecimalField("Cotización al Cliente", max_digits=12, decimal_places=2, default=0.00)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Presupuesto de Proyecto"
+        verbose_name_plural = "Presupuestos de Proyectos"
+
+    def __str__(self):
+        return f"Presupuesto - {self.project.name}"
+
+class BudgetItem(models.Model):
+    ITEM_TYPES = [
+        ('Visitas', 'Visitas'),
+        ('Ensayos', 'Ensayos'),
+        ('Insumos', 'Insumos'),
+        ('Horas Asesor', 'Horas Asesor'),
+        ('Otros', 'Otros'),
+    ]
+    budget = models.ForeignKey(ProjectBudget, on_delete=models.CASCADE, related_name="items", verbose_name="Presupuesto")
+    item_type = models.CharField("Tipo de Ítem", max_length=50, choices=ITEM_TYPES, default='Otros')
+    description = models.CharField("Descripción", max_length=255)
+    quantity = models.DecimalField("Cantidad", max_digits=10, decimal_places=2, default=1.00)
+    unit_price = models.DecimalField("Precio Unitario", max_digits=12, decimal_places=2, default=0.00)
+
+    class Meta:
+        verbose_name = "Ítem de Presupuesto"
+        verbose_name_plural = "Ítems de Presupuesto"
+
+    def __str__(self):
+        return f"{self.description} ({self.item_type})"

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import (
     Client, Project, Ensayo, Ingredient, 
     ProjectIngredientPrice, Visit, EnsayoDetail, EnsayoImage,
-    TechnicalReport, Complaint, ComplaintImage
+    TechnicalReport, Complaint, ComplaintImage, ProjectBudget, BudgetItem
 )
 
 # --- CLIENTES ---
@@ -11,9 +11,22 @@ class ClientSerializer(serializers.ModelSerializer):
         model = Client
         fields = '__all__'
 
+# --- PRESUPUESTOS ---
+class BudgetItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BudgetItem
+        fields = '__all__'
+
+class ProjectBudgetSerializer(serializers.ModelSerializer):
+    items = BudgetItemSerializer(many=True, read_only=True)
+    class Meta:
+        model = ProjectBudget
+        fields = '__all__'
+
 # --- PROYECTOS ---
 class ProjectSerializer(serializers.ModelSerializer):
     client_name = serializers.ReadOnlyField(source='client.name')
+    budget = ProjectBudgetSerializer(read_only=True)
     class Meta:
         model = Project
         fields = '__all__'

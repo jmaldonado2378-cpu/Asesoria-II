@@ -1,8 +1,8 @@
-﻿from django.contrib import admin
+from django.contrib import admin
 from django.utils.html import format_html
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from .models import Client, Ingredient, Project, Visit, Ensayo, EnsayoDetail, EnsayoImage, ProjectIngredientPrice, Complaint, ComplaintImage, TechnicalReport
+from .models import Client, Ingredient, Project, Visit, Ensayo, EnsayoDetail, EnsayoImage, ProjectIngredientPrice, Complaint, ComplaintImage, TechnicalReport, ProjectBudget, BudgetItem
 
 # --- RESOURCES FOR EXPORT ---
 
@@ -187,3 +187,12 @@ class ComplaintAdmin(admin.ModelAdmin):
 @admin.register(ComplaintImage)
 class ComplaintImageAdmin(admin.ModelAdmin):
     list_display = ('complaint', 'caption')
+
+@admin.register(ProjectBudget)
+class ProjectBudgetAdmin(admin.ModelAdmin):
+    list_display = ('project', 'client_quote', 'created_at', 'updated_at')
+
+@admin.register(BudgetItem)
+class BudgetItemAdmin(admin.ModelAdmin):
+    list_display = ('budget', 'item_type', 'description', 'quantity', 'unit_price')
+    list_filter = ('item_type',)

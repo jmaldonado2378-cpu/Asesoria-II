@@ -5,7 +5,8 @@ from .views import (
     EnsayoViewSet, EnsayoDetailViewSet, EnsayoImageViewSet,
     ProjectIngredientPriceViewSet, VisitViewSet,
     TechnicalReportViewSet,
-    ComplaintViewSet, ComplaintImageViewSet
+    ComplaintViewSet, ComplaintImageViewSet,
+    ProjectBudgetViewSet, BudgetItemViewSet
 )
 from . import views
 
@@ -18,6 +19,8 @@ router.register(r'ensayo-details', EnsayoDetailViewSet)
 router.register(r'ensayo-images', EnsayoImageViewSet)
 router.register(r'project-ingredient-prices', ProjectIngredientPriceViewSet)
 router.register(r'visits', VisitViewSet)
+router.register(r'project-budgets', ProjectBudgetViewSet)
+router.register(r'budget-items', BudgetItemViewSet)
 router.register(r'technical-reports', TechnicalReportViewSet)
 router.register(r'complaints', ComplaintViewSet)
 router.register(r'complaint-images', ComplaintImageViewSet)

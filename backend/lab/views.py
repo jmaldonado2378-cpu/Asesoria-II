@@ -20,7 +20,7 @@ from django.conf import settings
 from .models import (
     Client, Project, Ensayo, Ingredient, 
     ProjectIngredientPrice, Visit, EnsayoDetail, EnsayoImage,
-    TechnicalReport, Complaint, ComplaintImage
+    TechnicalReport, Complaint, ComplaintImage, ProjectBudget, BudgetItem
 )
 import base64
 import urllib.request
@@ -36,7 +36,9 @@ from .serializers import (
     EnsayoImageSerializer,
     TechnicalReportSerializer,
     ComplaintSerializer,
-    ComplaintImageSerializer
+    ComplaintImageSerializer,
+    ProjectBudgetSerializer,
+    BudgetItemSerializer
 )
 
 # --- UTILIDADES GLOBALES (REPORTES) ---
@@ -195,6 +197,28 @@ class EnsayoImageViewSet(viewsets.ModelViewSet):
                 
         # Fallback if no file is sent, or if it's sent as a URL string directly
         return super().create(request, *args, **kwargs)
+
+class ProjectBudgetViewSet(viewsets.ModelViewSet):
+    queryset = ProjectBudget.objects.all()
+    serializer_class = ProjectBudgetSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+        project_id = self.request.query_params.get('project')
+        if project_id is not None:
+            queryset = queryset.filter(project_id=project_id)
+        return queryset
+
+class BudgetItemViewSet(viewsets.ModelViewSet):
+    queryset = BudgetItem.objects.all()
+    serializer_class = BudgetItemSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+        budget_id = self.request.query_params.get('budget')
+        if budget_id is not None:
+            queryset = queryset.filter(budget_id=budget_id)
+        return queryset
 
 class ProjectIngredientPriceViewSet(viewsets.ModelViewSet):
     queryset = ProjectIngredientPrice.objects.all()
