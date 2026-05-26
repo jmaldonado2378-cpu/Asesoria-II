@@ -140,8 +140,15 @@ class IngredientViewSet(viewsets.ModelViewSet):
     serializer_class = IngredientSerializer
 
 class EnsayoViewSet(viewsets.ModelViewSet):
-    queryset = Ensayo.objects.all().order_by('-date')
+    queryset = Ensayo.objects.all().select_related('project', 'project__client').prefetch_related('details__ingredient', 'images').order_by('-date')
     serializer_class = EnsayoSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        project_id = self.request.query_params.get('project')
+        if project_id:
+            queryset = queryset.filter(project_id=project_id)
+        return queryset
 
 class EnsayoDetailViewSet(viewsets.ModelViewSet):
     queryset = EnsayoDetail.objects.all()
@@ -225,8 +232,15 @@ class ProjectIngredientPriceViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectIngredientPriceSerializer
 
 class VisitViewSet(viewsets.ModelViewSet):
-    queryset = Visit.objects.all().order_by('-date')
+    queryset = Visit.objects.all().select_related('project', 'client').order_by('-date')
     serializer_class = VisitSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        project_id = self.request.query_params.get('project')
+        if project_id:
+            queryset = queryset.filter(project_id=project_id)
+        return queryset
 
 class TechnicalReportViewSet(viewsets.ModelViewSet):
     queryset = TechnicalReport.objects.all().order_by('-report_date', '-created_at')

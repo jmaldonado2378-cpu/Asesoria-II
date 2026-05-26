@@ -305,8 +305,19 @@ class EnsayoDetail(models.Model):
         return f"{self.ingredient.name}: {self.quantity}"
 
     def _get_total_harina_kg(self):
-        total = self.ensayo.details.filter(ingredient__is_base_flour=True).aggregate(Sum('quantity'))['quantity__sum']
-        return total if total else Decimal(0)
+        try:
+            # Optimización para evitar queries N+1 cuando details está prefetched.
+            # .all() en un queryset prefetched recupera los datos de la caché en memoria.
+            total = Decimal('0.000000000')
+            details = self.ensayo.details.all()
+            for d in details:
+                if d.ingredient.is_base_flour:
+                    total += d.quantity
+            return total
+        except Exception:
+            # Fallback seguro por si ocurre algún error
+            total = self.ensayo.details.filter(ingredient__is_base_flour=True).aggregate(Sum('quantity'))['quantity__sum']
+            return total if total else Decimal(0)
 
     @property
     def panadero_pct(self):
