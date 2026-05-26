@@ -61,7 +61,7 @@ export default function ProjectDetail() {
         realMargin: 0
     });
 
-    useEffect(() => {
+    const fetchProject = () => {
         Promise.all([
             fetch(`${API_URL}/api/projects/${id}/`).then(r => r.json()),
             fetch(`${API_URL}/api/ensayos/`).then(r => r.json()),
@@ -106,6 +106,10 @@ export default function ProjectDetail() {
             alert("⚠️ Error de conexión: " + err.message);
             setLoading(false);
         });
+    };
+
+    useEffect(() => {
+        fetchProject();
     }, [id]);
 
     const calculateFinancials = (pEssays, pVisits, pMatExpenses) => {

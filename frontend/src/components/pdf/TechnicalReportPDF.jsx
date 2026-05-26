@@ -302,7 +302,7 @@ const TechnicalReportPDF = ({
                                 <View key={e.id || i} style={i % 2 === 0 ? s.tableRow : s.tableRowAlt}>
                                     <Text style={[s.tdBold, { flex: 1.5 }]}>{e.code || `ENS-${e.id}`}</Text>
                                     <Text style={[s.td, { flex: 2 }]}>{e.date || '-'}</Text>
-                                    <Text style={[s.td, { flex: 3 }]}>{e.product || '-'}</Text>
+                                    <Text style={[s.td, { flex: 3 }]}>{e.base_flour_name || '-'}</Text>
                                     <Text style={[s.td, { flex: 2 }]}>{e.essay_type || '-'}</Text>
                                     <Text style={[s.tdRight]}>{e.final_score ? `${e.final_score}/10` : '-'}</Text>
                                 </View>

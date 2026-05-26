@@ -65,18 +65,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# DB: Neon en producciÃ³n (DATABASE_URL), SQLite local como fallback
-DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3'),
-        # CRITICAL: conn_max_age=0 means Django will NOT keep persistent connections open.
-        # This is REQUIRED for Supabase Transaction Pooler (PgBouncer) compatibility.
-        # Setting it to 600 (the previous value) exhausts the pooler's connection limit,
-        # causing "MaxClientsInSessionMode" errors on all database writes.
-        conn_max_age=0,
-        conn_health_checks=False,
-    )
-}
+# DB: Neon en producción (DATABASE_URL) en Render, SQLite local en desarrollo
+if 'RENDER' in os.environ:
+    DATABASES = {
+        'default': dj_database_url.config(
+            conn_max_age=0,
+            conn_health_checks=False,
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
