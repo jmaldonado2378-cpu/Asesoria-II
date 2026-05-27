@@ -3,6 +3,24 @@
 from django.db import migrations, models
 
 
+class PostgresSeparateDatabaseAndState(migrations.SeparateDatabaseAndState):
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        if schema_editor.connection.vendor == 'postgresql':
+            for operation in self.database_operations:
+                operation.database_forwards(app_label, schema_editor, from_state, to_state)
+        else:
+            for operation in self.state_operations:
+                operation.database_forwards(app_label, schema_editor, from_state, to_state)
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        if schema_editor.connection.vendor == 'postgresql':
+            for operation in reversed(self.database_operations):
+                operation.database_backwards(app_label, schema_editor, from_state, to_state)
+        else:
+            for operation in reversed(self.state_operations):
+                operation.database_backwards(app_label, schema_editor, from_state, to_state)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,7 +28,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.SeparateDatabaseAndState(
+        PostgresSeparateDatabaseAndState(
             database_operations=[
                 migrations.RunSQL(
                     sql="ALTER TABLE lab_project ADD COLUMN IF NOT EXISTS technical_observations text;",

@@ -78,7 +78,7 @@ class ClientAdmin(ImportExportModelAdmin):
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'type', 'legal_name_ins', 'brand', 'is_base_flour', 'recommended_dosage_ppm', 'default_price')
+    list_display = ('name', 'type', 'brand', 'is_base_flour', 'recommended_dosage_ppm', 'default_price')
     list_filter = ('type', 'is_base_flour', 'brand')
     search_fields = ('name', 'brand', 'observations')
 

@@ -52,7 +52,6 @@ class Ingredient(models.Model):
     is_base_flour = models.BooleanField("Es Harina Base", default=False, help_text="Indica si se usa como base para cálculos de PPM")
     is_active = models.BooleanField(default=True)
     default_price = models.DecimalField("Precio Base", max_digits=10, decimal_places=4, default=Decimal('0.0000'))
-    legal_name_ins = models.CharField("Nombre Legal / INS", max_length=255, blank=True, null=True)
 
     class Meta:
         verbose_name = "Ingrediente"
@@ -89,7 +88,7 @@ class Project(models.Model):
     project_type = models.CharField("Tipo de Proyecto", max_length=50, choices=PROJECT_TYPES, default='Consulta')
     frequency = models.CharField("Frecuencia", max_length=50, choices=FREQUENCY_CHOICES, default='Mensual')
     status = models.CharField("Estado", max_length=50, choices=STATUS_CHOICES, default='En Curso')
-    start_date = models.DateField("Fecha de Inicio", default=timezone.localdate)
+    start_date = models.DateField("Fecha de Inicio", default=timezone.now)
     end_date = models.DateField("Fecha de Cierre", blank=True, null=True)
     objective = models.TextField("Objetivo Principal", blank=True, null=True)
     technical_observations = models.TextField("Observaciones Técnicas / Conclusiones", blank=True, null=True)
@@ -170,7 +169,7 @@ class Ensayo(models.Model):
     ]
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="ensayos", verbose_name="Proyecto")
     code = models.CharField("Código de Ensayo", max_length=50, unique=True, editable=False)
-    date = models.DateField("Fecha", default=timezone.localdate)
+    date = models.DateField("Fecha", default=timezone.now)
     description = models.TextField("Descripción del Problema/Objetivo", blank=True, null=True)
     conclusion = models.TextField("Conclusión Técnica", blank=True, null=True)
     baking_type = models.CharField("Tipo de Panificación", max_length=50, choices=BAKING_TYPES, blank=True, null=True)
@@ -343,7 +342,7 @@ class EnsayoDetail(models.Model):
 
 class TechnicalReport(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="reports", verbose_name="Proyecto")
-    report_date = models.DateField("Fecha del Informe", default=timezone.localdate)
+    report_date = models.DateField("Fecha del Informe", default=timezone.now)
     start_date = models.DateField("Fecha Inicio Rango")
     end_date = models.DateField("Fecha Fin Rango")
     technical_observations = models.TextField("Observaciones Técnicas / Conclusiones")
@@ -361,7 +360,7 @@ class TechnicalReport(models.Model):
 class Complaint(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="complaints", verbose_name="Proyecto")
     delivery_date = models.DateField("Fecha Entrega", null=True, blank=True)
-    loading_date = models.DateField("Fecha Carga", default=timezone.localdate)
+    loading_date = models.DateField("Fecha Carga", default=timezone.now)
     batch = models.CharField("Lote / Partida", max_length=100, blank=True, null=True)
     flour_type = models.CharField("Tipo de Harina", max_length=255, blank=True, null=True)
     direct_client = models.CharField("Cliente Directo", max_length=255, blank=True, null=True)

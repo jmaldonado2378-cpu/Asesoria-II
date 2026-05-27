@@ -26,48 +26,38 @@ class BakeryLabTests(APITestCase):
 
     def test_scenario_1_ppm_math(self):
         """
-        Verify that creating an Ensayo and details via API correctly calculates PPM dosage.
+        Verify that creating an Ensayo via API correctly calculates PPM dosage.
         Scenario: 10kg Flour + 1g Enzyme = 100 PPM
-        Formula: (0.001 / 10) * 1,000,000 = 100.0
+        Formula: (0.001 / 10) * 1,000,000 = 100.0000
         """
-        # 1. Create the trial (Ensayo) via API
-        url_ensayo = reverse('ensayo-list')
-        data_ensayo = {
+        url = reverse('ensayo-list') # Standard DRF router name for 'ensayos'
+        data = {
             "project": self.project_a.id,
-            "description": "Test de PPM Physics"
+            "code": "ENS-TEST-001",
+            "description": "Test de PPM Physics",
+            "details": [
+                {
+                    "ingredient": self.harina.id,
+                    "quantity": "10.0000"
+                },
+                {
+                    "ingredient": self.enzima.id,
+                    "quantity": "0.0010"
+                }
+            ]
         }
-        res_ensayo = self.client.post(url_ensayo, data_ensayo, format='json')
-        self.assertEqual(res_ensayo.status_code, status.HTTP_201_CREATED)
-        ensayo_id = res_ensayo.data['id']
-
-        # 2. Add details via API
-        url_detail = reverse('ensayodetail-list')
         
-        # Harina detail (10 kg)
-        data_flour = {
-            "ensayo": ensayo_id,
-            "ingredient": self.harina.id,
-            "quantity": "10.000000000"
-        }
-        res_flour = self.client.post(url_detail, data_flour, format='json')
-        self.assertEqual(res_flour.status_code, status.HTTP_201_CREATED)
-
-        # Enzyme detail (0.001 kg = 1 g)
-        data_enzyme = {
-            "ensayo": ensayo_id,
-            "ingredient": self.enzima.id,
-            "quantity": "0.001000000"
-        }
-        res_enzyme = self.client.post(url_detail, data_enzyme, format='json')
-        self.assertEqual(res_enzyme.status_code, status.HTTP_201_CREATED)
-
-        # 3. Retrieve the enzyme detail and verify the calculated PPM value
-        ensayo_obj = Ensayo.objects.get(id=ensayo_id)
-        enzima_detail = ensayo_obj.details.get(ingredient=self.enzima)
+        # API Call (Triggers perform_create handles recalculate_ppms)
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         
-        # Check PPM value property
-        self.assertEqual(float(enzima_detail.ppm_calc), 100.0)
-        print(f"\n[OK] Scenario 1 Passed: PPM calculated as {enzima_detail.ppm_calc}")
+        # Verify the calculation in the database
+        ensayo = Ensayo.objects.get(code="ENS-TEST-001")
+        enzima_detail = ensayo.details.get(ingredient=self.enzima)
+        
+        # Check PPM value
+        self.assertEqual(enzima_detail.dosage_ppm, Decimal('100.0000'))
+        print(f"\n✅ Scenario 1 Passed: PPM calculated as {enzima_detail.dosage_ppm}")
 
     def test_scenario_2_contextual_price(self):
         """
@@ -102,7 +92,7 @@ class BakeryLabTests(APITestCase):
         
         self.assertEqual(cost_a, Decimal('8.0000'))
         self.assertEqual(cost_b, Decimal('10.0000'))
-        print(f"[OK] Scenario 2 Passed: Project A Cost (${cost_a}), Project B Cost (${cost_b})")
+        print(f"✅ Scenario 2 Passed: Project A Cost (${cost_a}), Project B Cost (${cost_b})")
 
     def test_scenario_3_integrity_protection(self):
         """
@@ -115,4 +105,4 @@ class BakeryLabTests(APITestCase):
         with self.assertRaises(ProtectedError):
             self.harina.delete()
         
-        print("[OK] Scenario 3 Passed: Ingredient deletion blocked by historical trial records.")
+        print("✅ Scenario 3 Passed: Ingredient deletion blocked by historical trial records.")
