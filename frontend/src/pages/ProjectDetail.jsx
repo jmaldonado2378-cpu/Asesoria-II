@@ -4,7 +4,7 @@ import {
     Pipette, Calculator, Save, FileSpreadsheet, FileText, ChevronRight,
     MessageSquare, Upload, Image as ImageIcon, Calendar, DollarSign,
     Activity, Building, ArrowLeft, Clock, GitCompare, TrendingUp,
-    ShoppingBag, PieChart, Plus, Trash2, AlertCircle, CheckSquare, Square, Eye
+    ShoppingBag, PieChart, Plus, Trash2, Edit3, AlertCircle, CheckSquare, Square, Eye
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { API_URL } from '../config';
@@ -324,6 +324,23 @@ export default function ProjectDetail() {
         setShowComplaintForm(true);
     };
 
+    const handleDeleteProject = async () => {
+        if (window.confirm('⚠️ ADVERTENCIA ABSOLUTA: Al eliminar este proyecto se borrarán de forma definitiva todos los ensayos de laboratorio, visitas agendadas, reclamos, presupuestos e informes asociados.\n\n¿Estás seguro de que deseas continuar?')) {
+            try {
+                const res = await fetch(`${API_URL}/api/projects/${id}/`, { method: 'DELETE' });
+                if (res.ok) {
+                    alert('Proyecto eliminado con éxito');
+                    navigate('/projects');
+                } else {
+                    alert('Error al intentar eliminar el proyecto');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error de conexión al eliminar el proyecto');
+            }
+        }
+    };
+
     const handleSaveObservations = async () => {
         setSavingObs(true);
         try {
@@ -480,11 +497,27 @@ export default function ProjectDetail() {
                         }}>
                         {project.status}
                     </div>
-                    <button onClick={() => setShowReportForm(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-sm font-black text-[10px] uppercase tracking-widest transition ml-4"
-                        style={{ background: 'var(--accent)', color: '#0f172a', border: 'none' }}>
-                        <FileSpreadsheet size={15} /> Generar Informe Técnico
-                    </button>
+                    <div className="flex items-center gap-2 ml-4">
+                        <Link to={`/projects/${id}/edit`}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-sm font-black text-[10px] uppercase tracking-widest transition"
+                            style={{ border: '1px solid var(--border)', color: 'var(--text-1)', background: 'var(--bg-main)' }}
+                            title="Editar Proyecto"
+                        >
+                            <Edit3 size={14} /> Editar
+                        </Link>
+                        <button onClick={handleDeleteProject}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-sm font-black text-[10px] uppercase tracking-widest transition hover:bg-red-950/40"
+                            style={{ border: '1px solid rgb(239, 68, 68)', color: 'rgb(248, 113, 113)', background: 'transparent' }}
+                            title="Eliminar Proyecto"
+                        >
+                            <Trash2 size={14} /> Eliminar
+                        </button>
+                        <button onClick={() => setShowReportForm(true)}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-sm font-black text-[10px] uppercase tracking-widest transition"
+                            style={{ background: 'var(--accent)', color: '#0f172a', border: 'none' }}>
+                            <FileSpreadsheet size={15} /> Generar Informe Técnico
+                        </button>
+                    </div>
                 </div>
 
                 {/* GENERADOR DE INFORME MODAL — Fix 6: tema dark neon */}

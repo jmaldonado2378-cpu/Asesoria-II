@@ -1,12 +1,29 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 import { Link } from 'react-router-dom';
-import { Briefcase, Plus, Loader2, Search, ArrowRight, Building, Calendar, Tag, Activity } from 'lucide-react';
+import { Briefcase, Plus, Loader2, Search, ArrowRight, Building, Calendar, Tag, Activity, Edit3, Trash2 } from 'lucide-react';
 
 export default function Projects() {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+
+    const handleDeleteProject = async (projectId, projectName) => {
+        if (window.confirm(`⚠️ ADVERTENCIA ABSOLUTA: Al eliminar el proyecto "${projectName}" se borrarán de forma definitiva todos los ensayos, visitas, reclamos, presupuestos e informes asociados.\n\n¿Estás seguro de que deseas continuar?`)) {
+            try {
+                const res = await fetch(`${API_URL}/api/projects/${projectId}/`, { method: 'DELETE' });
+                if (res.ok) {
+                    alert('Proyecto eliminado con éxito');
+                    setProjects(prev => prev.filter(p => p.id !== projectId));
+                } else {
+                    alert('Error al intentar eliminar el proyecto');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error de conexión al eliminar el proyecto');
+            }
+        }
+    };
 
     useEffect(() => {
         fetch(`${API_URL}/api/projects/`)
@@ -117,11 +134,29 @@ export default function Projects() {
                                             {new Date(project.start_date).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            <Link to={`/projects/${project.id}`}
-                                                className="text-xs font-bold px-3 py-1.5 rounded-lg transition"
-                                                style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}>
-                                                Ver
-                                            </Link>
+                                            <div className="flex justify-end items-center gap-2">
+                                                <Link to={`/projects/${project.id}`}
+                                                    className="text-xs font-bold px-3 py-1.5 rounded-lg transition hover:text-white"
+                                                    style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}
+                                                    title="Ver Detalle"
+                                                >
+                                                    Ver
+                                                </Link>
+                                                <Link to={`/projects/${project.id}/edit`}
+                                                    className="p-1.5 rounded-lg border transition hover:text-white"
+                                                    style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}
+                                                    title="Editar Proyecto"
+                                                >
+                                                    <Edit3 size={14} />
+                                                </Link>
+                                                <button onClick={() => handleDeleteProject(project.id, project.name)}
+                                                    className="p-1.5 rounded-lg border transition hover:border-red-500 hover:text-red-400"
+                                                    style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}
+                                                    title="Eliminar Proyecto"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 );

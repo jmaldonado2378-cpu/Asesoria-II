@@ -11,6 +11,7 @@ import NewEssay from './pages/NewEssay';
 import ProjectDetail from './pages/ProjectDetail';
 import EssayCompare from './pages/EssayCompare';
 import NewProject from './pages/NewProject';
+import EditProject from './pages/EditProject';
 import IngredientList from './pages/IngredientList';
 import NewIngredient from './pages/NewIngredient';
 import IngredientDetail from './pages/IngredientDetail';
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/projects" element={<Projects />} />
           <Route path="/projects/new" element={<NewProject />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
+          <Route path="/projects/:id/edit" element={<EditProject />} />
           <Route path="/essays" element={<Essays />} />
           <Route path="/essays/new" element={<NewEssay />} />
           <Route path="/essays/compare" element={<EssayCompare />} />
