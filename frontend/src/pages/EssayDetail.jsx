@@ -9,6 +9,8 @@ import {
 import EssayReportPDF from '../components/pdf/EssayReportPDF';
 import ExportPDFButton from '../components/pdf/ExportPDFButton';
 import { API_URL } from '../config';
+import { apiGet, apiPost, apiPut, apiPatch, apiDelete } from '../api/httpClient';
+import { useToast } from '../components/ui/Toast';
 
 // --- COMPONENTES EXTERNOS (SOLUCIÓN AL PROBLEMA DE FOCO) ---
 const WebProcessRow = ({ label, name, unit, value, onChange, isEditing, formData }) => {
@@ -77,6 +79,7 @@ const INITIAL_EVALUATION = {
 
 export default function EssayDetail() {
     const { id } = useParams();
+    const { showSuccess, showError } = useToast();
     const [ensayo, setEnsayo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -100,7 +103,7 @@ export default function EssayDetail() {
 
     useEffect(() => {
         fetchData();
-        fetch(`${API_URL}/api/ingredients/`).then(res => res.json()).then(data => setAllIngredients(data)).catch(console.error);
+        apiGet('/api/ingredients/').then(data => setAllIngredients(data)).catch(console.error);
         const handleClickOutside = (event) => { if (selectorRef.current && !selectorRef.current.contains(event.target)) setShowFieldSelector(false); };
         document.addEventListener("mousedown", handleClickOutside); return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [id]);
@@ -147,8 +150,9 @@ export default function EssayDetail() {
         }, 0);
     }, [detailsData]);
 
-    const fetchData = () => {
-        fetch(`${API_URL}/api/ensayos/${id}/`).then(res => res.json()).then(data => {
+    const fetchData = async () => {
+        try {
+            const data = await apiGet(`/api/ensayos/${id}/`);
             if (!data || data.detail) {
                 console.error("Essay not found or API error", data);
                 setEnsayo(null);
@@ -158,20 +162,22 @@ export default function EssayDetail() {
             setEnsayo(data);
             setFormData(data);
             setDetailsData(Array.isArray(data.details) ? data.details : []);
-            setImages(data.images || []);
-            if (data.evaluation_data && Object.keys(data.evaluation_data).length > 0) setEvalData(data.evaluation_data); else setEvalData(INITIAL_EVALUATION);
+            setImages(Array.isArray(data.images) ? data.images : []);
+            if (data.evaluation_data && Object.keys(data.evaluation_data).length > 0) {
+                setEvalData(data.evaluation_data);
+            } else {
+                setEvalData(INITIAL_EVALUATION);
+            }
+            if (data.final_score) setFinalScore(data.final_score);
+            
             setLoading(false);
             const autoDetected = LAB_FIELDS.filter(f => data[f.key] !== null && data[f.key] !== undefined && data[f.key] !== 0).map(f => f.key);
             const combined = Array.from(new Set([...visibleFields, ...autoDetected]));
             if (combined.length > visibleFields.length) setVisibleFields(combined);
-        }).catch(err => {
+        } catch (err) {
             console.error("Fetch error:", err);
             setLoading(false);
-        }).catch(err => {
-            console.error("Fetch error:", err);
-            alert("⚠️ Error de conexión: " + err.message);
-            setLoading(false);
-        });
+        }
     };
 
     const handleInputChange = (e) => {
@@ -234,41 +240,50 @@ export default function EssayDetail() {
 
     const handleSave = async () => {
         try {
-            await fetch(`${API_URL}/api/ensayos/${id}/`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...formData, evaluation_data: evalData, final_score: finalScore }) });
+            await apiPut(`/api/ensayos/${id}/`, { ...formData, evaluation_data: evalData, final_score: finalScore });
             const updatePromises = detailsData.map(async detail => {
                 const qValue = parseFloat(detail.quantity) || 0;
                 const pValue = parseFloat(detail.price_per_kg || detail.cost_per_kg) || 0;
-                const r = await fetch(`${API_URL}/api/ensayo-details/${detail.id}/`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantity: qValue.toFixed(9), price_per_kg: pValue.toFixed(4) }) });
-                if (!r.ok) { throw new Error(await r.text()); }
-                return r;
+                return apiPatch(`/api/ensayo-details/${detail.id}/`, { quantity: qValue.toFixed(9), price_per_kg: pValue.toFixed(4) });
             });
-            await Promise.all(updatePromises); fetchData(); setIsEditing(false); alert('Guardado correctamente');
-        } catch (error) { alert(`Error al guardar: ${error.message}`); }
+            await Promise.all(updatePromises);
+            await fetchData();
+            setIsEditing(false);
+            showSuccess('Guardado correctamente');
+        } catch (error) {
+            showError(`Error al guardar: ${error.message || 'Error de conexión'}`);
+        }
     };
 
     const handleAddIngredient = async () => {
-        if (!newIngredientId || !newIngredientGrams) return alert('Datos incompletos');
+        if (!newIngredientId || !newIngredientGrams) return showError('Datos incompletos');
         try {
-            const res = await fetch(`${API_URL}/api/ensayo-details/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ensayo: id,
-                    ingredient: newIngredientId,
-                    quantity: (parseFloat(String(newIngredientGrams).replace(/,/g, '.')) / 1000).toFixed(9),
-                    price_per_kg: (parseFloat(String(newIngredientPrice).replace(/,/g, '.')) || 0).toFixed(4)
-                })
+            await apiPost('/api/ensayo-details/', {
+                ensayo: id,
+                ingredient: newIngredientId,
+                quantity: (parseFloat(String(newIngredientGrams).replace(/,/g, '.')) / 1000).toFixed(9),
+                price_per_kg: (parseFloat(String(newIngredientPrice).replace(/,/g, '.')) || 0).toFixed(4)
             });
-            if (res.ok) {
-                setNewIngredientId(''); setNewIngredientGrams(''); setNewIngredientPrice(''); fetchData();
-            } else {
-                const errText = await res.text();
-                alert(`Error backend: ${res.status} - ${errText}`);
-            }
-        } catch (e) { alert(`Exception: ${e.message}`); console.error(e); }
+            setNewIngredientId(''); setNewIngredientGrams(''); setNewIngredientPrice('');
+            await fetchData();
+            showSuccess('Ingrediente agregado');
+        } catch (e) {
+            showError(`Error al agregar ingrediente: ${e.message || 'Error de conexión'}`);
+        }
     };
 
-    const handleDeleteIngredient = async (id) => { if (confirm('¿Borrar?')) { await fetch(`${API_URL}/api/ensayo-details/${id}/`, { method: 'DELETE' }); fetchData(); } };
+    const handleDeleteIngredient = async (detailId) => {
+        if (confirm('¿Borrar ingrediente?')) {
+            try {
+                await apiDelete(`/api/ensayo-details/${detailId}/`);
+                await fetchData();
+                showSuccess('Ingrediente eliminado');
+            } catch (e) {
+                showError('Error al eliminar ingrediente');
+            }
+        }
+    };
+
     const handleFileUpload = async (e) => {
         const f = e.target.files[0];
         if (!f) return;
@@ -287,16 +302,34 @@ export default function EssayDetail() {
                 throw new Error(`Error ${res.status}: ${errText}`);
             }
             await fetchData();
+            showSuccess('Imagen subida exitosamente');
         } catch (err) {
             console.error("Upload error:", err);
-            alert(`❌ Error al subir imagen: ${err.message}`);
+            showError(`❌ Error al subir imagen: ${err.message}`);
         } finally {
             setUploading(false);
         }
     };
+
     const handleCaptionChange = (id, txt) => setImages(images.map(i => i.id === id ? { ...i, caption: txt } : i));
-    const saveCaption = async (id, txt) => fetch(`${API_URL}/api/ensayo-images/${id}/`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ caption: txt }) });
-    const handleDeleteImage = async (id) => { if (confirm('¿Borrar?')) { await fetch(`${API_URL}/api/ensayo-images/${id}/`, { method: 'DELETE' }); setImages(images.filter(i => i.id !== id)); } };
+    const saveCaption = async (imgId, txt) => {
+        try {
+            await apiPatch(`/api/ensayo-images/${imgId}/`, { caption: txt });
+        } catch (e) {
+            console.error('Error saving caption', e);
+        }
+    };
+    const handleDeleteImage = async (imgId) => {
+        if (confirm('¿Borrar imagen?')) {
+            try {
+                await apiDelete(`/api/ensayo-images/${imgId}/`);
+                setImages(images.filter(i => i.id !== imgId));
+                showSuccess('Imagen eliminada');
+            } catch (e) {
+                showError('Error al eliminar imagen');
+            }
+        }
+    };
     const handleEvalChange = (c, i, f, v) => { const n = { ...evalData }; n[c][i][f] = v; setEvalData(n); };
     const toggleField = (k) => setVisibleFields(prev => prev.includes(k) ? prev.filter(f => f !== k) : [...prev, k]);
 
@@ -440,7 +473,7 @@ export default function EssayDetail() {
                                             </td>
                                             <td className="p-3 text-right font-mono font-bold" style={{ color: 'var(--accent)', background: 'rgba(74,222,128,0.05)' }}>
                                                 {isEditing && baseFlourIndex >= 0 ? (
-                                                    <div className="flex items-center justify-end gap-2">
+                                                    <div className="flex items-center justify-end">
                                                         <input
                                                             type="text"
                                                             inputMode="decimal"
@@ -448,7 +481,6 @@ export default function EssayDetail() {
                                                             onChange={(e) => handleDetailChange(baseFlourIndex, 'quantity_grams', e.target.value)}
                                                             className="w-24 text-right p-1 border border-blue-300 rounded outline-none font-bold focus:border-indigo-600 focus:bg-white"
                                                         />
-                                                        <span className="text-[10px]">g</span>
                                                     </div>
                                                 ) : (
                                                     <span>{ensayo.total_harina_grams ? fmt(ensayo.total_harina_grams) : '0'} g</span>
