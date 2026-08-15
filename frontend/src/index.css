@@ -46,6 +46,14 @@
   .font-serif {
     font-family: 'Crimson Text', 'Georgia', serif !important;
   }
+
+  /* Regla de seguridad: inputs sobre fondos claros tienen texto oscuro */
+  .bg-white input, .bg-slate-50 input, .bg-slate-100 input,
+  input.bg-white, input.bg-slate-50, input.bg-slate-100,
+  select.bg-white, select.bg-slate-50, select.bg-slate-100,
+  textarea.bg-white, textarea.bg-slate-50, textarea.bg-slate-100 {
+    color: #0f172a !important;
+  }
 }
 
 
