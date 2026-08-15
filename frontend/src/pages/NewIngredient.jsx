@@ -1,25 +1,22 @@
 import { useState } from 'react';
-import { API_URL } from '../config';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Package, Truck, DollarSign, FileText, Activity, Tag } from 'lucide-react';
+import { ArrowLeft, Save, Package, Truck, DollarSign, FileText, Activity, Tag, AlertCircle } from 'lucide-react';
+import { createIngredient } from '../api/ingredients';
+import { useApiMutation } from '../hooks/useApiMutation';
+import { useToast } from '../components/ui/Toast';
+import { FormField } from '../components/ui/FormField';
 
 const inputStyle = {
     background: 'var(--bg-main)',
     border: '1px solid var(--border)',
     color: 'var(--text-1)',
 };
-const labelStyle = { color: 'var(--text-2)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em' };
-
-function FormLabel({ icon, children }) {
-    return (
-        <label className="flex items-center gap-2 mb-2" style={labelStyle}>
-            {icon} {children}
-        </label>
-    );
-}
 
 export default function NewIngredient() {
     const navigate = useNavigate();
+    const { showSuccess } = useToast();
+    const { loading, error, fieldErrors, execute } = useApiMutation(createIngredient);
+
     const [formData, setFormData] = useState({
         name: '',
         type: 'Ingrediente General',
@@ -32,25 +29,16 @@ export default function NewIngredient() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.name) return alert('El nombre del ingrediente es obligatorio');
+        if (!formData.name) return; // FormField will show the error via fieldErrors
         try {
-            const res = await fetch(`${API_URL}/api/ingredients/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...formData,
-                    default_price: parseFloat(formData.default_price) || 0
-                })
+            await execute({
+                ...formData,
+                default_price: parseFloat(formData.default_price) || 0
             });
-            if (res.ok) {
-                navigate('/ingredients');
-            } else {
-                const errData = await res.json();
-                alert('Error al crear: ' + JSON.stringify(errData));
-            }
-        } catch (error) {
-            console.error(error);
-            alert('Error de conexión con el servidor');
+            showSuccess('Ingrediente creado exitosamente');
+            navigate('/ingredients');
+        } catch (e) {
+            // handled by useApiMutation
         }
     };
 
@@ -89,20 +77,25 @@ export default function NewIngredient() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-7 space-y-6">
+                        
+                        {error && (
+                            <div className="p-4 rounded-lg flex items-center gap-3 text-sm" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                <AlertCircle size={16} />
+                                {error}
+                            </div>
+                        )}
 
                         {/* Nombre */}
-                        <div>
-                            <FormLabel icon={<Package size={13} />}>Nombre del Insumo / Ingrediente</FormLabel>
+                        <FormField label="Nombre del Insumo / Ingrediente" icon={<Package size={13} />} error={fieldErrors?.name}>
                             <input name="name" required value={formData.name} onChange={handleChange}
                                 className="w-full px-4 py-3 rounded-lg text-base font-bold outline-none placeholder:text-slate-700"
                                 style={inputStyle}
                                 placeholder="Ej: Harina de Trigo 000 Extra" />
-                        </div>
+                        </FormField>
 
                         {/* Tipo + Marca */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <FormLabel icon={<Tag size={13} />}>Tipo de Insumo</FormLabel>
+                            <FormField label="Tipo de Insumo" icon={<Tag size={13} />} error={fieldErrors?.type}>
                                 <select name="type" value={formData.type} onChange={handleChange}
                                     className="w-full px-3 py-2.5 rounded-lg text-sm font-medium outline-none"
                                     style={inputStyle}>
@@ -113,20 +106,18 @@ export default function NewIngredient() {
                                     <option value="Enzimático">Enzimático</option>
                                     <option value="Otro">Otro</option>
                                 </select>
-                            </div>
-                            <div>
-                                <FormLabel icon={<Truck size={13} />}>Marca / Proveedor</FormLabel>
+                            </FormField>
+                            <FormField label="Marca / Proveedor" icon={<Truck size={13} />} error={fieldErrors?.brand}>
                                 <input name="brand" value={formData.brand} onChange={handleChange}
                                     className="w-full px-3 py-2.5 rounded-lg text-sm outline-none placeholder:text-slate-700"
                                     style={inputStyle}
                                     placeholder="Ej: Molino Cañuelas" />
-                            </div>
+                            </FormField>
                         </div>
 
                         {/* Precio + Harina Base */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-end">
-                            <div>
-                                <FormLabel icon={<DollarSign size={13} />}>Costo Base por Kg</FormLabel>
+                            <FormField label="Costo Base por Kg" icon={<DollarSign size={13} />} error={fieldErrors?.default_price}>
                                 <div className="relative">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-mono"
                                         style={{ color: 'var(--text-2)' }}>$</span>
@@ -135,7 +126,7 @@ export default function NewIngredient() {
                                         className="w-full pl-7 pr-3 py-2.5 rounded-lg font-mono text-sm outline-none"
                                         style={inputStyle} />
                                 </div>
-                            </div>
+                            </FormField>
                             <div className="pb-1">
                                 <label className="flex items-center gap-3 cursor-pointer">
                                     <div className="relative">
@@ -154,13 +145,12 @@ export default function NewIngredient() {
                         </div>
 
                         {/* Observaciones */}
-                        <div>
-                            <FormLabel icon={<FileText size={13} />}>Observaciones y Notas Técnicas</FormLabel>
+                        <FormField label="Observaciones y Notas Técnicas" icon={<FileText size={13} />} error={fieldErrors?.observations}>
                             <textarea name="observations" rows="4" value={formData.observations} onChange={handleChange}
                                 className="w-full px-4 py-3 rounded-lg text-sm outline-none resize-none placeholder:text-slate-700"
                                 style={inputStyle}
                                 placeholder="Dosificación, fecha de vencimiento, requisitos de almacenamiento..." />
-                        </div>
+                        </FormField>
 
                         {/* Buttons */}
                         <div className="pt-2 flex justify-end gap-3" style={{ borderTop: '1px solid var(--border)' }}>
@@ -168,10 +158,10 @@ export default function NewIngredient() {
                                 style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}>
                                 Cancelar
                             </Link>
-                            <button type="submit"
-                                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition active:scale-95"
+                            <button type="submit" disabled={loading}
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition active:scale-95 disabled:opacity-50"
                                 style={{ background: 'var(--accent)', color: '#0f172a' }}>
-                                <Save size={16} /> Registrar Insumo
+                                <Save size={16} /> {loading ? 'Registrando...' : 'Registrar Insumo'}
                             </button>
                         </div>
                     </form>

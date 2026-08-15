@@ -11,6 +11,51 @@ class ClientSerializer(serializers.ModelSerializer):
         model = Client
         fields = '__all__'
 
+    def validate_name(self, value):
+        if value:
+            return value.strip()
+        return value
+
+    def validate_email(self, value):
+        if value == '':
+            return None
+        return value
+
+    def validate_contacts_data(self, value):
+        if value is not None:
+            if not isinstance(value, list):
+                raise serializers.ValidationError("contacts_data must be a list")
+            for item in value:
+                if not isinstance(item, dict):
+                    raise serializers.ValidationError("each contact must be a dict")
+                if not all(k in item for k in ('name', 'position', 'phone', 'email')):
+                    raise serializers.ValidationError("contact must have name, position, phone, email")
+        return value
+
+    def create(self, validated_data):
+        contacts_data = validated_data.get('contacts_data')
+        if contacts_data and isinstance(contacts_data, list) and len(contacts_data) > 0:
+            first = contacts_data[0]
+            validated_data.setdefault('contact_name', first.get('name', ''))
+            validated_data.setdefault('position', first.get('position', ''))
+            validated_data.setdefault('phone', first.get('phone', ''))
+            validated_data.setdefault('email', first.get('email', ''))
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        contacts_data = validated_data.get('contacts_data', instance.contacts_data)
+        if contacts_data and isinstance(contacts_data, list) and len(contacts_data) > 0:
+            first = contacts_data[0]
+            if 'contact_name' not in validated_data:
+                validated_data['contact_name'] = first.get('name', instance.contact_name)
+            if 'position' not in validated_data:
+                validated_data['position'] = first.get('position', instance.position)
+            if 'phone' not in validated_data:
+                validated_data['phone'] = first.get('phone', instance.phone)
+            if 'email' not in validated_data:
+                validated_data['email'] = first.get('email', instance.email)
+        return super().update(instance, validated_data)
+
 # --- PRESUPUESTOS ---
 class BudgetItemSerializer(serializers.ModelSerializer):
     class Meta:

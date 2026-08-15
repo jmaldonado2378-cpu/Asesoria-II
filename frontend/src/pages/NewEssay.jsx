@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
-import { API_URL } from '../config';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, Building, FolderKanban, Calendar, ChefHat, Loader2 } from 'lucide-react';
+
+import { createEssay } from '../api/essays';
+import { getClients } from '../api/clients';
+import { getProjects } from '../api/projects';
+import { useApiMutation } from '../hooks/useApiMutation';
+import { useToast } from '../components/ui/Toast';
+import { FormField } from '../components/ui/FormField';
 
 /* ── Design System helpers ── */
 const input = {
@@ -9,11 +15,12 @@ const input = {
     border: '1px solid var(--border)',
     color: 'var(--text-1)',
 };
-const label = { color: 'var(--text-2)' };
 
 export default function NewEssay() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { showSuccess, showError } = useToast();
+
     const [loading, setLoading] = useState(true);
     const [clients, setClients] = useState([]);
     const [projects, setProjects] = useState([]);
@@ -27,15 +34,20 @@ export default function NewEssay() {
         conclusion: ''
     });
 
+    const mutation = useApiMutation(createEssay);
+
     useEffect(() => {
         Promise.all([
-            fetch(`${API_URL}/api/clients/`).then(res => res.json()),
-            fetch(`${API_URL}/api/projects/`).then(res => res.json())
+            getClients(),
+            getProjects()
         ]).then(([clientsData, projectsData]) => {
             setClients(clientsData);
             setProjects(projectsData);
             setLoading(false);
-        }).catch(() => alert('Error cargando datos iniciales'));
+        }).catch(() => {
+            showError('Error cargando datos iniciales');
+            setLoading(false);
+        });
     }, []);
 
     const filteredProjects = selectedClient
@@ -44,18 +56,13 @@ export default function NewEssay() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.project) return alert('Debes seleccionar un Proyecto');
+        
         try {
-            const res = await fetch(`${API_URL}/api/ensayos/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-            if (!res.ok) throw new Error('Error al crear');
-            const newEssay = await res.json();
+            const newEssay = await mutation.execute(formData);
+            showSuccess('Ensayo creado exitosamente');
             navigate(`/essays/${newEssay.id}`);
-        } catch {
-            alert('Error creando el ensayo. Verifica los datos.');
+        } catch (error) {
+            // handled by mutation
         }
     };
 
@@ -95,6 +102,12 @@ export default function NewEssay() {
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="p-8 space-y-6">
 
+                        {mutation.error && (
+                            <div className="p-4 rounded-lg bg-red-900/30 border border-red-800 text-red-200 text-sm">
+                                {mutation.error}
+                            </div>
+                        )}
+
                         {/* Cliente */}
                         <FormField label="Cliente" icon={<Building size={14} />}>
                             <select value={selectedClient}
@@ -107,7 +120,7 @@ export default function NewEssay() {
                         </FormField>
 
                         {/* Proyecto */}
-                        <FormField label="Proyecto Asociado" icon={<FolderKanban size={14} />}>
+                        <FormField label="Proyecto Asociado" icon={<FolderKanban size={14} />} error={mutation.fieldErrors.project}>
                             <select disabled={!selectedClient}
                                 value={formData.project}
                                 onChange={(e) => setFormData({ ...formData, project: e.target.value })}
@@ -125,13 +138,13 @@ export default function NewEssay() {
 
                         {/* Fecha + Tipo */}
                         <div className="grid grid-cols-2 gap-6">
-                            <FormField label="Fecha de Ensayo" icon={<Calendar size={14} />}>
+                            <FormField label="Fecha de Ensayo" icon={<Calendar size={14} />} error={mutation.fieldErrors.date}>
                                 <input type="date" value={formData.date}
                                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                     className="w-full px-4 py-3 rounded-lg text-sm font-mono outline-none transition-all"
                                     style={input} />
                             </FormField>
-                            <FormField label="Tipo de Proceso" icon={<ChefHat size={14} />}>
+                            <FormField label="Tipo de Proceso" icon={<ChefHat size={14} />} error={mutation.fieldErrors.baking_type}>
                                 <select value={formData.baking_type}
                                     onChange={(e) => setFormData({ ...formData, baking_type: e.target.value })}
                                     className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all"
@@ -148,27 +161,16 @@ export default function NewEssay() {
                                 style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}>
                                 Cancelar
                             </Link>
-                            <button type="submit"
-                                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition active:scale-95"
+                            <button type="submit" disabled={mutation.loading}
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition active:scale-95 disabled:opacity-50"
                                 style={{ background: 'var(--accent)', color: '#0f172a' }}>
-                                <Save size={16} /> Iniciar Protocolo
+                                {mutation.loading ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                                {mutation.loading ? 'Iniciando...' : 'Iniciar Protocolo'}
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
-        </div>
-    );
-}
-
-function FormField({ label: lbl, icon, children }) {
-    return (
-        <div>
-            <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-2"
-                style={{ color: 'var(--text-2)' }}>
-                {icon} {lbl}
-            </label>
-            {children}
         </div>
     );
 }

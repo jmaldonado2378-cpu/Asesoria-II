@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
-import { API_URL } from '../config';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Building, Calendar, FileText, Briefcase, Settings, Activity, Loader2 } from 'lucide-react';
+
+import { createProject } from '../api/projects';
+import { getClients } from '../api/clients';
+import { useApiMutation } from '../hooks/useApiMutation';
+import { useToast } from '../components/ui/Toast';
+import { FormField } from '../components/ui/FormField';
 
 const inputStyle = {
     background: 'var(--bg-main)',
@@ -9,20 +14,10 @@ const inputStyle = {
     color: 'var(--text-1)',
 };
 
-function FormField({ label, icon, children }) {
-    return (
-        <div>
-            <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-2"
-                style={{ color: 'var(--text-2)' }}>
-                {icon} {label}
-            </label>
-            {children}
-        </div>
-    );
-}
-
 export default function NewProject() {
     const navigate = useNavigate();
+    const { showSuccess, showError } = useToast();
+    
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
@@ -35,32 +30,22 @@ export default function NewProject() {
         objective: ''
     });
 
+    const mutation = useApiMutation(createProject);
+
     useEffect(() => {
-        fetch(`${API_URL}/api/clients/`)
-            .then(r => r.json())
-            .then(d => { setClients(d); setLoading(false); })
-            .catch(err => { console.error(err); setLoading(false); });
+        getClients()
+            .then(data => { setClients(data); setLoading(false); })
+            .catch(() => { showError('Error cargando clientes'); setLoading(false); });
     }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.client || !formData.name) return alert('Cliente y Nombre requeridos');
         try {
-            const res = await fetch(`${API_URL}/api/projects/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-            if (res.ok) {
-                const newP = await res.json();
-                navigate(`/projects/${newP.id}`);
-            } else {
-                const errData = await res.json();
-                alert('Error al crear: ' + JSON.stringify(errData));
-            }
+            const newP = await mutation.execute(formData);
+            showSuccess('Proyecto creado exitosamente');
+            navigate(`/projects/${newP.id}`);
         } catch (error) {
-            console.error(error);
-            alert('Error de conexión con la API');
+            // Handled by mutation
         }
     };
 
@@ -107,11 +92,17 @@ export default function NewProject() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                        {mutation.error && (
+                            <div className="p-4 rounded-lg bg-red-900/30 border border-red-800 text-red-200 text-sm">
+                                {mutation.error}
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                             {/* Columna izquierda */}
                             <div className="space-y-6">
-                                <FormField label="Entidad Cliente" icon={<Building size={14} />}>
+                                <FormField label="Entidad Cliente" icon={<Building size={14} />} error={mutation.fieldErrors.client}>
                                     <select name="client" value={formData.client} onChange={handleInputChange}
                                         className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all"
                                         style={inputStyle}>
@@ -120,7 +111,7 @@ export default function NewProject() {
                                     </select>
                                 </FormField>
 
-                                <FormField label="Identificador del Proyecto" icon={<Briefcase size={14} />}>
+                                <FormField label="Identificador del Proyecto" icon={<Briefcase size={14} />} error={mutation.fieldErrors.name}>
                                     <input type="text" name="name"
                                         placeholder="Ej: Desarrollo Panettone 2026 Premium"
                                         value={formData.name}
@@ -133,7 +124,7 @@ export default function NewProject() {
                             {/* Columna derecha */}
                             <div className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <FormField label="Categoría" icon={null}>
+                                    <FormField label="Categoría" icon={null} error={mutation.fieldErrors.project_type}>
                                         <select name="project_type" value={formData.project_type}
                                             onChange={handleInputChange}
                                             className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
@@ -144,7 +135,7 @@ export default function NewProject() {
                                             <option>Optimización</option>
                                         </select>
                                     </FormField>
-                                    <FormField label="Frecuencia" icon={null}>
+                                    <FormField label="Frecuencia" icon={null} error={mutation.fieldErrors.frequency}>
                                         <select name="frequency" value={formData.frequency}
                                             onChange={handleInputChange}
                                             className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
@@ -158,7 +149,7 @@ export default function NewProject() {
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <FormField label="Estado" icon={null}>
+                                    <FormField label="Estado" icon={null} error={mutation.fieldErrors.status}>
                                         <select name="status" value={formData.status} onChange={handleInputChange}
                                             className="w-full px-3 py-2.5 rounded-lg text-sm outline-none"
                                             style={inputStyle}>
@@ -168,7 +159,7 @@ export default function NewProject() {
                                             <option>Finalizado</option>
                                         </select>
                                     </FormField>
-                                    <FormField label="Fecha Inicio" icon={<Calendar size={14} />}>
+                                    <FormField label="Fecha Inicio" icon={<Calendar size={14} />} error={mutation.fieldErrors.start_date}>
                                         <input type="date" name="start_date" value={formData.start_date}
                                             onChange={handleInputChange}
                                             className="w-full px-3 py-2.5 rounded-lg text-sm font-mono outline-none"
@@ -180,7 +171,7 @@ export default function NewProject() {
 
                         {/* Objetivo */}
                         <div className="pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-                            <FormField label="Objetivo Técnico y Alcance" icon={<FileText size={14} />}>
+                            <FormField label="Objetivo Técnico y Alcance" icon={<FileText size={14} />} error={mutation.fieldErrors.objective}>
                                 <textarea name="objective" rows="4"
                                     placeholder="Describa el objetivo técnico del proyecto..."
                                     value={formData.objective}
@@ -196,10 +187,11 @@ export default function NewProject() {
                                 style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}>
                                 Descartar
                             </Link>
-                            <button type="submit"
-                                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition active:scale-95"
+                            <button type="submit" disabled={mutation.loading}
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition active:scale-95 disabled:opacity-50"
                                 style={{ background: 'var(--accent)', color: '#0f172a' }}>
-                                <Save size={16} /> Inicializar Proyecto
+                                {mutation.loading ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                                {mutation.loading ? 'Guardando...' : 'Inicializar Proyecto'}
                             </button>
                         </div>
                     </form>

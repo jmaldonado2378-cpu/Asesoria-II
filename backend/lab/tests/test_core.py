@@ -3,8 +3,8 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from decimal import Decimal
 from django.db.models import ProtectedError
-from .models import Client, Project, Ingredient, ProjectIngredientPrice, Ensayo, EnsayoDetail
-from .services import BakeryCalculator
+from lab.models import Client, Project, Ingredient, ProjectIngredientPrice, Ensayo, EnsayoDetail
+from lab.services import BakeryCalculator
 
 class BakeryLabTests(APITestCase):
     

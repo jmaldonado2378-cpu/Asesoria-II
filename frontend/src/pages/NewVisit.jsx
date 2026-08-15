@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
-import { API_URL } from '../config';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Calendar, Clock, Briefcase, Users, Activity, FileText, Tag, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Calendar, Clock, Briefcase, Users, Activity, FileText, Tag, Loader2, AlertCircle } from 'lucide-react';
+import { createVisit } from '../api/visits';
+import { getClients } from '../api/clients';
+import { getProjects } from '../api/projects';
+import { useApiMutation } from '../hooks/useApiMutation';
+import { useToast } from '../components/ui/Toast';
+import { FormField } from '../components/ui/FormField';
 
 const inputStyle = {
     background: 'var(--bg-main)',
@@ -9,20 +14,11 @@ const inputStyle = {
     color: 'var(--text-1)',
 };
 
-function FormField({ label, icon, children }) {
-    return (
-        <div>
-            <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-2"
-                style={{ color: 'var(--text-2)' }}>
-                {icon} {label}
-            </label>
-            {children}
-        </div>
-    );
-}
-
 export default function NewVisit() {
     const navigate = useNavigate();
+    const { showSuccess, showError } = useToast();
+    const { loading: submitting, error, fieldErrors, execute } = useApiMutation(createVisit);
+
     const [clients, setClients] = useState([]);
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -39,33 +35,23 @@ export default function NewVisit() {
 
     useEffect(() => {
         Promise.all([
-            fetch(`${API_URL}/api/clients/`).then(r => r.json()),
-            fetch(`${API_URL}/api/projects/`).then(r => r.json())
+            getClients(),
+            getProjects()
         ]).then(([cData, pData]) => {
             setClients(cData);
             setProjects(pData);
             setLoading(false);
-        }).catch(e => { console.error(e); setLoading(false); });
-    }, []);
+        }).catch(() => { showError('Error cargando datos'); setLoading(false); });
+    }, [showError]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.client && !formData.project) return alert('Debe seleccionar un cliente o un proyecto');
         try {
-            const res = await fetch(`${API_URL}/api/visits/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-            });
-            if (res.ok) {
-                navigate('/visits');
-            } else {
-                const errData = await res.json();
-                alert('Error al agendar: ' + JSON.stringify(errData));
-            }
-        } catch (error) {
-            console.error(error);
-            alert('Error de conexión');
+            await execute(formData);
+            showSuccess('Visita agendada exitosamente');
+            navigate('/visits');
+        } catch (e) {
+            // handled by useApiMutation
         }
     };
 
@@ -122,10 +108,17 @@ export default function NewVisit() {
 
                     <form onSubmit={handleSubmit} className="p-8 space-y-6">
 
+                        {error && (
+                            <div className="p-4 rounded-lg flex items-center gap-3 text-sm" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                <AlertCircle size={16} />
+                                {error}
+                            </div>
+                        )}
+
                         {/* Entidad */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6"
                             style={{ borderBottom: '1px solid var(--border)' }}>
-                            <FormField label="Cliente / Empresa" icon={<Users size={14} />}>
+                            <FormField label="Cliente / Empresa" icon={<Users size={14} />} error={fieldErrors?.client}>
                                 <select name="client" value={formData.client} onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all"
                                     style={inputStyle}>
@@ -133,7 +126,7 @@ export default function NewVisit() {
                                     {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
                             </FormField>
-                            <FormField label="Proyecto Asociado (Opcional)" icon={<Briefcase size={14} />}>
+                            <FormField label="Proyecto Asociado (Opcional)" icon={<Briefcase size={14} />} error={fieldErrors?.project}>
                                 <select name="project" value={formData.project} onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all"
                                     style={inputStyle}>
@@ -148,17 +141,17 @@ export default function NewVisit() {
 
                         {/* Temporal */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <FormField label="Fecha Programada" icon={<Calendar size={14} />}>
+                            <FormField label="Fecha Programada" icon={<Calendar size={14} />} error={fieldErrors?.date}>
                                 <input type="date" name="date" value={formData.date} onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-lg text-sm font-mono outline-none transition-all"
                                     style={inputStyle} />
                             </FormField>
-                            <FormField label="Hora de Inicio" icon={<Clock size={14} />}>
+                            <FormField label="Hora de Inicio" icon={<Clock size={14} />} error={fieldErrors?.start_time}>
                                 <input type="time" name="start_time" value={formData.start_time} onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-lg text-sm font-mono outline-none transition-all"
                                     style={inputStyle} />
                             </FormField>
-                            <FormField label="Hora de Fin" icon={<Clock size={14} />}>
+                            <FormField label="Hora de Fin" icon={<Clock size={14} />} error={fieldErrors?.end_time}>
                                 <input type="time" name="end_time" value={formData.end_time} onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-lg text-sm font-mono outline-none transition-all"
                                     style={inputStyle} />
@@ -167,7 +160,7 @@ export default function NewVisit() {
 
                         {/* Detalles */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField label="Tipo de Intervención" icon={<Tag size={14} />}>
+                            <FormField label="Tipo de Intervención" icon={<Tag size={14} />} error={fieldErrors?.visit_type}>
                                 <select name="visit_type" value={formData.visit_type} onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all"
                                     style={inputStyle}>
@@ -177,7 +170,7 @@ export default function NewVisit() {
                                     <option value="Otro">Otro / Administrativo</option>
                                 </select>
                             </FormField>
-                            <FormField label="Objetivo de la Visita" icon={<FileText size={14} />}>
+                            <FormField label="Objetivo de la Visita" icon={<FileText size={14} />} error={fieldErrors?.objective}>
                                 <input name="objective" value={formData.objective} onChange={handleChange}
                                     className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all"
                                     style={inputStyle}
@@ -186,7 +179,7 @@ export default function NewVisit() {
                         </div>
 
                         {/* Notas */}
-                        <FormField label="Notas Previas / Preparación" icon={<FileText size={14} />}>
+                        <FormField label="Notas Previas / Preparación" icon={<FileText size={14} />} error={fieldErrors?.description}>
                             <textarea name="description" rows="3"
                                 value={formData.description || ''} onChange={handleChange}
                                 className="w-full px-4 py-3 rounded-lg text-sm outline-none transition-all resize-none italic"
@@ -200,10 +193,10 @@ export default function NewVisit() {
                                 style={{ border: '1px solid var(--border)', color: 'var(--text-2)' }}>
                                 Cancelar
                             </Link>
-                            <button type="submit"
-                                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition active:scale-95"
+                            <button type="submit" disabled={submitting}
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition active:scale-95 disabled:opacity-50"
                                 style={{ background: 'var(--accent)', color: '#0f172a' }}>
-                                <Save size={16} /> Confirmar Agenda
+                                <Save size={16} /> {submitting ? 'Agendando...' : 'Confirmar Agenda'}
                             </button>
                         </div>
                     </form>

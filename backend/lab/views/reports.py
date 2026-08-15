@@ -1,6 +1,10 @@
 import io
 import os
-import xlsxwriter
+import base64
+import urllib.request
+import urllib.error
+from datetime import datetime
+
 try:
     from xhtml2pdf import pisa
     from django.template.loader import render_to_string
@@ -8,38 +12,18 @@ except ImportError:
     pisa = None
     render_to_string = None
 
+from django.conf import settings
 from django.utils import timezone
 from django.http import HttpResponse, FileResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, parser_classes
-from rest_framework.parsers import MultiPartParser
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from datetime import datetime
-from django.conf import settings
-from .models import (
-    Client, Project, Ensayo, Ingredient, 
-    ProjectIngredientPrice, Visit, EnsayoDetail, EnsayoImage,
-    TechnicalReport, Complaint, ComplaintImage, ProjectBudget, BudgetItem
+
+from lab.models import (
+    Project, Ensayo, Visit, Complaint, TechnicalReport
 )
-import base64
-import urllib.request
-import urllib.error
-from .serializers import (
-    ClientSerializer, 
-    ProjectSerializer, 
-    EnsayoSerializer, 
-    IngredientSerializer,
-    ProjectIngredientPriceSerializer, 
-    VisitSerializer,
-    EnsayoDetailSerializer,
-    EnsayoImageSerializer,
-    TechnicalReportSerializer,
-    ComplaintSerializer,
-    ComplaintImageSerializer,
-    ProjectBudgetSerializer,
-    BudgetItemSerializer
-)
+from lab.serializers import TechnicalReportSerializer
 
 # --- UTILIDADES GLOBALES (REPORTES) ---
 
@@ -127,120 +111,6 @@ def link_callback(uri, rel):
     resolved = resolve_image_path(path)
     return resolved if resolved else uri
 
-class ClientViewSet(viewsets.ModelViewSet):
-    queryset = Client.objects.all()
-    serializer_class = ClientSerializer
-
-class ProjectViewSet(viewsets.ModelViewSet):
-    queryset = Project.objects.all()
-    serializer_class = ProjectSerializer
-
-class IngredientViewSet(viewsets.ModelViewSet):
-    queryset = Ingredient.objects.all()
-    serializer_class = IngredientSerializer
-
-class EnsayoViewSet(viewsets.ModelViewSet):
-    queryset = Ensayo.objects.all().select_related('project', 'project__client').prefetch_related('details__ingredient', 'images').order_by('-date')
-    serializer_class = EnsayoSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        project_id = self.request.query_params.get('project')
-        if project_id:
-            queryset = queryset.filter(project_id=project_id)
-        return queryset
-
-class EnsayoDetailViewSet(viewsets.ModelViewSet):
-    queryset = EnsayoDetail.objects.all()
-    serializer_class = EnsayoDetailSerializer
-
-class EnsayoImageViewSet(viewsets.ModelViewSet):
-    queryset = EnsayoImage.objects.all()
-    serializer_class = EnsayoImageSerializer
-
-    def create(self, request, *args, **kwargs):
-        if 'image' in request.FILES:
-            file_obj = request.FILES['image']
-            
-            supabase_url = settings.SUPABASE_URL
-            supabase_key = settings.SUPABASE_KEY
-            if not supabase_url or not supabase_key:
-                return Response({'error': 'Supabase no configurado en el backend'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-            try:
-                ext = os.path.splitext(file_obj.name)[1]
-                safe_name = file_obj.name.replace(' ', '_')
-                filename = f"{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
-                
-                bucket_name = "ensayo_photos"
-                upload_url = f"{supabase_url}/storage/v1/object/{bucket_name}/{filename}"
-                req_upload = urllib.request.Request(upload_url, data=file_obj.read(), method="POST")
-                req_upload.add_header("Authorization", f"Bearer {supabase_key}")
-                req_upload.add_header("apikey", supabase_key)
-                req_upload.add_header("Content-Type", file_obj.content_type or "application/octet-stream")
-                
-                try:
-                    with urllib.request.urlopen(req_upload, timeout=15.0) as res:
-                        pass
-                except urllib.error.HTTPError as e:
-                    import traceback
-                    print(f"Supabase upload error: {e.read().decode('utf-8', errors='ignore')}")
-                    raise Exception(f"HTTPError {e.code}: {e.reason}")
-                
-                # Guardar solo el nombre del archivo (la propiedad full_url del modelo reconstruirá el resto)
-                data = request.data.copy()
-                data['image'] = filename
-                
-                serializer = self.get_serializer(data=data)
-                serializer.is_valid(raise_exception=True)
-                self.perform_create(serializer)
-                headers = self.get_success_headers(serializer.data)
-                return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-                
-            except Exception as e:
-                import traceback
-                print(traceback.format_exc())
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-                
-        # Fallback if no file is sent, or if it's sent as a URL string directly
-        return super().create(request, *args, **kwargs)
-
-class ProjectBudgetViewSet(viewsets.ModelViewSet):
-    queryset = ProjectBudget.objects.all()
-    serializer_class = ProjectBudgetSerializer
-
-    def get_queryset(self):
-        queryset = self.queryset
-        project_id = self.request.query_params.get('project')
-        if project_id is not None:
-            queryset = queryset.filter(project_id=project_id)
-        return queryset
-
-class BudgetItemViewSet(viewsets.ModelViewSet):
-    queryset = BudgetItem.objects.all()
-    serializer_class = BudgetItemSerializer
-
-    def get_queryset(self):
-        queryset = self.queryset
-        budget_id = self.request.query_params.get('budget')
-        if budget_id is not None:
-            queryset = queryset.filter(budget_id=budget_id)
-        return queryset
-
-class ProjectIngredientPriceViewSet(viewsets.ModelViewSet):
-    queryset = ProjectIngredientPrice.objects.all()
-    serializer_class = ProjectIngredientPriceSerializer
-
-class VisitViewSet(viewsets.ModelViewSet):
-    queryset = Visit.objects.all().select_related('project', 'client').order_by('-date')
-    serializer_class = VisitSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        project_id = self.request.query_params.get('project')
-        if project_id:
-            queryset = queryset.filter(project_id=project_id)
-        return queryset
 
 class TechnicalReportViewSet(viewsets.ModelViewSet):
     queryset = TechnicalReport.objects.all().order_by('-report_date', '-created_at')
@@ -252,170 +122,6 @@ class TechnicalReportViewSet(viewsets.ModelViewSet):
         if project_id:
             queryset = queryset.filter(project_id=project_id)
         return queryset
-
-class ComplaintViewSet(viewsets.ModelViewSet):
-    queryset = Complaint.objects.all().order_by('-loading_date', '-created_at')
-    serializer_class = ComplaintSerializer
-    
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        project_id = self.request.query_params.get('project')
-        if project_id:
-            queryset = queryset.filter(project_id=project_id)
-        return queryset
-
-class ComplaintImageViewSet(viewsets.ModelViewSet):
-    queryset = ComplaintImage.objects.all()
-    serializer_class = ComplaintImageSerializer
-
-    def create(self, request, *args, **kwargs):
-        if 'image' in request.FILES:
-            file_obj = request.FILES['image']
-            
-            supabase_url = settings.SUPABASE_URL
-            supabase_key = settings.SUPABASE_KEY
-            if not supabase_url or not supabase_key:
-                return Response({'error': 'Supabase no configurado en el backend'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-            try:
-                ext = os.path.splitext(file_obj.name)[1]
-                safe_name = file_obj.name.replace(' ', '_')
-                filename = f"{timezone.now().strftime('%Y%m%d_%H%M%S')}_{safe_name}"
-                
-                # Reusing 'ensayo_photos' bucket
-                bucket_name = "ensayo_photos" 
-                
-                upload_url = f"{supabase_url}/storage/v1/object/{bucket_name}/complaints/{filename}"
-                req_upload = urllib.request.Request(upload_url, data=file_obj.read(), method="POST")
-                req_upload.add_header("Authorization", f"Bearer {supabase_key}")
-                req_upload.add_header("apikey", supabase_key)
-                req_upload.add_header("Content-Type", file_obj.content_type or "application/octet-stream")
-                
-                try:
-                    with urllib.request.urlopen(req_upload, timeout=15.0) as res:
-                        pass
-                except urllib.error.HTTPError as e:
-                    import traceback
-                    print(f"Supabase upload error: {e.read().decode('utf-8', errors='ignore')}")
-                    raise Exception(f"HTTPError {e.code}: {e.reason}")
-                
-                # Guardar la ruta relativa dentro del bucket
-                data = request.data.copy()
-                data['image'] = f"complaints/{filename}"
-                
-                serializer = self.get_serializer(data=data)
-                serializer.is_valid(raise_exception=True)
-                self.perform_create(serializer)
-                headers = self.get_success_headers(serializer.data)
-                return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-                
-            except Exception as e:
-                import traceback
-                print(traceback.format_exc())
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-                
-        return super().create(request, *args, **kwargs)
-
-# --- RECLAMOS TÉCNICOS (CARGA MANUAL EXCLUSIVA) ---
-# Se ha eliminado la lógica de importación masiva para garantizar la integridad de los datos manuales.
-
-@api_view(['GET'])
-def generar_reporte_reclamo_estandar(request):
-    """
-    GENERADOR DE REPORTE DE RECLAMO ESTÁNDAR
-    Mapeo de Inyección:
-    - Cliente Directo -> B6
-    - Proyecto -> F6
-    - Lote -> E12
-    - Tipo Harina -> B14
-    - Producto Final -> B16 
-    - Proceso -> F16
-    - Descripción -> B18
-    """
-    import openpyxl
-    complaint_id = request.query_params.get('complaint')
-    complaint = None
-    if complaint_id:
-        complaint = get_object_or_404(Complaint, id=complaint_id)
-
-    template_path = os.path.join(os.path.dirname(__file__), 'static', 'templates', 'reclamo.xlsx')
-    
-    if not os.path.exists(template_path):
-        return Response({"error": "Template file not found."}, status=404)
-
-    wb = openpyxl.load_workbook(template_path)
-    if "PLANTILLA_RECLAMOS" in wb.sheetnames:
-        ws = wb["PLANTILLA_RECLAMOS"]
-    else:
-        ws = wb.active
-
-    # --- INYECCIÓN DINÁMICA DE CARGA MANUAL ---
-    if complaint:
-        ws['B6'] = complaint.direct_client or (complaint.project.client.name if complaint.project.client else "---")
-        ws['F6'] = complaint.project.name
-        ws['E12'] = complaint.batch or "---"
-        ws['B14'] = complaint.flour_type or "---"
-        ws['B16'] = complaint.product_made or "---"
-        ws['F16'] = complaint.process_type or "---"
-        ws['B18'] = complaint.description or "---"
-    else:
-        # Fallback a proyecto si no hay ID de reclamo (descarga de plantilla limpia con datos de cliente)
-        project_id = request.query_params.get('project')
-        if project_id:
-            project = Project.objects.filter(id=project_id).first()
-            if project:
-                ws['B6'] = project.client.name if project.client else "---"
-                ws['F6'] = project.name
-
-    # --- INYECCIÓN DE IMÁGENES (ANEXO) ---
-    if complaint and complaint.images.exists():
-        ws_photos = wb.create_sheet("ANEXO FOTOS")
-        ws_photos.column_dimensions['A'].width = 80
-        curr_row = 1
-        
-        for img in complaint.images.all():
-            if img.image:
-                try:
-                    req_get = urllib.request.Request(str(img.full_url))
-                    with urllib.request.urlopen(req_get, timeout=10.0) as response:
-                        if response.status == 200:
-                            from openpyxl.drawing.image import Image as OpenpyxlImage
-                            
-                            # Título de la foto
-                            title = f"FOTO: {img.caption or 'Sin nota'}"
-                            ws_photos.cell(row=curr_row, column=1, value=title)
-                            ws_photos.cell(row=curr_row, column=1).font = openpyxl.styles.Font(bold=True, size=12)
-                            curr_row += 1
-
-                            # Insertar Imagen desde RAM
-                            img_stream = io.BytesIO(response.read())
-                            img_data = OpenpyxlImage(img_stream)
-                        
-                        # Redimensión proporcional para el Excel
-                        orig_w, orig_h = img_data.width, img_data.height
-                        aspect = orig_w / orig_h
-                        img_data.width = 500
-                        img_data.height = 500 / aspect
-                        
-                        ws_photos.add_image(img_data, f'A{curr_row}')
-                        
-                        # Espaciado (aproximadamente la altura de la imagen en filas)
-                        rows_to_skip = int(img_data.height / 15) + 2
-                        curr_row += rows_to_skip
-                except Exception as e:
-                    print(f"Error inyectando imagen {img.id}: {e}")
-
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
-    
-    filename = f"RECLAMO_{complaint.batch or 'S_LOTE'}.xlsx" if complaint else "reporte_reclamo_estandar.xlsx"
-    response = HttpResponse(
-        output.read(), 
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    response["Content-Disposition"] = f"attachment; filename={filename}"
-    return response
 
 
 # --- VISTAS DE REPORTES ---
@@ -570,7 +276,8 @@ def generar_informe_tecnico_estandar(request):
 
         # 1. ENCABEZADO
         ws.merge_range('A1:B5', "", workbook.add_format({'border': 2}))
-        logo_path = os.path.join(os.path.dirname(__file__), 'static', 'images', 'logo_institucional.png')
+        # Modified logo path relative to `views/` directory
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'images', 'logo_institucional.png')
         if os.path.exists(logo_path):
             ws.insert_image('A1', logo_path, {'x_offset': 10, 'y_offset': 10, 'x_scale': 0.12, 'y_scale': 0.12})
 
@@ -674,7 +381,6 @@ def generar_informe_tecnico_estandar(request):
             "traceback": error_details 
         }, status=500)
     
-
 
 def serve_media_view(request, path):
     """

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ToastProvider } from './components/ui/Toast';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Clients from './pages/Clients';
@@ -23,29 +24,31 @@ import Settings from './pages/Settings';
 export default function App() {
   return (
     <BrowserRouter>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/clients" element={<Clients />} />
-          <Route path="/clients/new" element={<NewClient />} />
-          <Route path="/clients/:id" element={<ClientDetail />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/projects/new" element={<NewProject />} />
-          <Route path="/projects/:id" element={<ProjectDetail />} />
-          <Route path="/projects/:id/edit" element={<EditProject />} />
-          <Route path="/essays" element={<Essays />} />
-          <Route path="/essays/new" element={<NewEssay />} />
-          <Route path="/essays/compare" element={<EssayCompare />} />
-          <Route path="/essays/:id" element={<EssayDetail />} />
-          <Route path="/ingredients" element={<IngredientList />} />
-          <Route path="/ingredients/new" element={<NewIngredient />} />
-          <Route path="/ingredients/:id" element={<IngredientDetail />} />
-          <Route path="/visits" element={<VisitList />} />
-          <Route path="/visits/new" element={<NewVisit />} />
-          <Route path="/visits/:id" element={<VisitDetail />} />
-          <Route path="/settings" element={<Settings />} />
-        </Routes>
-      </Layout>
+      <ToastProvider>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/clients" element={<Clients />} />
+            <Route path="/clients/new" element={<NewClient />} />
+            <Route path="/clients/:id" element={<ClientDetail />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/new" element={<NewProject />} />
+            <Route path="/projects/:id" element={<ProjectDetail />} />
+            <Route path="/projects/:id/edit" element={<EditProject />} />
+            <Route path="/essays" element={<Essays />} />
+            <Route path="/essays/new" element={<NewEssay />} />
+            <Route path="/essays/compare" element={<EssayCompare />} />
+            <Route path="/essays/:id" element={<EssayDetail />} />
+            <Route path="/ingredients" element={<IngredientList />} />
+            <Route path="/ingredients/new" element={<NewIngredient />} />
+            <Route path="/ingredients/:id" element={<IngredientDetail />} />
+            <Route path="/visits" element={<VisitList />} />
+            <Route path="/visits/new" element={<NewVisit />} />
+            <Route path="/visits/:id" element={<VisitDetail />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </Layout>
+      </ToastProvider>
     </BrowserRouter>
   );
 }
