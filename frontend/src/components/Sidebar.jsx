@@ -3,6 +3,7 @@ import {
     Home, FolderKanban, FlaskConical, Users,
     Calendar, Package, Settings, ChevronRight, DollarSign
 } from 'lucide-react';
+import { preloadRoute } from '../api/dataCache';
 
 const navItems = [
     { path: '/', label: 'Inicio', icon: Home },
@@ -56,6 +57,7 @@ export default function Sidebar() {
                                 background: active ? 'var(--accent-dim)' : 'transparent',
                             }}
                             onMouseEnter={e => {
+                                preloadRoute(path);
                                 if (!active) e.currentTarget.style.background = 'rgba(74,222,128,0.06)';
                                 if (!active) e.currentTarget.style.color = '#e2e8f0';
                             }}

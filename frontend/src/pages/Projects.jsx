@@ -5,10 +5,12 @@ import { Briefcase, Plus, Loader2, Search, ArrowRight, Building, Calendar, Tag, 
 
 import { useToast } from '../components/ui/Toast';
 
+import { useDataCache } from '../api/dataCache';
+import { apiGet } from '../api/httpClient';
+
 export default function Projects() {
     const { showSuccess, showError } = useToast();
-    const [projects, setProjects] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { data: projects = [], loading, setData: setProjects } = useDataCache('/api/projects/', () => apiGet('/api/projects/'));
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleDeleteProject = async (projectId, projectName) => {
@@ -17,7 +19,7 @@ export default function Projects() {
                 const res = await fetch(`${API_URL}/api/projects/${projectId}/`, { method: 'DELETE' });
                 if (res.ok) {
                     showSuccess('Proyecto eliminado con éxito');
-                    setProjects(prev => prev.filter(p => p.id !== projectId));
+                    setProjects(prev => (prev || []).filter(p => p.id !== projectId));
                 } else {
                     showError('Error al intentar eliminar el proyecto');
                 }
@@ -27,19 +29,6 @@ export default function Projects() {
             }
         }
     };
-
-    useEffect(() => {
-        fetch(`${API_URL}/api/projects/`)
-            .then(res => res.json())
-            .then(data => {
-                setProjects(data);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error(err);
-                setLoading(false);
-            });
-    }, []);
 
     const filteredProjects = projects.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

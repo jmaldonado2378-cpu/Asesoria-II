@@ -3,27 +3,15 @@ import { Link } from 'react-router-dom';
 import { FlaskConical, Calendar, FileText, User, Loader2, Beaker, Plus } from 'lucide-react';
 import { API_URL } from '../config';
 
-export default function Essays() {
-    const [ensayos, setEnsayos] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+import { useDataCache } from '../api/dataCache';
+import { apiGet } from '../api/httpClient';
 
-    useEffect(() => {
-        fetch(`${API_URL}/api/ensayos/`)
-            .then((res) => {
-                if (!res.ok) throw new Error('Error al conectar con el servidor');
-                return res.json();
-            })
-            .then((data) => {
-                setEnsayos(data);
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error(err);
-                setError('No se pudieron cargar los ensayos.');
-                setLoading(false);
-            });
-    }, []);
+import { FileSpreadsheet } from 'lucide-react';
+import GoogleSheetsImporter from '../components/ui/GoogleSheetsImporter';
+
+export default function Essays() {
+    const { data: ensayos = [], loading, error } = useDataCache('/api/ensayos/', () => apiGet('/api/ensayos/'));
+    const [showImporter, setShowImporter] = useState(false);
 
     if (loading) return (
         <div className="flex items-center justify-center h-64" style={{ color: 'var(--text-2)' }}>
@@ -33,6 +21,8 @@ export default function Essays() {
 
     return (
         <div className="p-8 max-w-[1600px] mx-auto" style={{ background: 'var(--bg-main)', minHeight: '100vh' }}>
+            <GoogleSheetsImporter isOpen={showImporter} onClose={() => setShowImporter(false)} />
+
             <header className="flex justify-between items-end mb-10 pb-8" style={{ borderBottom: '2px solid var(--border)' }}>
                 <div>
                     <h1 className="text-3xl font-bold text-white flex items-center gap-3">
@@ -40,13 +30,22 @@ export default function Essays() {
                     </h1>
                     <p className="mt-1 text-sm" style={{ color: 'var(--text-2)' }}>Laboratorio Molinero · Control de Calidad</p>
                 </div>
-                <Link
-                    to="/essays/new"
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition active:scale-95"
-                    style={{ background: 'var(--accent)', color: '#0f172a' }}
-                >
-                    <Plus size={16} /> Nuevo Registro
-                </Link>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setShowImporter(true)}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition active:scale-95 border"
+                        style={{ background: 'var(--bg-panel)', borderColor: 'var(--border)', color: 'var(--text-1)' }}
+                    >
+                        <FileSpreadsheet size={16} style={{ color: 'var(--accent)' }} /> Importar desde Google Sheets
+                    </button>
+                    <Link
+                        to="/essays/new"
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition active:scale-95"
+                        style={{ background: 'var(--accent)', color: '#0f172a' }}
+                    >
+                        <Plus size={16} /> Nuevo Registro
+                    </Link>
+                </div>
             </header>
 
             {error && (

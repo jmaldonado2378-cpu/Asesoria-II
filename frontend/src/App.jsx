@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastProvider } from './components/ui/Toast';
 import Layout from './components/Layout';
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { API_URL } from './config';
 
 const Home = lazy(() => import('./pages/Home'));
 const Clients = lazy(() => import('./pages/Clients'));
@@ -34,6 +35,14 @@ const PageLoader = () => (
 );
 
 export default function App() {
+  useEffect(() => {
+    // Keep-alive ping every 4 minutes so Render backend never sleeps
+    const ping = () => fetch(`${API_URL}/`).catch(() => {});
+    ping();
+    const interval = setInterval(ping, 4 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <BrowserRouter>
       <ToastProvider>

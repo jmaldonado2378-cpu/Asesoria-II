@@ -1,15 +1,27 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, GitCompare, Eye, CheckSquare, Square } from 'lucide-react';
+import { Plus, GitCompare, Eye, CheckSquare, Square, FileSpreadsheet } from 'lucide-react';
+import GoogleSheetsImporter from '../../components/ui/GoogleSheetsImporter';
 
 export default function ProjectEssaysTab({ essays, selectedIds, toggleSelection, handleCompare, projectId, clientId }) {
+    const [showImporter, setShowImporter] = useState(false);
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+            <GoogleSheetsImporter isOpen={showImporter} onClose={() => setShowImporter(false)} preselectedProject={projectId} />
+
             <div className="flex justify-end gap-4">
                 {selectedIds.length >= 2 && (
                     <button onClick={handleCompare} className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-sm shadow-xl hover:bg-indigo-700 transition font-black text-[10px] uppercase tracking-widest border border-indigo-500">
                         <GitCompare size={16} /> Comparar ({selectedIds.length})
                     </button>
                 )}
+                <button
+                    onClick={() => setShowImporter(true)}
+                    className="flex items-center gap-2 bg-[var(--bg-panel)] text-white px-6 py-3 rounded-sm shadow-xl transition font-black text-[10px] uppercase tracking-widest border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                >
+                    <FileSpreadsheet size={16} style={{ color: 'var(--accent)' }} /> Importar Google Sheets
+                </button>
                 <Link to="/essays/new" state={{ preselectedProject: projectId, preselectedClient: clientId }} className="flex items-center gap-2 bg-[var(--bg-panel)] text-white px-6 py-3 rounded-sm shadow-xl transition font-black text-[10px] uppercase tracking-widest border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]">
                     <Plus size={16} /> Iniciar Protocolo
                 </Link>

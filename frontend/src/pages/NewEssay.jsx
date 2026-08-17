@@ -16,10 +16,14 @@ const input = {
     color: 'var(--text-1)',
 };
 
+import { FileSpreadsheet } from 'lucide-react';
+import GoogleSheetsImporter from '../components/ui/GoogleSheetsImporter';
+
 export default function NewEssay() {
     const navigate = useNavigate();
     const location = useLocation();
     const { showSuccess, showError } = useToast();
+    const [showImporter, setShowImporter] = useState(false);
 
     const [loading, setLoading] = useState(true);
     const [clients, setClients] = useState([]);
@@ -76,14 +80,24 @@ export default function NewEssay() {
 
     return (
         <div className="min-h-screen p-8 flex flex-col items-center" style={{ background: 'var(--bg-main)' }}>
+            <GoogleSheetsImporter isOpen={showImporter} onClose={() => setShowImporter(false)} preselectedProject={formData.project} />
+
             <div className="w-full max-w-2xl">
 
                 {/* Back link */}
-                <div className="mb-6">
+                <div className="mb-6 flex justify-between items-center">
                     <Link to="/essays" className="flex items-center gap-2 text-sm font-medium transition hover:text-white"
                         style={{ color: 'var(--text-2)' }}>
                         <ArrowLeft size={16} /> Cancelar y Volver
                     </Link>
+                    <button
+                        type="button"
+                        onClick={() => setShowImporter(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition border"
+                        style={{ background: 'var(--bg-panel)', borderColor: 'var(--border)', color: 'var(--accent)' }}
+                    >
+                        <FileSpreadsheet size={16} /> Importar desde Google Sheets
+                    </button>
                 </div>
 
                 {/* Card */}
