@@ -30,8 +30,8 @@ export default function Projects() {
         }
     };
 
-    const filteredProjects = projects.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const filteredProjects = (Array.isArray(projects) ? projects : []).filter(p =>
+        p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.client_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 

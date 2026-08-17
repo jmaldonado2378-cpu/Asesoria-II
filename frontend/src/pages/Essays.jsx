@@ -10,7 +10,8 @@ import { FileSpreadsheet } from 'lucide-react';
 import GoogleSheetsImporter from '../components/ui/GoogleSheetsImporter';
 
 export default function Essays() {
-    const { data: ensayos = [], loading, error } = useDataCache('/api/ensayos/', () => apiGet('/api/ensayos/'));
+    const { data: ensayosData = [], loading, error } = useDataCache('/api/ensayos/', () => apiGet('/api/ensayos/'));
+    const ensayos = Array.isArray(ensayosData) ? ensayosData : [];
     const [showImporter, setShowImporter] = useState(false);
 
     if (loading) return (

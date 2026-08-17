@@ -62,10 +62,10 @@ export function clearCache(pattern = null) {
  * Custom React hook for Stale-While-Revalidate data fetching.
  * Instantly returns cached data on mount (0ms delay), then updates from network in background.
  */
-export function useDataCache(path, fetcherFn) {
+export function useDataCache(path, fetcherFn, fallbackData = []) {
   const cached = getCachedData(path);
-  const [data, setData] = useState(cached);
-  const [loading, setLoading] = useState(!cached);
+  const [data, setData] = useState(cached !== null && cached !== undefined ? cached : fallbackData);
+  const [loading, setLoading] = useState(cached === null || cached === undefined);
   const [error, setError] = useState(null);
 
   const revalidate = useCallback(async () => {
