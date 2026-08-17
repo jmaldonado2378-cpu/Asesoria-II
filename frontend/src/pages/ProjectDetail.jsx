@@ -17,9 +17,12 @@ import ProjectReportModal from './project/ProjectReportModal';
 const PDFDownloadLink = lazy(() => import('@react-pdf/renderer').then(m => ({ default: m.PDFDownloadLink })));
 const TechnicalReportPDF = lazy(() => import('../components/pdf/TechnicalReportPDF'));
 
+import { useToast } from '../components/ui/Toast';
+
 export default function ProjectDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showSuccess, showError } = useToast();
     const [project, setProject] = useState(null);
     const [essays, setEssays] = useState([]);
     const [visits, setVisits] = useState([]);
@@ -89,7 +92,7 @@ export default function ProjectDetail() {
             setLoading(false);
         }).catch(err => {
             console.error("Fetch error:", err);
-            alert("⚠️ Error de conexión: " + err.message);
+            showError("⚠️ Error de conexión: " + err.message);
             setLoading(false);
         });
     };
@@ -118,16 +121,16 @@ export default function ProjectDetail() {
             });
             if (resp.ok) {
                 const result = await resp.json();
-                alert(result.message);
+                showSuccess(result.message);
                 // Recargar reclamos
                 const freshReclamos = await fetch(`${API_URL}/api/complaints/?project=${id}`).then(r => r.json());
                 setComplaints(freshReclamos);
             } else {
-                alert('Error al importar Excel.');
+                showError('Error al importar Excel.');
             }
         } catch (err) {
             console.error(err);
-            alert('Error de conexión.');
+            showError('Error de conexión.');
         }
     };
 
@@ -161,11 +164,11 @@ export default function ProjectDetail() {
                 } catch (_) {
                     errMsg = await resp.text().then(t => t.substring(0, 300));
                 }
-                alert(`Error al subir imagen:\n${errMsg}`);
+                showError(`Error al subir imagen:\n${errMsg}`);
             }
         } catch (err) {
             console.error(err);
-            alert(`Error de red: ${err.message}`);
+            showError(`Error de red: ${err.message}`);
         } finally {
             setUploadingComplaintId(null);
         }
@@ -226,8 +229,9 @@ export default function ProjectDetail() {
                 // Refresh
                 const fresh = await fetch(`${API_URL}/api/complaints/?project=${id}`).then(r => r.json());
                 setComplaints(fresh);
+                showSuccess('Reclamo guardado correctamente.');
             } else {
-                alert('Error al guardar el reclamo.');
+                showError('Error al guardar el reclamo.');
             }
         } catch (err) { console.error(err); }
     };
@@ -275,14 +279,14 @@ export default function ProjectDetail() {
             try {
                 const res = await fetch(`${API_URL}/api/projects/${id}/`, { method: 'DELETE' });
                 if (res.ok) {
-                    alert('Proyecto eliminado con éxito');
+                    showSuccess('Proyecto eliminado con éxito');
                     navigate('/projects');
                 } else {
-                    alert('Error al intentar eliminar el proyecto');
+                    showError('Error al intentar eliminar el proyecto');
                 }
             } catch (e) {
                 console.error(e);
-                alert('Error de conexión al eliminar el proyecto');
+                showError('Error de conexión al eliminar el proyecto');
             }
         }
     };
@@ -298,13 +302,13 @@ export default function ProjectDetail() {
             if (response.ok) {
                 const updatedProj = await response.json();
                 setProject(updatedProj);
-                alert('Observaciones guardadas con éxito.');
+                showSuccess('Observaciones guardadas con éxito.');
             } else {
-                alert('Error al guardar observaciones.');
+                showError('Error al guardar observaciones.');
             }
         } catch (error) {
             console.error(error);
-            alert('Error de conexión.');
+            showError('Error de conexión.');
         } finally {
             setSavingObs(false);
         }
@@ -312,7 +316,7 @@ export default function ProjectDetail() {
 
     const handleGenerateReport = async () => {
         if (!reportParams.startDate || !reportParams.endDate) {
-            alert('Por favor seleccione ambas fechas.');
+            showError('Por favor seleccione ambas fechas.');
             return;
         }
         setSavingObs(true);
@@ -361,11 +365,11 @@ export default function ProjectDetail() {
                 } catch (e) {
                     errorMessage = `Servidor respondió con código ${resp.status} (${resp.statusText})`;
                 }
-                alert(`DETALLE TÉCNICO:\n${errorMessage}\n\nTRACEBACK:\n${trace.substring(0, 500)}...`);
+                showError(`DETALLE TÉCNICO:\n${errorMessage}`);
             }
         } catch (err) {
             console.error(err);
-            alert(`Error de conexión: ${err.message}`);
+            showError(`Error de conexión: ${err.message}`);
         }
     };
 

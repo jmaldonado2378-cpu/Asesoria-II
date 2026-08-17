@@ -3,7 +3,10 @@ import { API_URL } from '../config';
 import { Link } from 'react-router-dom';
 import { Briefcase, Plus, Loader2, Search, ArrowRight, Building, Calendar, Tag, Activity, Edit3, Trash2 } from 'lucide-react';
 
+import { useToast } from '../components/ui/Toast';
+
 export default function Projects() {
+    const { showSuccess, showError } = useToast();
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -13,14 +16,14 @@ export default function Projects() {
             try {
                 const res = await fetch(`${API_URL}/api/projects/${projectId}/`, { method: 'DELETE' });
                 if (res.ok) {
-                    alert('Proyecto eliminado con éxito');
+                    showSuccess('Proyecto eliminado con éxito');
                     setProjects(prev => prev.filter(p => p.id !== projectId));
                 } else {
-                    alert('Error al intentar eliminar el proyecto');
+                    showError('Error al intentar eliminar el proyecto');
                 }
             } catch (e) {
                 console.error(e);
-                alert('Error de conexión al eliminar el proyecto');
+                showError('Error de conexión al eliminar el proyecto');
             }
         }
     };

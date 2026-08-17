@@ -3,9 +3,12 @@ import { API_URL } from '../config';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Package, Truck, DollarSign, FileText, Activity, Tag, Loader2, Trash2 } from 'lucide-react';
 
+import { useToast } from '../components/ui/Toast';
+
 export default function IngredientDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showSuccess, showError } = useToast();
     const [formData, setFormData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -37,14 +40,15 @@ export default function IngredientDetail() {
                 })
             });
             if (res.ok) {
-                alert('Ingrediente actualizado correctamente');
+                showSuccess('Ingrediente actualizado correctamente');
                 navigate('/ingredients');
             } else {
                 const errData = await res.json();
-                alert('Error al actualizar: ' + JSON.stringify(errData));
+                showError('Error al actualizar: ' + JSON.stringify(errData));
             }
         } catch (error) {
             console.error(error);
+            showError('Error de conexión');
         } finally {
             setSaving(false);
         }

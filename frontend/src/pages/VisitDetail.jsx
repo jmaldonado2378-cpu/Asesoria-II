@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useToast } from '../components/ui/Toast';
 import {
     ArrowLeft, Save, Calendar, Clock, Briefcase, Users, Activity,
     FileText, Tag, Loader2, CheckCircle, XCircle, Trash2, MapPin, DollarSign
@@ -9,6 +10,7 @@ import {
 export default function VisitDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showSuccess, showError } = useToast();
     const [formData, setFormData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -37,21 +39,22 @@ export default function VisitDetail() {
                 body: JSON.stringify(formData)
             });
             if (res.ok) {
-                alert('Visita actualizada correctamente');
+                showSuccess('Visita actualizada correctamente');
                 navigate('/visits');
             } else {
                 const errData = await res.json();
-                alert('Error al actualizar: ' + JSON.stringify(errData));
+                showError('Error al actualizar: ' + JSON.stringify(errData));
             }
         } catch (error) {
             console.error(error);
+            showError('Error de conexión');
         } finally {
             setSaving(false);
         }
     };
 
     const handleMarkAsRealizada = async () => {
-        if (!formData.description) return alert('Debe completar el reporte de visita (bitácora) antes de finalizar.');
+        if (!formData.description) return showError('Debe completar el reporte de visita (bitácora) antes de finalizar.');
 
         setSaving(true);
         try {
@@ -61,7 +64,7 @@ export default function VisitDetail() {
                 body: JSON.stringify({ status: 'Realizada', description: formData.description })
             });
             if (res.ok) {
-                alert('Visita finalizada con éxito.');
+                showSuccess('Visita finalizada con éxito.');
                 navigate('/visits');
             }
         } catch (e) { console.error(e); }

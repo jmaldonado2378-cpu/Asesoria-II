@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Save, Building, User, Mail, MapPin, Phone, Briefcase, Plus, Trash2, Loader2 } from 'lucide-react';
 import { FormField } from '../ui/FormField';
 
+import { useToast } from '../ui/Toast';
+
 const inputStyle = {
     background: 'var(--bg-main)',
     border: '1px solid var(--border)',
@@ -11,6 +13,7 @@ const inputStyle = {
 
 export default function ClientForm({ initialData, onSubmit, loading, fieldErrors = {}, error }) {
     const isEdit = !!initialData;
+    const { showError } = useToast();
     
     const [formData, setFormData] = useState({ name: '', address: '' });
     const [contacts, setContacts] = useState([
@@ -50,7 +53,7 @@ export default function ClientForm({ initialData, onSubmit, loading, fieldErrors
 
     const addContact = () => setContacts([...contacts, { name: '', position: '', phone: '', email: '' }]);
     const removeContact = (index) => {
-        if (contacts.length <= 1) return alert('Debe haber al menos un contacto.');
+        if (contacts.length <= 1) return showError('Debe haber al menos un contacto.');
         setContacts(contacts.filter((_, i) => i !== index));
     };
 
@@ -142,7 +145,7 @@ export default function ClientForm({ initialData, onSubmit, loading, fieldErrors
                             
                             {isEdit && (
                                 <button onClick={() => {
-                                    if (!formData.address) return alert("Dirección no especificada.");
+                                    if (!formData.address) return showError("Dirección no especificada.");
                                     const query = encodeURIComponent(formData.address);
                                     window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
                                 }} type="button"
