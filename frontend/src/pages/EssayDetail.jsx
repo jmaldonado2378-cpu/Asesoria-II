@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, lazy, Suspense, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
     ArrowLeft, FlaskConical, Save, X, Edit3, Timer, Thermometer,
@@ -6,8 +6,8 @@ import {
     Trash2, Upload, Settings, CheckSquare, Square,
     ClipboardCheck, Plus, Printer, Wheat, Award
 } from 'lucide-react';
-import EssayReportPDF from '../components/pdf/EssayReportPDF';
-import ExportPDFButton from '../components/pdf/ExportPDFButton';
+const EssayReportPDF = lazy(() => import('../components/pdf/EssayReportPDF'));
+const ExportPDFButton = lazy(() => import('../components/pdf/ExportPDFButton'));
 import { API_URL } from '../config';
 import { apiGet, apiPost, apiPut, apiPatch, apiDelete } from '../api/httpClient';
 import { useToast } from '../components/ui/Toast';
@@ -108,34 +108,30 @@ export default function EssayDetail() {
         document.addEventListener("mousedown", handleClickOutside); return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [id]);
 
-    // Fix 4: Convertir imágenes a base64 cuando cambian
-    useEffect(() => {
+    // Fix 4: Convertir imágenes a base64 sólo bajo demanda (al exportar PDF)
+    const convertImagesForPDF = useCallback(async () => {
         if (!images || images.length === 0) {
             setImagesForPDF([]);
             setIsPdfReady(true);
             return;
         }
         setIsPdfReady(false);
-        const convertAll = async () => {
-            const results = await Promise.all(images.map(async (img) => {
-                try {
-                    const url = img.image;
-                    const res = await fetch(url);
-                    const blob = await res.blob();
-                    return new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve({ ...img, base64: reader.result });
-                        reader.onerror = () => resolve({ ...img, base64: null });
-                        reader.readAsDataURL(blob);
-                    });
-                } catch {
-                    return { ...img, base64: null };
-                }
-            }));
-            setImagesForPDF(results);
-            setIsPdfReady(true);
-        };
-        convertAll();
+        const results = await Promise.all(images.map(async (img) => {
+            try {
+                const res = await fetch(img.image);
+                const blob = await res.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve({ ...img, base64: reader.result });
+                    reader.onerror = () => resolve({ ...img, base64: null });
+                    reader.readAsDataURL(blob);
+                });
+            } catch {
+                return { ...img, base64: null };
+            }
+        }));
+        setImagesForPDF(results);
+        setIsPdfReady(true);
     }, [images]);
 
     useEffect(() => {
@@ -340,8 +336,11 @@ export default function EssayDetail() {
         return parseFloat(n.toFixed(maxDecimals)).toString();
     };
 
-    // Sort ingredients by weight descending (heaviest first)
-    const sortedDetails = [...detailsData].sort((a, b) => parseFloat(b.quantity || 0) - parseFloat(a.quantity || 0));
+    // Sort ingredients by weight descending (heaviest first) — memoized
+    const sortedDetails = useMemo(() => 
+        [...detailsData].sort((a, b) => parseFloat(b.quantity || 0) - parseFloat(a.quantity || 0)),
+        [detailsData]
+    );
 
     // handlePrint reemplazado por ExportPDFButton + EssayReportPDF (ver sección de UI)
 
@@ -381,26 +380,29 @@ export default function EssayDetail() {
                     </Link>
                     <div className="flex gap-2">
                         {!isPdfReady ? (
-                            <span className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold opacity-50"
+                            <button onClick={convertImagesForPDF}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition hover:opacity-80"
                                 style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', color: 'var(--text-2)' }}>
-                                ⏳ Preparando imágenes...
-                            </span>
+                                <Printer size={14} /> Preparar PDF
+                            </button>
                         ) : (
-                            <ExportPDFButton
-                                document={
-                                    <EssayReportPDF
-                                        ensayo={ensayo}
-                                        detailsData={detailsData}
-                                        evalData={evalData}
-                                        finalScore={finalScore}
-                                        images={imagesForPDF}
-                                    />
-                                }
-                                fileName={`Reporte_Ensayo_${ensayo?.code || ensayo?.id}.pdf`}
-                                buttonText="Exportar PDF"
-                                className="text-sm"
-                                style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', color: 'var(--text-2)' }}
-                            />
+                            <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-2)' }}>Cargando...</span>}>
+                                <ExportPDFButton
+                                    document={
+                                        <EssayReportPDF
+                                            ensayo={ensayo}
+                                            detailsData={detailsData}
+                                            evalData={evalData}
+                                            finalScore={finalScore}
+                                            images={imagesForPDF}
+                                        />
+                                    }
+                                    fileName={`Reporte_Ensayo_${ensayo?.code || ensayo?.id}.pdf`}
+                                    buttonText="Exportar PDF"
+                                    className="text-sm"
+                                    style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)', color: 'var(--text-2)' }}
+                                />
+                            </Suspense>
                         )}
                         {!isEditing
                             ? <button onClick={() => setIsEditing(true)}

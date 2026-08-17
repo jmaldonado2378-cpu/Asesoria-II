@@ -13,7 +13,7 @@ from lab.models import Complaint, ComplaintImage, Project
 from lab.serializers import ComplaintSerializer, ComplaintImageSerializer
 
 class ComplaintViewSet(viewsets.ModelViewSet):
-    queryset = Complaint.objects.all().order_by('-loading_date', '-created_at')
+    queryset = Complaint.objects.all().select_related('project__client').prefetch_related('images').order_by('-loading_date', '-created_at')
     serializer_class = ComplaintSerializer
     
     def get_queryset(self):

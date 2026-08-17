@@ -3,7 +3,7 @@ from lab.models import Project, ProjectBudget, BudgetItem, ProjectIngredientPric
 from lab.serializers import ProjectSerializer, ProjectBudgetSerializer, BudgetItemSerializer, ProjectIngredientPriceSerializer
 
 class ProjectViewSet(viewsets.ModelViewSet):
-    queryset = Project.objects.all()
+    queryset = Project.objects.all().select_related('client').prefetch_related('budget', 'budget__items')
     serializer_class = ProjectSerializer
 
 class ProjectBudgetViewSet(viewsets.ModelViewSet):
@@ -29,5 +29,5 @@ class BudgetItemViewSet(viewsets.ModelViewSet):
         return queryset
 
 class ProjectIngredientPriceViewSet(viewsets.ModelViewSet):
-    queryset = ProjectIngredientPrice.objects.all()
+    queryset = ProjectIngredientPrice.objects.all().select_related('ingredient', 'project')
     serializer_class = ProjectIngredientPriceSerializer

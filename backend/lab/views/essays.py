@@ -20,7 +20,7 @@ class EnsayoViewSet(viewsets.ModelViewSet):
         return queryset
 
 class EnsayoDetailViewSet(viewsets.ModelViewSet):
-    queryset = EnsayoDetail.objects.all()
+    queryset = EnsayoDetail.objects.all().select_related('ingredient', 'ensayo')
     serializer_class = EnsayoDetailSerializer
 
 class EnsayoImageViewSet(viewsets.ModelViewSet):

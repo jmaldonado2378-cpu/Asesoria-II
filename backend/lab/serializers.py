@@ -134,8 +134,8 @@ class EnsayoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_total_harina_grams(self, obj):
-        total_kg = obj.get_total_flour_weight()
-        return float(total_kg) * 1000
+        total_kg = sum(d.quantity for d in obj.details.all() if d.ingredient.is_base_flour and d.quantity)
+        return float(total_kg) * 1000 if total_kg else 0.0
 
     def get_total_cost(self, obj):
         total = sum(d.quantity * d.price_per_kg for d in obj.details.all() if d.quantity and d.price_per_kg)

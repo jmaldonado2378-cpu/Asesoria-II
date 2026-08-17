@@ -113,7 +113,7 @@ def link_callback(uri, rel):
 
 
 class TechnicalReportViewSet(viewsets.ModelViewSet):
-    queryset = TechnicalReport.objects.all().order_by('-report_date', '-created_at')
+    queryset = TechnicalReport.objects.all().select_related('project').order_by('-report_date', '-created_at')
     serializer_class = TechnicalReportSerializer
     
     def get_queryset(self):
