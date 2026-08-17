@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 const EssayReportPDF = lazy(() => import('../components/pdf/EssayReportPDF'));
 const ExportPDFButton = lazy(() => import('../components/pdf/ExportPDFButton'));
+const SheetsExportButton = lazy(() => import('../components/ui/SheetsExportButton'));
 import { API_URL } from '../config';
 import { apiGet, apiPost, apiPut, apiPatch, apiDelete } from '../api/httpClient';
 import { useToast } from '../components/ui/Toast';
@@ -382,6 +383,13 @@ export default function EssayDetail() {
                                 />
                             </Suspense>
                         )}
+                        <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-2)' }}>Cargando...</span>}>
+                            <SheetsExportButton 
+                                ensayo={ensayo} 
+                                detailsData={detailsData} 
+                                evalData={evalData} 
+                            />
+                        </Suspense>
                         {!isEditing
                             ? <button onClick={() => setIsEditing(true)}
                                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold transition"

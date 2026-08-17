@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
     Home, FolderKanban, FlaskConical, Users,
-    Calendar, Package, Settings, ChevronRight
+    Calendar, Package, Settings, ChevronRight, DollarSign
 } from 'lucide-react';
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
     { path: '/clients', label: 'Clientes', icon: Users },
     { path: '/visits', label: 'Agenda', icon: Calendar },
     { path: '/ingredients', label: 'Insumos', icon: Package },
+    { path: '/finanzas', label: 'Finanzas', icon: DollarSign },
 ];
 
 export default function Sidebar() {

@@ -22,6 +22,7 @@ const VisitList = lazy(() => import('./pages/VisitList'));
 const NewVisit = lazy(() => import('./pages/NewVisit'));
 const VisitDetail = lazy(() => import('./pages/VisitDetail'));
 const Settings = lazy(() => import('./pages/Settings'));
+const Finance = lazy(() => import('./pages/Finance'));
 
 const PageLoader = () => (
   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: 'var(--text-2)' }}>
@@ -57,6 +58,7 @@ export default function App() {
               <Route path="/visits" element={<VisitList />} />
               <Route path="/visits/new" element={<NewVisit />} />
               <Route path="/visits/:id" element={<VisitDetail />} />
+              <Route path="/finanzas" element={<Finance />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </Suspense>

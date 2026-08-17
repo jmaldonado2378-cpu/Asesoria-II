@@ -453,3 +453,22 @@ class BudgetItem(models.Model):
 
     def __str__(self):
         return f"{self.description} ({self.item_type})"
+
+class ProjectExpense(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='project_expenses')
+    date = models.DateField(default=timezone.localdate)
+    description = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    category = models.CharField(max_length=50, choices=[
+        ('material', 'Material/Insumo'),
+        ('viaje', 'Viaje/Transporte'),
+        ('servicio', 'Servicio Externo'),
+        ('otro', 'Otro'),
+    ], default='material')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date', '-created_at']
+
+    def __str__(self):
+        return f"{self.description} - ${self.amount} ({self.project.name})"

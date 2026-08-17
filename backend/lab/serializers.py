@@ -2,7 +2,8 @@ from rest_framework import serializers
 from .models import (
     Client, Project, Ensayo, Ingredient, 
     ProjectIngredientPrice, Visit, EnsayoDetail, EnsayoImage,
-    TechnicalReport, Complaint, ComplaintImage, ProjectBudget, BudgetItem
+    TechnicalReport, Complaint, ComplaintImage, ProjectBudget, BudgetItem,
+    ProjectExpense
 )
 
 # --- CLIENTES ---
@@ -195,3 +196,11 @@ class ComplaintSerializer(serializers.ModelSerializer):
             'status', 'technical_conclusion', 'corrective_action', 
             'direct_client', 'contact', 'images', 'client_name', 'project_name'
         ]
+
+class ProjectExpenseSerializer(serializers.ModelSerializer):
+    project_name = serializers.ReadOnlyField(source='project.name')
+    client_name = serializers.ReadOnlyField(source='project.client.name')
+    
+    class Meta:
+        model = ProjectExpense
+        fields = '__all__'
