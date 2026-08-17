@@ -1,15 +1,21 @@
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, Fragment, lazy, Suspense } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-    Pipette, Calculator, Save, FileSpreadsheet, FileText, ChevronRight,
-    MessageSquare, Upload, Image as ImageIcon, Calendar, DollarSign,
+    Pipette, Save, FileSpreadsheet, FileText, ChevronRight,
+    MessageSquare, Upload, Image as ImageIcon, Calendar,
     Activity, Building, ArrowLeft, Clock, GitCompare, TrendingUp,
-    ShoppingBag, PieChart, Plus, Trash2, Edit3, AlertCircle, CheckSquare, Square, Eye
+    Plus, Trash2, Edit3, CheckSquare, Square, Eye
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { API_URL } from '../config';
-import { PDFDownloadLink } from '@react-pdf/renderer';
-import TechnicalReportPDF from '../components/pdf/TechnicalReportPDF';
+
+import ProjectEssaysTab from './project/ProjectEssaysTab';
+import ProjectVisitsTab from './project/ProjectVisitsTab';
+import ProjectComplaintsTab from './project/ProjectComplaintsTab';
+import ProjectReportModal from './project/ProjectReportModal';
+
+const PDFDownloadLink = lazy(() => import('@react-pdf/renderer').then(m => ({ default: m.PDFDownloadLink })));
+const TechnicalReportPDF = lazy(() => import('../components/pdf/TechnicalReportPDF'));
 
 export default function ProjectDetail() {
     const { id } = useParams();
@@ -48,18 +54,7 @@ export default function ProjectDetail() {
         corrective_action: ''
     });
 
-    // Estado para Gastos de Materiales (Simulado en localStorage por simplicidad)
-    const [materialExpenses, setMaterialExpenses] = useState([]);
-    const [newExpense, setNewExpense] = useState({ description: '', amount: '' });
 
-    // Finanzas Calculadas
-    const [financials, setFinancials] = useState({
-        revenue: 0,
-        visitExpenses: 0,
-        materialExpensesTotal: 0,
-        recipeTheoreticalCost: 0,
-        realMargin: 0
-    });
 
     const fetchProject = () => {
         Promise.all([
@@ -89,16 +84,7 @@ export default function ProjectDetail() {
             setComplaints(Array.isArray(complaintsData) ? complaintsData : []);
             setReports(Array.isArray(reportsData) ? reportsData : []);
 
-            // Cargar gastos materiales guardados localmente
-            try {
-                const savedExpenses = JSON.parse(localStorage.getItem(`proj_expenses_${id}`)) || [];
-                setMaterialExpenses(savedExpenses);
-                calculateFinancials(pEssays, pVisits, savedExpenses);
-            } catch (e) {
-                console.error("Error parsing local expenses", e);
-                setMaterialExpenses([]);
-                calculateFinancials(pEssays, pVisits, []);
-            }
+
 
             setLoading(false);
         }).catch(err => {
@@ -112,47 +98,7 @@ export default function ProjectDetail() {
         fetchProject();
     }, [id]);
 
-    const calculateFinancials = (pEssays, pVisits, pMatExpenses) => {
-        // 1. Ingresos (Honorarios Visitas) -> Corregido a 'fees'
-        const revenue = pVisits.reduce((acc, v) => acc + parseFloat(v.fees || 0), 0);
 
-        // 2. Egresos Reales (Viáticos) -> Corregido a 'expenses'
-        const visitExp = pVisits.reduce((acc, v) => acc + parseFloat(v.expenses || 0), 0);
-
-        // 3. Egresos Materiales (Lista Manual)
-        const matExp = pMatExpenses.reduce((acc, m) => acc + parseFloat(m.amount || 0), 0);
-
-        // 4. Costo Teórico Recetas (Informativo)
-        const recipeCost = pEssays.reduce((acc, curr) => acc + parseFloat(curr.total_cost || 0), 0);
-
-        setFinancials({
-            revenue: revenue,
-            visitExpenses: visitExp,
-            materialExpensesTotal: matExp,
-            recipeTheoreticalCost: recipeCost,
-            realMargin: revenue - (visitExp + matExp)
-        });
-    };
-
-    const handleAddExpense = (e) => {
-        e.preventDefault();
-        if (!newExpense.description || !newExpense.amount) return;
-
-        const updatedExpenses = [...materialExpenses, { id: Date.now(), description: newExpense.description, amount: parseFloat(newExpense.amount), date: new Date().toISOString() }];
-        setMaterialExpenses(updatedExpenses);
-        localStorage.setItem(`proj_expenses_${id}`, JSON.stringify(updatedExpenses));
-
-        // Recalcular
-        calculateFinancials(essays, visits, updatedExpenses);
-        setNewExpense({ description: '', amount: '' });
-    };
-
-    const handleDeleteExpense = (expId) => {
-        const updated = materialExpenses.filter(e => e.id !== expId);
-        setMaterialExpenses(updated);
-        localStorage.setItem(`proj_expenses_${id}`, JSON.stringify(updated));
-        calculateFinancials(essays, visits, updated);
-    };
 
     const toggleSelection = (eid) => setSelectedIds(prev => prev.includes(eid) ? prev.filter(i => i !== eid) : [...prev, eid]);
     const handleCompare = () => selectedIds.length >= 2 && navigate(`/essays/compare?ids=${selectedIds.join(',')}`);
@@ -521,60 +467,14 @@ export default function ProjectDetail() {
                 </div>
 
                 {/* GENERADOR DE INFORME MODAL — Fix 6: tema dark neon */}
-                {showReportForm && (
-                    <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-                        style={{ background: 'rgba(0,0,0,0.75)' }}>
-                        <div className="w-full max-w-2xl rounded-sm shadow-2xl p-8 space-y-6"
-                            style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
-                            <div className="flex justify-between items-center pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
-                                <h2 className="text-lg font-serif font-black uppercase tracking-tighter italic"
-                                    style={{ color: 'var(--text-1)' }}>Configurar Informe Técnico</h2>
-                                <button onClick={() => setShowReportForm(false)}
-                                    style={{ color: 'var(--text-2)' }}><ArrowLeft size={22} /></button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em]"
-                                        style={{ color: 'var(--text-2)' }}>Fecha Inicio</label>
-                                    <input
-                                        type="date"
-                                        value={reportParams.startDate}
-                                        onChange={e => setReportParams({ ...reportParams, startDate: e.target.value })}
-                                        className="w-full p-3 rounded-sm font-mono text-sm outline-none"
-                                        style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em]"
-                                        style={{ color: 'var(--text-2)' }}>Fecha Fin</label>
-                                    <input
-                                        type="date"
-                                        value={reportParams.endDate}
-                                        onChange={e => setReportParams({ ...reportParams, endDate: e.target.value })}
-                                        className="w-full p-3 rounded-sm font-mono text-sm outline-none"
-                                        style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em]"
-                                    style={{ color: 'var(--text-2)' }}>Conclusiones &amp; Observaciones</label>
-                                <textarea
-                                    value={reportParams.conclusions}
-                                    onChange={e => setReportParams({ ...reportParams, conclusions: e.target.value })}
-                                    placeholder="Redacte las conclusiones técnicas para este periodo..."
-                                    className="w-full h-36 p-3 rounded-sm text-sm outline-none"
-                                    style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-1)' }}
-                                />
-                            </div>
-                            <button onClick={handleGenerateReport} disabled={savingObs}
-                                className="w-full py-4 rounded-sm font-black text-sm uppercase tracking-[0.3em] transition disabled:opacity-40"
-                                style={{ background: 'var(--accent)', color: '#0f172a' }}>
-                                {savingObs ? 'Procesando...' : 'Generar y Guardar Informe'}
-                            </button>
-                        </div>
-                    </div>
-                )}
+                <ProjectReportModal
+                    showReportForm={showReportForm}
+                    setShowReportForm={setShowReportForm}
+                    reportParams={reportParams}
+                    setReportParams={setReportParams}
+                    handleGenerateReport={handleGenerateReport}
+                    savingObs={savingObs}
+                />
 
                 {/* HISTORIAL DE INFORMES — Fix 6: tema dark neon */}
                 <div className="rounded-sm p-6 mb-8" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
@@ -622,33 +522,35 @@ export default function ProjectDetail() {
                                                     >
                                                         <FileSpreadsheet size={12} /> Excel
                                                     </button>
-                                                    <PDFDownloadLink
-                                                        document={
-                                                            <TechnicalReportPDF
-                                                                project={project}
-                                                                essays={essays}
-                                                                visits={visits}
-                                                                complaints={complaints}
-                                                                financials={financials}
-                                                                startDate={rep.start_date}
-                                                                endDate={rep.end_date}
-                                                                reportDate={rep.report_date}
-                                                                conclusions={rep.technical_observations || ''}
-                                                                advisorName="Asesor Técnico"
-                                                            />
-                                                        }
-                                                        fileName={`IT_${project?.client_name?.replace(/\s/g, '_') || 'cliente'}_${project?.name?.replace(/\s/g, '_') || 'proyecto'}_${rep.report_date}.pdf`}
-                                                    >
-                                                        {({ loading: pdfLoading }) => (
-                                                            <button
-                                                                disabled={pdfLoading}
-                                                                className="flex items-center gap-2 px-3 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-widest transition shadow-lg disabled:opacity-50"
-                                                                style={{ background: 'var(--accent-2)', color: '#fff' }}
-                                                            >
-                                                                <FileText size={12} /> {pdfLoading ? '...' : 'PDF'}
-                                                            </button>
-                                                        )}
-                                                    </PDFDownloadLink>
+                                                    <Suspense fallback={<span className="text-[8px] text-[var(--text-2)]">Cargando PDF...</span>}>
+                                                        <PDFDownloadLink
+                                                            document={
+                                                                <TechnicalReportPDF
+                                                                    project={project}
+                                                                    essays={essays}
+                                                                    visits={visits}
+                                                                    complaints={complaints}
+                                                                    financials={{ revenue: 0, visitExpenses: 0, materialExpensesTotal: 0, recipeTheoreticalCost: 0, realMargin: 0 }}
+                                                                    startDate={rep.start_date}
+                                                                    endDate={rep.end_date}
+                                                                    reportDate={rep.report_date}
+                                                                    conclusions={rep.technical_observations || ''}
+                                                                    advisorName="Asesor Técnico"
+                                                                />
+                                                            }
+                                                            fileName={`IT_${project?.client_name?.replace(/\s/g, '_') || 'cliente'}_${project?.name?.replace(/\s/g, '_') || 'proyecto'}_${rep.report_date}.pdf`}
+                                                        >
+                                                            {({ loading: pdfLoading }) => (
+                                                                <button
+                                                                    disabled={pdfLoading}
+                                                                    className="flex items-center gap-2 px-3 py-1.5 rounded-sm text-[8px] font-black uppercase tracking-widest transition shadow-lg disabled:opacity-50"
+                                                                    style={{ background: 'var(--accent-2)', color: '#fff' }}
+                                                                >
+                                                                    <FileText size={12} /> {pdfLoading ? '...' : 'PDF'}
+                                                                </button>
+                                                            )}
+                                                        </PDFDownloadLink>
+                                                    </Suspense>
                                                 </div>
                                             </td>
                                         </tr>
@@ -664,352 +566,39 @@ export default function ProjectDetail() {
                     <TabButton active={activeTab === 'ensayos'} onClick={() => setActiveTab('ensayos')} icon={<Pipette size={16} />} label={`Ensayos Técs. (${essays.length})`} />
                     <TabButton active={activeTab === 'visitas'} onClick={() => setActiveTab('visitas')} icon={<Calendar size={16} />} label={`Agenda / Visitas (${visits.length})`} />
                     <TabButton active={activeTab === 'reclamos'} onClick={() => setActiveTab('reclamos')} icon={<MessageSquare size={16} />} label={`Reclamos (${complaints.length})`} />
-                    <TabButton active={activeTab === 'finanzas'} onClick={() => setActiveTab('finanzas')} icon={<DollarSign size={16} />} label="Estado de Resultados" />
+
                 </div>
 
                 {/* CONTENIDO TABS */}
                 <div className="transition-all duration-300">
                     {/* --- TAB ENSAYOS --- */}
                     {activeTab === 'ensayos' && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
-                            <div className="flex justify-end gap-4">
-                                {selectedIds.length >= 2 && (
-                                    <button onClick={handleCompare} className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-sm shadow-xl hover:bg-indigo-700 transition font-black text-[10px] uppercase tracking-widest border border-indigo-500">
-                                        <GitCompare size={16} /> Comparar ({selectedIds.length})
-                                    </button>
-                                )}
-                                <Link to="/essays/new" state={{ preselectedProject: project.id, preselectedClient: project.client }} className="flex items-center gap-2 bg-[var(--bg-panel)] text-white px-6 py-3 rounded-sm shadow-xl transition font-black text-[10px] uppercase tracking-widest border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]">
-                                    <Plus size={16} /> Iniciar Protocolo
-                                </Link>
-                            </div>
-
-                            <div className="bg-[var(--bg-panel)] shadow-2xl border border-[var(--border)] rounded-sm overflow-hidden">
-                                <table className="w-full text-left border-collapse font-mono">
-                                    <thead className="bg-[var(--bg-main)] p-4 text-[9px] font-black text-[var(--text-2)] uppercase tracking-[0.3em] border-b border-[var(--border)]">
-                                        <tr>
-                                            <th className="p-5 w-16 text-center border-r border-[var(--border)]">SEL.</th>
-                                            <th className="p-5">PROTÓCOLO / CÓDIGO</th>
-                                            <th className="p-5">DESCRIPCIÓN TÉCNICA</th>
-                                            <th className="p-5 text-right">SCORE</th>
-                                            <th className="p-5 text-right pr-8">EXPEDIENTE</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-[var(--border)]">
-                                        {essays.length === 0 ? (
-                                            <tr><td colSpan="5" className="p-20 text-center text-[var(--text-2)] uppercase text-[10px] font-bold tracking-widest italic">Sin registros técnicos vinculados.</td></tr>
-                                        ) : (
-                                            essays.map(e => (
-                                                <tr key={e.id} className="hover:bg-[var(--bg-hover)] transition-colors group">
-                                                    <td className="p-5 text-center border-r border-[var(--border)]">
-                                                        <button onClick={() => toggleSelection(e.id)} className="transition transform active:scale-90">
-                                                            {selectedIds.includes(e.id) ? <CheckSquare size={20} className="text-[var(--accent)]" /> : <Square size={20} className="text-[var(--border)]" />}
-                                                        </button>
-                                                    </td>
-                                                    <td className="p-5">
-                                                        <div className="font-black text-[var(--text-1)] text-lg uppercase tracking-tighter group-hover:text-[var(--accent)] transition-colors">{e.code || `ENS-${e.id}`}</div>
-                                                        <div className="text-[9px] text-[var(--text-2)] font-bold uppercase tracking-widest">{e.date}</div>
-                                                    </td>
-                                                    <td className="p-5 text-[10px] font-bold uppercase tracking-widest text-[var(--text-2)] truncate max-w-xs">{e.description || 'Sin descripción'}</td>
-                                                    <td className="p-5 text-right">
-                                                        {e.final_score ? (
-                                                            <div className={`text-xl font-black ${parseFloat(e.final_score) >= 8 ? 'text-[var(--accent)]' : 'text-orange-600'}`}>{parseFloat(e.final_score).toFixed(1)}</div>
-                                                        ) : <span className="text-[var(--border)]">--</span>}
-                                                    </td>
-                                                    <td className="p-5 text-right pr-8">
-                                                        <Link to={`/essays/${e.id}`} className="bg-[var(--bg-main)] text-white p-2 rounded-sm hover:bg-[var(--accent)] hover:text-[#0f172a] transition inline-block shadow-md border border-[var(--border)]">
-                                                            <Eye size={16} />
-                                                        </Link>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                        <ProjectEssaysTab
+                            essays={essays}
+                            selectedIds={selectedIds}
+                            toggleSelection={toggleSelection}
+                            handleCompare={handleCompare}
+                            projectId={project.id}
+                            clientId={project.client}
+                        />
                     )}
 
                     {/* --- TAB VISITAS --- */}
                     {activeTab === 'visitas' && (
-                        <div className="animate-in fade-in slide-in-from-bottom-2">
-                            <div className="flex justify-end mb-6">
-                                <Link to="/visits/new" className="flex items-center gap-2 bg-[var(--bg-panel)] text-white px-6 py-3 rounded-sm shadow-xl transition font-black text-[10px] uppercase tracking-widest border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]">
-                                    <Plus size={16} /> Agendar Visita Técnica
-                                </Link>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {visits.length === 0 ? (
-                                    <div className="md:col-span-2 bg-[var(--bg-panel)] border-2 border-dashed border-[var(--border)] p-20 text-center rounded-sm">
-                                        <Calendar size={48} className="mx-auto text-[var(--border)] mb-4" />
-                                        <p className="text-[var(--text-2)] font-bold uppercase text-xs tracking-widest">No hay visitas de campo programadas.</p>
-                                    </div>
-                                ) : (
-                                    visits.map(v => (
-                                        <Link key={v.id} to={`/visits/${v.id}`} className="bg-[var(--bg-panel)] border border-[var(--border)] shadow-xl hover:border-[var(--accent)] transition-all p-8 flex justify-between items-center group relative overflow-hidden">
-                                            <div className={`absolute top-0 left-0 w-1.5 h-full ${v.status === 'Realizada' ? 'bg-[var(--accent)]' : 'bg-orange-500'}`}></div>
-                                            <div className="space-y-4">
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-sm text-[#0f172a] ${v.status === 'Realizada' ? 'bg-[var(--accent)]' : 'bg-orange-500'}`}>{v.status}</span>
-                                                    <span className="text-[10px] font-bold text-[var(--text-2)] uppercase tracking-widest">{v.visit_type}</span>
-                                                </div>
-                                                <div>
-                                                    <div className="text-xl font-black text-[var(--text-1)] uppercase tracking-tighter group-hover:text-[var(--accent)] transition-colors">{v.objective || 'Visita Técnica'}</div>
-                                                    <div className="text-[10px] font-bold text-[var(--text-2)] flex items-center gap-4 mt-1">
-                                                        <span className="flex items-center gap-1"><Calendar size={12} /> {v.date}</span>
-                                                        <span className="flex items-center gap-1"><Clock size={12} /> {v.start_time?.substring(0, 5)} hs</span>
-                                                        {v.kilometers > 0 && <span className="flex items-center gap-1 text-[var(--accent)]"><TrendingUp size={12} /> {v.kilometers} KM</span>}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2 bg-[var(--bg-main)] px-4 py-2 rounded-sm group-hover:bg-[var(--accent)] transition-colors">
-                                                <span className="text-xs font-black text-[var(--text-2)] uppercase tracking-widest group-hover:text-[#0f172a]">Gestionar</span>
-                                                <ArrowLeft size={14} className="rotate-180 text-[var(--accent)] group-hover:text-[#0f172a]" />
-                                            </div>
-                                        </Link>
-                                    ))
-                                )}
-                            </div>
-                        </div>
+                        <ProjectVisitsTab visits={visits} />
                     )}
 
                     {/* --- TAB RECLAMOS --- */}
                     {activeTab === 'reclamos' && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
-                            <div className="flex justify-between items-center bg-[var(--bg-panel)] p-6 shadow-xl border border-[var(--border)] rounded-sm">
-                                <div>
-                                    <h3 className="text-sm font-black text-[var(--text-1)] uppercase tracking-widest italic">Gestión de Reclamos Técnicos</h3>
-                                    <div className="flex gap-4 mt-2">
-                                        <button onClick={openNewComplaint} className="flex items-center gap-2 bg-[var(--bg-main)] text-white px-4 py-2 rounded-sm text-[9px] font-black uppercase tracking-widest hover:border-[var(--accent)] hover:text-[var(--accent)] transition shadow-inner border border-[var(--border)]">
-                                            <Plus size={14} /> Nuevo Reclamo Manual
-                                        </button>
-                                        <button onClick={handleDownloadTemplate} className="flex items-center gap-2 bg-transparent text-[var(--text-2)] px-4 py-2 rounded-sm text-[9px] font-black uppercase tracking-widest border border-[var(--border)] hover:bg-[var(--bg-hover)] transition shadow-sm">
-                                            <FileSpreadsheet size={14} /> Descargar Plantilla
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-[var(--bg-panel)] shadow-2xl border border-[var(--border)] rounded-sm overflow-hidden">
-                                <table className="w-full text-left font-mono">
-                                    <thead className="bg-[var(--bg-main)] text-[9px] font-black text-[var(--text-2)] uppercase tracking-[0.3em] border-b border-[var(--border)]">
-                                        <tr>
-                                            <th className="p-5">DATOS / FECHA</th>
-                                            <th className="p-5">ESTADO / LOTE</th>
-                                            <th className="p-5">HARINA / PRODUCTO</th>
-                                            <th className="p-5">DESCRIPCIÓN</th>
-                                            <th className="p-5 text-right">ACCIONES</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-[var(--border)]">
-                                        {complaints.length === 0 ? (
-                                            <tr><td colSpan="5" className="p-20 text-center text-[var(--text-2)] uppercase text-[10px] font-bold tracking-widest italic">No se han registrado reclamos técnicos.</td></tr>
-                                        ) : (
-                                            complaints.map(c => (
-                                                <Fragment key={c.id}>
-                                                    <tr className="hover:bg-[var(--bg-hover)] transition-colors group">
-                                                        <td className="p-5">
-                                                            <div className="text-[10px] font-black text-[var(--text-1)] uppercase tracking-tight italic">{c.loading_date}</div>
-                                                            <div className="text-[8px] text-[var(--text-2)] font-bold uppercase">Ent: {c.delivery_date || '-'}</div>
-                                                        </td>
-                                                        <td className="p-5">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${c.status === 'Cerrado' ? 'bg-green-900/40 text-green-400' :
-                                                                    c.status === 'En Proceso' ? 'bg-amber-900/40 text-amber-400' : 'bg-red-900/40 text-red-400'
-                                                                    }`}>
-                                                                    {c.status}
-                                                                </span>
-                                                                {c.images && c.images.length > 0 && (
-                                                                    <span className="text-[8px] font-black text-[var(--accent)] bg-[var(--accent-dim)] px-1 rounded-sm">
-                                                                        {c.images.length} FOTOS
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <div className="text-[9px] font-bold text-[var(--text-1)] uppercase tracking-tighter">Lote: {c.batch || 'S/N'}</div>
-                                                        </td>
-                                                        <td className="p-5">
-                                                            <div className="text-[10px] font-bold text-orange-400 uppercase mb-0.5">{c.flour_type || '-'}</div>
-                                                            <div className="text-[8px] text-[var(--text-2)] font-bold uppercase">{c.product_made || '-'}</div>
-                                                        </td>
-                                                        <td className="p-5">
-                                                            <div className="text-[9px] font-bold text-[var(--text-2)] uppercase max-w-xs">{c.description?.substring(0, 40)}...</div>
-                                                            {c.technical_conclusion && (
-                                                                <div className="mt-1 text-[8px] px-2 py-1 bg-[var(--bg-main)] text-[var(--text-2)] rounded-sm italic border-l-2 border-[var(--accent)]">
-                                                                    {c.technical_conclusion.substring(0, 30)}...
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                        <td className="p-5 text-right">
-                                                            <div className="flex justify-end items-center gap-2">
-                                                                {uploadingComplaintId === c.id ? (
-                                                                    <div className="text-[8px] font-black text-orange-600 animate-pulse uppercase tracking-widest px-2">Subiendo...</div>
-                                                                ) : (
-                                                                    <>
-                                                                        <button onClick={() => openEditComplaint(c)} className="p-2 bg-[var(--bg-main)] text-white rounded-sm hover:border-[var(--accent)] hover:text-[var(--accent)] transition shadow-md border border-[var(--border)]">
-                                                                            <FileText size={14} />
-                                                                        </button>
-                                                                        <label className="bg-[var(--bg-main)] p-2 rounded-sm text-[var(--text-2)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition cursor-pointer shadow-sm border border-[var(--border)]">
-                                                                            <ImageIcon size={14} />
-                                                                            <input
-                                                                                type="file"
-                                                                                className="hidden"
-                                                                                accept="image/*"
-                                                                                onChange={(e) => handleUploadComplaintImage(c.id, e.target.files[0])}
-                                                                            />
-                                                                        </label>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                    {/* GALERÍA DE MINIATURAS PARA RECLAMO (ESPEJO ENSAYOS) */}
-                                                    {c.images && c.images.length > 0 && (
-                                                        <tr className="bg-[var(--bg-main)]/30">
-                                                            <td colSpan="5" className="p-4 pt-1">
-                                                                <div className="flex flex-wrap gap-4 border-t border-[var(--border)] pt-3 pl-5">
-                                                                    {c.images.map(img => (
-                                                                        <div key={img.id} className="relative group w-20 h-20 bg-[var(--bg-panel)] rounded-sm overflow-hidden border border-[var(--border)] shadow-sm transition hover:shadow-md">
-                                                                            <img
-                                                                                src={img.image?.startsWith('http') ? img.image : `${API_URL}${img.image}`}
-                                                                                alt="Reclamo"
-                                                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                                                            />
-                                                                            <button
-                                                                                onClick={() => handleDeleteComplaintImage(img.id)}
-                                                                                className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition shadow-lg hover:bg-red-700 active:scale-90"
-                                                                                title="Eliminar Foto"
-                                                                            >
-                                                                                <Trash2 size={10} />
-                                                                            </button>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    )}
-                                                </Fragment>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* --- TAB FINANZAS (EXPERTO) --- */}
-                    {activeTab === 'finanzas' && (
-                        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2">
-                            {/* 1. KPIs FINANCIEROS */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                <FinanceCard label="Ingresos (Honorarios)" val={financials.revenue} icon={<DollarSign size={14} />} border="border-[var(--border)]" />
-                                <FinanceCard label="Viáticos (Egresos)" val={financials.visitExpenses} icon={<TrendingUp size={14} />} border="border-red-500" />
-                                <FinanceCard label="Materiales (Consultor)" val={financials.materialExpensesTotal} icon={<ShoppingBag size={14} />} border="border-orange-500" />
-                                <FinanceCard label="Margen Real Bruto" val={financials.realMargin} icon={<PieChart size={14} />} border="border-[var(--accent)]" bg="bg-[var(--bg-panel)]" />
-                            </div>
-
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                {/* 2. GESTIÓN DE GASTOS DE MATERIALES */}
-                                <div className="bg-[var(--bg-panel)] shadow-2xl border border-[var(--border)] rounded-sm overflow-hidden flex flex-col">
-                                    <div className="p-6 bg-[var(--bg-main)] text-white border-b border-[var(--border)] flex items-center gap-3">
-                                        <ShoppingBag size={18} className="text-[var(--accent)]" />
-                                        <h3 className="text-[11px] font-black uppercase tracking-[0.3em] flex-grow" style={{ color: 'var(--text-1)' }}>Compras y Gastos Out-of-Pocket</h3>
-                                    </div>
-
-                                    {/* Formulario Agregar Gasto */}
-                                    <form onSubmit={handleAddExpense} className="p-6 bg-[var(--bg-main)]/50 border-b border-[var(--border)] grid grid-cols-1 gap-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-1">
-                                                <label className="text-[9px] font-black text-[var(--text-2)] uppercase tracking-widest block ml-1">Concepto / Descripción</label>
-                                                <input
-                                                    placeholder="Ej: Muestras Competencia"
-                                                    value={newExpense.description}
-                                                    onChange={e => setNewExpense({ ...newExpense, description: e.target.value })}
-                                                    className="w-full p-3 bg-[var(--bg-main)] border border-[var(--border)] rounded-sm text-[10px] font-bold uppercase outline-none focus:border-[var(--accent)] text-[var(--text-1)]"
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-[9px] font-black text-[var(--text-2)] uppercase tracking-widest block ml-1">Monto ($)</label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="0.00"
-                                                    value={newExpense.amount}
-                                                    onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })}
-                                                    className="w-full p-3 bg-[var(--bg-main)] border border-[var(--border)] rounded-sm text-[10px] font-mono font-black outline-none focus:border-[var(--accent)] text-[var(--text-1)]"
-                                                />
-                                            </div>
-                                        </div>
-                                        <button type="submit" className="w-full bg-[var(--accent)] text-[#0f172a] py-3 rounded-sm font-black text-[9px] uppercase tracking-widest transition flex items-center justify-center gap-2">
-                                            <Plus size={14} /> Registrar Gasto Real
-                                        </button>
-                                    </form>
-
-                                    {/* Lista de Gastos */}
-                                    <div className="p-0 flex-grow max-h-[400px] overflow-y-auto">
-                                        {materialExpenses.length === 0 ? (
-                                            <div className="p-20 text-center text-[var(--text-2)] uppercase text-[9px] font-bold tracking-widest italic">Archivo de gastos vacío.</div>
-                                        ) : (
-                                            <table className="w-full font-mono text-xs">
-                                                <tbody className="divide-y-2 divide-[var(--border)]">
-                                                    {materialExpenses.map(exp => (
-                                                        <tr key={exp.id} className="group hover:bg-[var(--bg-hover)] transition-colors">
-                                                            <td className="p-4 pl-6">
-                                                                <div className="text-[10px] font-black text-[var(--text-1)] uppercase tracking-tight">{exp.description}</div>
-                                                                <div className="text-[8px] text-[var(--text-2)] font-bold uppercase">{new Date(exp.date).toLocaleDateString()}</div>
-                                                            </td>
-                                                            <td className="p-4 text-right font-black text-[var(--accent)]">$ {parseFloat(exp.amount).toFixed(2)}</td>
-                                                            <td className="p-4 w-12 text-center">
-                                                                <button onClick={() => handleDeleteExpense(exp.id)} className="text-[var(--text-2)] hover:text-red-500 transition p-2">
-                                                                    <Trash2 size={16} />
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* 3. COSTOS TEÓRICOS & CALCULADORA */}
-                                <div className="space-y-8">
-                                    {/* Costo Teórico Informativo */}
-                                    <div className="bg-[var(--bg-panel)] border-l-8 border-[var(--accent)] shadow-2xl p-8 rounded-sm relative overflow-hidden group border border-[var(--border)]">
-                                        <AlertCircle className="absolute top-4 right-4 text-[var(--accent-dim)] group-hover:text-[var(--accent)] transition-colors" size={64} />
-                                        <div className="space-y-4 relative z-10">
-                                            <div>
-                                                <h4 className="text-[11px] font-black text-[var(--accent)] uppercase tracking-[0.3em] mb-1">Costo Teórico de Recetas</h4>
-                                                <div className="text-[10px] text-[var(--text-2)] font-bold uppercase leading-tight max-w-[250px]">
-                                                    Suma informativa de ingredientes en ensayos. Usualmente cubierto por el cliente final.
-                                                </div>
-                                            </div>
-                                            <div className="text-4xl font-black text-[var(--text-1)]">$ {financials.recipeTheoreticalCost.toLocaleString()}</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Simulador de Presupuesto */}
-                                    <div className="bg-[var(--bg-panel)] shadow-2xl border border-[var(--border)] rounded-sm overflow-hidden">
-                                        <div className="p-6 bg-[var(--bg-main)] text-white border-b border-[var(--border)] flex items-center justify-between">
-                                            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] flex items-center gap-2" style={{ color: 'var(--text-1)' }}>
-                                                <Calculator size={18} className="text-[var(--accent)]" /> Simulador de Cotización Rápida
-                                            </h3>
-                                        </div>
-                                        <div className="p-8 grid grid-cols-2 gap-8">
-                                            <div className="space-y-2">
-                                                <label className="text-[9px] font-black text-[var(--text-2)] uppercase tracking-widest block">Horas Técnicas Est.</label>
-                                                <input type="number" className="w-full p-4 bg-[var(--bg-main)] border border-[var(--border)] rounded-sm font-mono text-xl font-black outline-none focus:border-[var(--accent)] text-[var(--text-1)]" placeholder="0" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[9px] font-black text-[var(--text-2)] uppercase tracking-widest block">Valor Hora ($)</label>
-                                                <input type="number" className="w-full p-4 bg-[var(--bg-main)] border border-[var(--border)] rounded-sm font-mono text-xl font-black outline-none focus:border-[var(--accent)] text-[var(--text-1)]" defaultValue="5000" />
-                                            </div>
-                                        </div>
-                                        <div className="p-8 bg-[var(--bg-main)] border-t border-[var(--border)] flex justify-between items-center">
-                                            <div className="text-[10px] font-black text-[var(--text-2)] uppercase tracking-widest italic tracking-tighter">Inversión Recomendada</div>
-                                            <div className="text-3xl font-black text-[var(--text-1)]">$ 0.00</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <ProjectComplaintsTab
+                            complaints={complaints}
+                            openNewComplaint={openNewComplaint}
+                            handleDownloadTemplate={handleDownloadTemplate}
+                            openEditComplaint={openEditComplaint}
+                            handleUploadComplaintImage={handleUploadComplaintImage}
+                            handleDeleteComplaintImage={handleDeleteComplaintImage}
+                            uploadingComplaintId={uploadingComplaintId}
+                        />
                     )}
                 </div>
 
@@ -1169,19 +758,6 @@ function TabButton({ active, onClick, icon, label }) {
         >
             {icon} {label}
         </button>
-    );
-}
-
-function FinanceCard({ label, val, icon, border, text = "", bg = "bg-[var(--bg-panel)]" }) {
-    return (
-        <div className={`${bg} p-6 border-l-4 ${border} shadow-xl rounded-sm group relative overflow-hidden transition-all hover:translate-y-[-4px]`} style={{ border: '1px solid var(--border)', borderLeft: `4px solid ${border.includes('accent') ? 'var(--accent)' : border.replace('border-', '')}` }}>
-            <div className={`text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2`} style={{ color: 'var(--text-2)' }}>
-                {icon} {label}
-            </div>
-            <div className={`text-2xl font-black font-mono tracking-tighter`} style={{ color: 'var(--text-1)' }}>
-                $ {parseFloat(val || 0).toLocaleString()}
-            </div>
-        </div>
     );
 }
 
